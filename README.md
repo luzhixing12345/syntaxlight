@@ -39,7 +39,7 @@ syntaxlight.export_css(['c','python','lua'], export_name='index.css')
 # 保存得到 index.css 文件, 将其引入 html 即可: <link rel='stylesheet' href=./index.css />
 ```
 
-除此之外为了方便用户使用, syntaxlight 提供了一个简易的示例用于预览结果和调整
+为了方便用户使用, syntaxlight 提供了一个简易的示例用于预览结果和调整
 
 ```python
 import syntaxlight

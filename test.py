@@ -2,17 +2,14 @@
 
 import syntaxlight
 
-code = """
-#include <stdio.h>
+code = ''
 
-int main() {
-    printf("hello world!\n");
-    return 0;
-}
-"""
+with open('./test/c.c', 'r', encoding='utf-8') as f:
+    code = f.read()
 
-html = syntaxlight.parse(code, 'C')
-print(html)
+c_lexer = syntaxlight.CLexer(code)
+token = c_lexer.get_next_token()
 
-syntaxlight.export_css(['c','python','lua'], export_name='index.css')
-# 保存得到 index.css 文件, 将其引入 html 即可: <link rel='stylesheet' href=./index.css />
+while token.type.value != 'EOF':
+    print(token)
+    token = c_lexer.get_next_token()
