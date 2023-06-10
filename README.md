@@ -1,10 +1,8 @@
 # syntaxlight
 
-syntaxlight 是一个基于 EBNF 的语法高亮的 python 库, 您可以 [在线浏览]() 所有文法的高亮结果
+syntaxlight 是一个基于 BNF 的语法高亮的 python 库, 您可以 [在线浏览]() 所有文法的高亮结果
 
-目前支持 C Python Lua 等常见编程语言和 json xml 等文件格式的文法解析, 默认使用 Vscode 风格的高亮显示
-
-除此之外也支持自定义 EBNF 规则匹配文本, 以及自定义高亮颜色
+目前支持 C Python 等常见编程语言和 json xml 等常见文件格式的文法解析, 默认使用 Vscode 风格的高亮显示, 也支持自定义高亮颜色
 
 ## 安装
 
@@ -58,3 +56,5 @@ syntaxlight.example_display()
 ## 参考
 
 - [pygments](https://pygments.org/)
+- [C EBNF](https://cs.wmich.edu/~gupta/teaching/cs4850/sumII06/The%20syntax%20of%20C%20in%20Backus-Naur%20form.htm)
+- [Lua5.4 EBNF](https://www.lua.org/manual/5.4/manual.html#8)

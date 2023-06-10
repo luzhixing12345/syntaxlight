@@ -17,11 +17,8 @@ EBNF(**E**xtended **B**ackus-**N**aur **F**orm 扩展巴科斯范式) 是其中�
 
 产生式是由一组非终结符或终结符按照一定的规则组合而成的
 
----
+## 参考
 
-例子1: 设计一种语言, 这种语言需要将数值(整数或小数)通过EBNF表示出来
-
-```EBNF
-S  ::= -FN|FN
-FN ::= 
-```
+- [BNF](https://zh.wikipedia.org/wiki/%E5%B7%B4%E7%A7%91%E6%96%AF%E8%8C%83%E5%BC%8F)
+- [EBNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form)
+- https://blog.csdn.net/lin_strong/article/details/78583543

@@ -20,25 +20,13 @@ class Error(Exception):
         # add exception class name before the message
         self.message = f'{self.__class__.__name__}: {message}'
 
-
-class LexerError(Error):
-    pass
-
-
-class ParserError(Error):
-    pass
-
-
-class SemanticError(Error):
-    pass
-
-
 class TokenType(Enum):
     # single-character token types
     PLUS = '+'
     MINUS = '-'
     MUL = '*'
     SLASH = '/'
+    ASSIGN = '='
     BACK_SLASH = '\\'
     LPAREN = '('
     RPAREN = ')'
@@ -67,15 +55,25 @@ class TokenType(Enum):
     VERTICAL_TAB = '\v'
     CARRIAGE_RETURN = '\r'
     FORM_FEED = '\f'
+    BELL = '\a'
+    BACKSPACE = '\b'
+    NULL = '\0'
     BANG = '!'
     BACKTICK = '`'
     TILDE = '~'
     AT_SIGN = '@'
     EOF = 'EOF'
-
-    # misc
-    ID = 'ID'
+    ID  = 'ID'
     STRING = 'STRING'
+    NUMBER = 'NUMBER'
+    SHL = '<<'
+    SHR = '>>'
+    EQ = '=='
+    NE = '!='
+    LE = '<='
+    GE = '>='
+    VARARGS = '...'
+    DB_COLON = '::'
 
     RESERVED_KEYWORD_START = 'RESERVED_KEYWORD_START'
 
@@ -108,6 +106,10 @@ class Token:
 
     def __repr__(self):
         return self.__str__()
+    
+
+    def __eq__(self, __value: object) -> bool:
+        return self.type == __value
 
 
 class Lexer:
@@ -181,7 +183,23 @@ class Lexer:
         self.advance()
         return token
     
-    def skip_string(self):
+    def peek(self, n = 1):
+        peek_pos = self.pos+n
+        if peek_pos > len(self.text)-1:
+            return None
+        else:
+            return self.text[self.pos+1:peek_pos]
+    
+    def get_number(self):
+
+        result = ''
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+
+        return Token(self.TokenType.NUMBER, result, self.line, self.column)
+
+    def get_string(self):
 
         result = self.current_char
         end_match = self.current_char # ' or "
@@ -200,14 +218,6 @@ class Lexer:
 
         return Token(self.TokenType.STRING, result, self.line, self.column)
 
-
-    def peek(self, n = 1):
-        peek_pos = self.pos+n
-        if peek_pos > len(self.text)-1:
-            return None
-        else:
-            return self.text[self.pos+1:peek_pos]
-    
     def get_id(self):
         """Handle identifiers and reserved keywords"""
 
@@ -219,14 +229,14 @@ class Lexer:
             value += self.current_char
             self.advance()
 
-        token_type = self.reserved_keywords.get(value.upper())
+        token_type = self.reserved_keywords.get(value)
         if token_type is None:
             token.type = self.TokenType.ID
             token.value = value
         else:
             # reserved keyword
             token.type = token_type
-            token.value = value.upper()
+            token.value = value
 
         return token
 

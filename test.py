@@ -1,15 +1,21 @@
 
 
 import syntaxlight
+import sys
+
+file_type = sys.argv[1]
+file_name = sys.argv[2]
+
+file_path = f'./test/{file_type}/{file_name}.{file_type}'
 
 code = ''
 
-with open('./test/c.c', 'r', encoding='utf-8') as f:
+with open(file_path, 'r', encoding='utf-8') as f:
     code = f.read()
 
-c_lexer = syntaxlight.CLexer(code)
-token = c_lexer.get_next_token()
+lexer = syntaxlight.JsonLexer(code)
+token = lexer.get_next_token()
 
 while token.type.value != 'EOF':
     print(token)
-    token = c_lexer.get_next_token()
+    token = lexer.get_next_token()

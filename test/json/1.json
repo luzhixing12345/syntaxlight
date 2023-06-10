@@ -1,0 +1,9 @@
+{
+    "definitions": {
+        "Schema1": {
+            "not": {"$ref": "#/definitions/Schema1"}
+        }
+    },
+    "$ref": "#/definitions/Schema1",
+    "23": 123e1
+}

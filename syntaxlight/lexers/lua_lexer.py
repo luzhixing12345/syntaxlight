@@ -1,9 +1,10 @@
 
 from syntaxlight.lexers.lexer import TokenType
-from .lexer import Token, Lexer
+from .lexer import Lexer, Token
 from enum import Enum
 
-class CTokenType(Enum):
+
+class LuaTokenType(Enum):
     PLUS = '+'
     MINUS = '-'
     MUL = '*'
@@ -51,71 +52,61 @@ class CTokenType(Enum):
     SHL = '<<'
     SHR = '>>'
     EQ = '=='
-    NE = '!='
+    NE = '~='     # 这里不一样
     LE = '<='
     GE = '>='
     VARARGS = '...'
     DB_COLON = '::'
+    CONCAT = '..'
 
     # -----------------------------------------------
     # start - end 之间为对应语言的保留关键字
     RESERVED_KEYWORD_START = 'RESERVED_KEYWORD_START'
 
-    # https://zhuanlan.zhihu.com/p/37908790
-    # 基本数据类型
-    VOID = 'void'
-    CHAR = 'char'
-    INT  = 'int'
-    FLOAT = 'float'
-    DOUBLE = 'double'
-
-    # 修饰性关键字
-    SHORT = 'short'
-    LONG = 'long'
-    SIGNED = 'signed'
-    UNSIGNED = 'unsigned'
-
-    # 复杂类型关键字
-    STRUCT = 'struct'
-    UNION = 'union'
-    ENUM = 'enum'
-    TYPEDEF = 'typedef'
-    SIZEOF = 'sizeof'
-
-    # 存储级别关键字
-    AUTO = 'auto'
-    STATIC = 'static'
-    REGISTER = 'register'
-    EXTERN = 'extern'
-    CONST = 'const'
-    VOLATILE = 'volatile'
-
-    # 流程跳转
-    RETURN = 'return'
-    CONTINUE = 'continue'
-    BREAK = 'break'
-    GOTO = 'goto'
-
-    # 分支结构
-    IF = 'if'
-    ELSE = 'else'
-    SWITCH = 'switch'
-    CASE = 'case'
-    DEFAULT = 'default'
+    # https://www.lua.org/manual/5.4/manual.html#8
     
-    # 循环结构
+    AND = 'and'
+    BREAK = 'break'
+    DO = 'do'
+    ELSE = 'else'
+    ELSEIF = 'elseif'
+    END = 'end'
+    FALSE = 'false'
     FOR = 'for'
-    DO    = 'do'
+    FUNCTION = 'function'
+    GOTO = 'goto'
+    IF = 'if'
+    IN = 'in'
+    LOCAL = 'local'
+    NIL = 'nil'
+    NOT = 'not'
+    OR = 'or'
+    REPEAT = 'repeat'
+    RETURN = 'return'
+    THEN = 'then'
+    TRUE = 'true'
+    UNTIL = 'until'
     WHILE = 'while'
 
     RESERVED_KEYWORD_END = 'RESERVED_KEYWORD_END'
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
 
-class CLexer(Lexer):
 
-    def __init__(self, text: str, TokenType: TokenType = CTokenType):
+
+class LuaLexer(Lexer):
+
+    def __init__(self, text: str, TokenType: TokenType = LuaTokenType):
         super().__init__(text, TokenType)
+
+    def get_number(self):
+
+        result = ''
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+
+        return Token(self.TokenType.NUMBER, result, self.line, self.column)
 
     def get_next_token(self):
         """Lexical analyzer (also known as scanner or tokenizer)
