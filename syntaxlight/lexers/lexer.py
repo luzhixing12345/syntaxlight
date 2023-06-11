@@ -1,27 +1,9 @@
-import argparse
-import sys
+
 from enum import Enum
-
-_SHOULD_LOG_SCOPE = False  # see '--scope' command line option
-_SHOULD_LOG_STACK = False  # see '--stack' command line option
-
-
-class ErrorCode(Enum):
-    UNEXPECTED_TOKEN = 'Unexpected token'
-    ID_NOT_FOUND = 'Identifier not found'
-    DUPLICATE_ID = 'Duplicate id found'
-    PARAMETERS_NOT_MATCH = 'parameter number not match'
-
-
-class Error(Exception):
-    def __init__(self, error_code=None, token=None, message=None):
-        self.error_code = error_code
-        self.token = token
-        # add exception class name before the message
-        self.message = f'{self.__class__.__name__}: {message}'
+from ..error import *
 
 class TokenType(Enum):
-    # single-character token types
+    # 所有基本 Token 类型
     PLUS = '+'
     MINUS = '-'
     MUL = '*'
@@ -36,6 +18,7 @@ class TokenType(Enum):
     RCURLY_BRACE = '}'
     LANGLE_BRACE = '<'
     RANGLE_BRACE = '>'
+    UNDERLINE = '_'
     SEMI = ';'
     DOT = '.'
     COLON = ':'
@@ -63,9 +46,13 @@ class TokenType(Enum):
     TILDE = '~'
     AT_SIGN = '@'
     EOF = 'EOF'
-    ID  = 'ID'
-    STRING = 'STRING'
-    NUMBER = 'NUMBER'
+    ID = 'ID'
+    STRING = 'STRING'  # STRING 表示严格意义上的字符串, 即 "" 两个双引号包裹的
+    CHAR = 'CHAR'  # CHAR 表示单个字符, 即 'a'
+    STR = 'STR'    # STR 表示 "" | '' 包裹的字符串
+    NUMBER = 'NUMBER' # 整数 | 小数 | 科学计数法
+    INT = 'INT' # 整数
+    FLOAT = 'FLOAT' # 小数
     SHL = '<<'
     SHR = '>>'
     EQ = '=='
@@ -75,20 +62,12 @@ class TokenType(Enum):
     VARARGS = '...'
     DB_COLON = '::'
 
-    RESERVED_KEYWORD_START = 'RESERVED_KEYWORD_START'
-
-    # 在这里添加对应语言的保留关键字
-    # ...
-
-    RESERVED_KEYWORD_END = 'RESERVED_KEYWORD_END'
-
-
 class Token:
-    def __init__(self, type, value, lineno=None, column=None):
-        self.type = type
+    def __init__(self, type:Enum, value, lineno=None, column=None):
+        self.type:Enum = type
         self.value = value
-        self.lineno = lineno
-        self.column = column
+        self.lineno:int = lineno
+        self.column:int = column
 
     def __str__(self):
         """String representation of the class instance.
@@ -106,33 +85,33 @@ class Token:
 
     def __repr__(self):
         return self.__str__()
-    
-
-    def __eq__(self, __value: object) -> bool:
-        return self.type == __value
-
 
 class Lexer:
     '''
     Lexer 基类, 提供了一些基础函数和功能, 比如匹配数字, 匹配字符串
 
         可能有些编程语言的处理(比如Lua的字符串)不同, 单独覆盖即可
-    
+
     继承 Lexer 的子类需要重写其 get_next_token 方法以提供给后续的 parser 解析
     '''
 
-    def __init__(self, text: str, TokenType: TokenType):
+    def __init__(self, text: str, LanguageTokenType: Enum):
         self.text: str = text
         self.pos: int = 0  # 当前指针指向的字符
         self.current_char: str = self.text[self.pos]  # 当前指针指向的字符
         self.line: int = 1
         self.column: int = 1
-        self.TokenType = TokenType
+        self.BaseTokenType:TokenType = TokenType
+        self.context_bias = 3 # 发生错误时 token 的前后文行数
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
-        tt_list = list(TokenType)
-        start_index = tt_list.index(TokenType.RESERVED_KEYWORD_START)
-        end_index = tt_list.index(TokenType.RESERVED_KEYWORD_END)
+        tt_list = list(LanguageTokenType)
+        try:
+            start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
+            end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
+        except:
+            print("LanguageTokenType should keep the keywords between RESERVED_KEYWORD_START and RESERVED_KEYWORD_END")
+            exit(1)
         self.reserved_keywords = {
             token_type.value: token_type
             for token_type in tt_list[start_index+1:end_index]
@@ -146,13 +125,34 @@ class Lexer:
             TokenType.FORM_FEED.value: TokenType.FORM_FEED
         }
 
-    def error(self):
-        s = "Lexer error on '{lexeme}' line: {lineno} column: {column}".format(
-            lexeme=self.current_char,
-            lineno=self.line,
-            column=self.column,
-        )
-        raise LexerError(message=s)
+    def error(self, error_code: LexerErrorCode = None, token:Token = None):
+        context = self.get_context(token)
+        raise LexerError(error_code=error_code, token=token, context=context)
+    
+    def get_context(self, token: Token):
+        # 出错时获取上下文
+        lines = self.text.split('\n')
+        start_line = max(token.lineno-self.context_bias,0)
+        end_line = min(token.lineno+self.context_bias, len(lines)-1)
+        context = '\n'
+        for i in range(start_line, end_line+1):
+            # print(i, token.lineno)
+            if i != token.lineno -1:
+                context += lines[i] + '\n'
+            else:
+                token_length = len(token.value)
+                if token.column == token_length:
+                    pre_context = ''
+                else:
+                    pre_context = lines[i][:token.column-token_length-1]
+                if token.column == len(lines[i]):
+                    end_context = ''
+                else:
+                    end_context = lines[i][token.column-1:]
+                context += pre_context + f'\033[31m{token.value}\033[0m' + end_context + '\n'
+                context += ' ' * (token.column - token_length - 1) + '^' * token_length + '\n'
+        context += '\n'
+        return context
 
     def advance(self):
         """Advance the `pos` pointer and set the `current_char` variable."""
@@ -175,21 +175,21 @@ class Lexer:
         while self.current_char is not None and self.current_char == ' ':
             result += ' '
             self.advance()
-        return Token(self.TokenType.SPACE, result, self.line, self.column)
+        return Token(self.BaseTokenType.SPACE, result, self.line, self.column)
 
     def skip_invisiable_character(self):
         token = Token(
             self.invisible_characters[self.current_char], self.current_char, self.line, self.column)
         self.advance()
         return token
-    
-    def peek(self, n = 1):
+
+    def peek(self, n=1):
         peek_pos = self.pos+n
         if peek_pos > len(self.text)-1:
             return None
         else:
             return self.text[self.pos+1:peek_pos]
-    
+
     def get_number(self):
 
         result = ''
@@ -197,14 +197,57 @@ class Lexer:
             result += self.current_char
             self.advance()
 
-        return Token(self.TokenType.NUMBER, result, self.line, self.column)
+        use_scientific_notation = False # 科学计数法
+        use_float_dot = False
+        if self.current_char == 'e' or self.current_char == 'E':
+            result += self.current_char
+            self.advance()
+            use_scientific_notation = True
+
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+
+        if self.current_char == self.BaseTokenType.DOT.value:
+            result += self.current_char
+            self.advance()
+            if use_scientific_notation:
+                self.error(LexerErrorCode.ERROR_NUMBER_INVALID, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+            use_float_dot = True
+
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+
+        if self.current_char == 'e' or self.current_char == 'E':
+            result += self.current_char
+            self.advance()
+            if use_scientific_notation:
+                self.error(LexerErrorCode.ERROR_NUMBER_INVALID, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+        
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+
+        if self.current_char == self.BaseTokenType.DOT.value or self.current_char == 'e' or self.current_char == 'E':
+            result += self.current_char
+            self.advance()
+            self.error(LexerErrorCode.ERROR_NUMBER_INVALID, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+
+        if result[-1] == 'e' or result[-1] == 'E':
+            self.error(LexerErrorCode.ERROR_EXPONENT_NO_DIGITS, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+
+        return Token(self.BaseTokenType.NUMBER, result, self.line, self.column)
 
     def get_string(self):
-
+        '''
+        严格双引号 ""
+        '''
         result = self.current_char
-        end_match = self.current_char # ' or "
+        assert result == self.BaseTokenType.QUOTO_MARK
+        end_match = self.BaseTokenType.QUOTO_MARK
         self.advance()
-            
+
         while self.current_char is not None and self.current_char != end_match:
             result += self.current_char
             if self.current_char == '\\':
@@ -216,7 +259,29 @@ class Lexer:
         self.advance()
         result += end_match
 
-        return Token(self.TokenType.STRING, result, self.line, self.column)
+        return Token(self.BaseTokenType.STRING, result, self.line, self.column)
+
+    def get_str(self):
+        '''
+        "" | ''
+        '''
+        result = self.current_char
+        assert result == self.BaseTokenType.AMPERSAND or result == self.BaseTokenType.QUOTO_MARK
+        end_match = self.current_char  # ' or "
+        self.advance()
+
+        while self.current_char is not None and self.current_char != end_match:
+            result += self.current_char
+            if self.current_char == '\\':
+                self.advance()
+                if self.current_char is None:
+                    self.error()
+                result += self.current_char
+            self.advance()
+        self.advance()
+        result += end_match
+
+        return Token(self.BaseTokenType.STRING, result, self.line, self.column)
 
     def get_id(self):
         """Handle identifiers and reserved keywords"""
@@ -231,7 +296,7 @@ class Lexer:
 
         token_type = self.reserved_keywords.get(value)
         if token_type is None:
-            token.type = self.TokenType.ID
+            token.type = self.BaseTokenType.ID
             token.value = value
         else:
             # reserved keyword
@@ -240,5 +305,5 @@ class Lexer:
 
         return token
 
-    def get_next_token(self):
+    def get_next_token(self) -> Token:
         raise NotImplementedError

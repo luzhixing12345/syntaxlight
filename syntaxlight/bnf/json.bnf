@@ -1,14 +1,16 @@
 <Json> ::= <Object>
          | <Array>
 
-<Object> ::= '{' {<Members>}? '}'
+<Object> ::= '{' '}'
+           | '{' <Members> '}'
 
 <Members> ::= <Pair>
             | <Pair> ',' <Members>
 
 <Pair> ::= <:String:> ':' <Value>
 
-<Array> ::= '[' {<Elements>}? ']'
+<Array> ::= '[' ']'
+          | '[' <Elements> ']'
 
 <Elements> ::= <Value>
              | <Value> ',' <Elements>

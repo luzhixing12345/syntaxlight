@@ -81,10 +81,10 @@ class JsonLexer(Lexer):
 
         while self.current_char is not None:
 
-            if self.current_char == self.TokenType.QUOTO_MARK.value:
+            if self.current_char == self.BaseTokenType.QUOTO_MARK.value:
                 return self.get_string()
             
-            if self.current_char == self.TokenType.SPACE.value:
+            if self.current_char == self.BaseTokenType.SPACE.value:
                 return self.skip_whitespace()     
             
             if self.current_char in self.invisible_characters:
@@ -96,7 +96,7 @@ class JsonLexer(Lexer):
             try:
                 # get enum member by value, e.g.
                 # TokenType(';') --> TokenType.SEMI
-                token_type = self.TokenType(self.current_char)
+                token_type = self.BaseTokenType(self.current_char)
             except ValueError:
                 # no enum member with value equal to self.current_char
                 self.error()
@@ -113,4 +113,4 @@ class JsonLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=self.TokenType.EOF, value=None)
+        return Token(type=self.BaseTokenType.EOF, value=None)

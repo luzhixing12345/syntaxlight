@@ -13,9 +13,13 @@ code = ''
 with open(file_path, 'r', encoding='utf-8') as f:
     code = f.read()
 
-lexer = syntaxlight.JsonLexer(code)
+lexer = syntaxlight.get_lexer(code,file_type)
 token = lexer.get_next_token()
 
 while token.type.value != 'EOF':
-    print(token)
-    token = lexer.get_next_token()
+    if token.type.value == 'NUMBER':
+        print(token)
+    try:
+        token = lexer.get_next_token()
+    except Exception as e:
+        print(e.message)
