@@ -141,7 +141,7 @@ class Lexer:
                 context += lines[i] + '\n'
             else:
                 token_length = len(token.value)
-                if token.column == token_length:
+                if token.column == token_length + 1:
                     pre_context = ''
                 else:
                     pre_context = lines[i][:token.column-token_length-1]
@@ -183,12 +183,12 @@ class Lexer:
         self.advance()
         return token
 
-    def peek(self, n=1):
-        peek_pos = self.pos+n
+    def peek(self):
+        peek_pos = self.pos + 1
         if peek_pos > len(self.text)-1:
             return None
         else:
-            return self.text[self.pos+1:peek_pos]
+            return self.text[peek_pos]
 
     def get_number(self):
 
@@ -198,7 +198,6 @@ class Lexer:
             self.advance()
 
         use_scientific_notation = False # 科学计数法
-        use_float_dot = False
         if self.current_char == 'e' or self.current_char == 'E':
             result += self.current_char
             self.advance()
@@ -213,7 +212,6 @@ class Lexer:
             self.advance()
             if use_scientific_notation:
                 self.error(LexerErrorCode.ERROR_NUMBER_INVALID, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
-            use_float_dot = True
 
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
@@ -244,8 +242,8 @@ class Lexer:
         严格双引号 ""
         '''
         result = self.current_char
-        assert result == self.BaseTokenType.QUOTO_MARK
-        end_match = self.BaseTokenType.QUOTO_MARK
+        assert result == self.BaseTokenType.QUOTO_MARK.value
+        end_match = self.BaseTokenType.QUOTO_MARK.value
         self.advance()
 
         while self.current_char is not None and self.current_char != end_match:
@@ -266,7 +264,7 @@ class Lexer:
         "" | ''
         '''
         result = self.current_char
-        assert result == self.BaseTokenType.AMPERSAND or result == self.BaseTokenType.QUOTO_MARK
+        assert result == self.BaseTokenType.AMPERSAND.value or result == self.BaseTokenType.QUOTO_MARK.value
         end_match = self.current_char  # ' or "
         self.advance()
 

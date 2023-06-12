@@ -23,8 +23,8 @@ class Error(Exception):
         self.error_code = error_code
         self.token = token
         # add exception class name before the message
-        self.message = context
-        self.message += f'{self.__class__.__name__} [line:{self.token.lineno}, column:{self.token.column}]: {message}'
+        self.context = context
+        self.message = f'{self.__class__.__name__} [line:{self.token.lineno}, column:{self.token.column}]: {message}'
         
 
 class LexerError(Error):
