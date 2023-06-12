@@ -1,0 +1,6 @@
+<BNF> ::= <rule> | <rule> <BNF>
+<rule> ::= "<" <nonterminal> ">" "::=" <expression> "\n"
+<expression> ::= <term> | <term> <expression>
+<term> ::= <nonterminal> | <terminal> | "<" <special> ">"
+<nonterminal> ::= <letter> | <nonterminal> <letter_or_digit>
+<terminal> ::= <character> | <escape_sequence>

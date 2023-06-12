@@ -105,24 +105,26 @@ class Lexer:
         self.context_bias = 3 # 发生错误时 token 的前后文行数
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
-        tt_list = list(LanguageTokenType)
-        try:
-            start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
-            end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
-        except:
-            print("LanguageTokenType should keep the keywords between RESERVED_KEYWORD_START and RESERVED_KEYWORD_END")
-            exit(1)
-        self.reserved_keywords = {
-            token_type.value: token_type
-            for token_type in tt_list[start_index+1:end_index]
-        }
+        # tt_list = list(LanguageTokenType)
+        # try:
+        #     start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
+        #     end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
+        # except:
+        #     print("LanguageTokenType should keep the keywords between RESERVED_KEYWORD_START and RESERVED_KEYWORD_END")
+        #     exit(1)
+        # self.reserved_keywords = {
+        #     token_type.value: token_type
+        #     for token_type in tt_list[start_index+1:end_index]
+        # }
         # 不可见字符, 一般情况下直接忽略即可, 这里考虑到为了不破坏原本的代码格式所以进行保留
+        # \n \t \v \r \f \b
         self.invisible_characters = {
             TokenType.NEWLINE.value: TokenType.NEWLINE,
             TokenType.TAB.value: TokenType.TAB,
             TokenType.VERTICAL_TAB.value: TokenType.VERTICAL_TAB,
             TokenType.CARRIAGE_RETURN.value: TokenType.CARRIAGE_RETURN,
-            TokenType.FORM_FEED.value: TokenType.FORM_FEED
+            TokenType.FORM_FEED.value: TokenType.FORM_FEED,
+            TokenType.BACKSPACE.value: TokenType.BACKSPACE
         }
 
     def error(self, error_code: LexerErrorCode = None, token:Token = None):
@@ -261,7 +263,7 @@ class Lexer:
 
     def get_str(self):
         '''
-        "" | ''
+        单引号 ' 和 双引号 " 都可以
         '''
         result = self.current_char
         assert result == self.BaseTokenType.AMPERSAND.value or result == self.BaseTokenType.QUOTO_MARK.value
@@ -304,4 +306,8 @@ class Lexer:
         return token
 
     def get_next_token(self) -> Token:
+        '''
+        while self.current_char is not None:
+            # do something
+        '''
         raise NotImplementedError

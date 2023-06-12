@@ -1,5 +1,5 @@
 
-from syntaxlight.lexers.lexer import TokenType
+from syntaxparser.lexers.lexer import TokenType
 from .lexer import Lexer, Token
 from enum import Enum
 
@@ -91,7 +91,6 @@ class LuaTokenType(Enum):
     RESERVED_KEYWORD_END = 'RESERVED_KEYWORD_END'
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
-
 
 
 class LuaLexer(Lexer):

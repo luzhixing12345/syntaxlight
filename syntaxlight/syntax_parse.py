@@ -2,8 +2,9 @@ import os
 from .lexers import *
 from .error import *
 
+
 def parse(text: str, language: str = 'guess') -> str:
-    
+
     assert type(text) == str
     assert type(language) == str
 
@@ -12,8 +13,9 @@ def parse(text: str, language: str = 'guess') -> str:
     tokens = get_tokens(lexer)
     # print(tokens)
 
+
 def parse_file(file_path: str, language: str = 'guess') -> str:
-    
+
     if not os.path.exists(file_path):
         print(f"{file_path} 文件不存在")
 
@@ -29,19 +31,19 @@ def parse_file(file_path: str, language: str = 'guess') -> str:
     parse(text, language)
 
 
-def guess_language(file_path:str) -> str:
+def guess_language(file_path: str) -> str:
 
     file_name = file_path.split(os.sep)[-1]
-    
+
     languages = {
-        'c': ['c','h'],
+        'c': ['c', 'h'],
         'lua': ['lua'],
         'bnf': ['bnf'],
-        'Makefile': ['Makefile', 'mk','mak'],
+        'Makefile': ['Makefile', 'mk', 'mak'],
         'java': ['java'],
         'rust': ['rs'],
         'javascript': ['js'],
-        'typescript': ['ts','tsx','tsc']
+        'typescript': ['ts', 'tsx', 'tsc']
     }
 
     if '.' in file_name:
@@ -54,10 +56,9 @@ def guess_language(file_path:str) -> str:
     for language, suffix_names in languages.items():
         if file_name in suffix_names:
             return language
-        
+
     return None
 
-        
 
 def get_tokens(lexer: Lexer):
 
@@ -71,13 +72,13 @@ def get_tokens(lexer: Lexer):
             token = lexer.get_next_token()
             tokens.append(token)
         except Exception as e:
-            e:Error
+            e: Error
             print(e.message)
 
     return tokens
 
 
-def get_lexer(code:str, language:str) -> Lexer:
+def get_lexer(code: str, language: str) -> Lexer:
 
     language = language.lower()
 

@@ -1,7 +1,7 @@
 
 import unittest
 import os
-import syntaxlight
+import syntaxparser
 
 
 test_folder_path = './test'
@@ -15,14 +15,14 @@ for language in languages:
         files[i] = os.path.join(test_folder_path, language, files[i])
     TEST_FILES[language] = files
 
+
 class TestMyMdParser(unittest.TestCase):
 
     def test_number_lexer(self):
-        
+
         for language, files in TEST_FILES.items():
             for file in files:
-                syntaxlight.parse_file(file, language)
-
+                syntaxparser.parse_file(file, language)
 
 
 if __name__ == "__main__":

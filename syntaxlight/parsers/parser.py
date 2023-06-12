@@ -1,17 +1,18 @@
 
 from ..lexers.lexer import Lexer, Token
-from ..error import *
+from ..error import ParserError, ErrorCode
+
 
 class Parser:
     def __init__(self, lexer):
-        self.lexer:Lexer = lexer
+        self.lexer: Lexer = lexer
         # set current token to the first token taken from the input
-        self.current_token:Token = self.get_next_token()
-        
+        self.current_token: Token = self.get_next_token()
+
     def get_next_token(self):
         return self.lexer.get_next_token()
 
-    def error(self, error_code, token):
+    def error(self, error_code: ErrorCode, token):
         raise ParserError(
             error_code=error_code,
             token=token,
@@ -27,7 +28,7 @@ class Parser:
             self.current_token = self.get_next_token()
         else:
             self.error(
-                error_code=ErrorCode.UNEXPECTED_TOKEN,
+                error_code=ErrorCode.ERROR_UNEXPECTED_TOKEN,
                 token=self.current_token,
             )
 

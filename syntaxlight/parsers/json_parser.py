@@ -1,7 +1,8 @@
 
 
 from .parser import Parser
-from ..lexers.json_lexer import *
+from ..lexers.json_lexer import JsonErrorCode, JsonTokenType
+
 
 class JsonParser(Parser):
 
@@ -16,7 +17,7 @@ class JsonParser(Parser):
                 token=self.current_token,
             )
         return node
-    
+
     def json(self):
         '''
         <Json> ::= <Object>
@@ -28,7 +29,7 @@ class JsonParser(Parser):
             return self.array()
         else:
             self.error(JsonErrorCode.UNEXPECTED_TOKEN, self.current_token)
-    
+
     def object(self):
         '''
         <Object> ::= '{' '}'
@@ -46,9 +47,9 @@ class JsonParser(Parser):
         <Array> ::= '[' ']'
                   | '[' <Elements> ']'
         '''
-        elements = []
+        # elements = []
         self.eat(JsonTokenType.LSQUAR_PAREN)
-        # if self.current_token.type == 
+        # if self.current_token.type ==
         self.eat(JsonTokenType.RSQUAR_PAREN)
 
     def members(self):
@@ -68,7 +69,6 @@ class JsonParser(Parser):
         <Elements> ::= <Value>
                      | <Value> ',' <Elements>
         '''
-
 
     def value(self):
         '''
