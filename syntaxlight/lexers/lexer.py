@@ -129,9 +129,9 @@ class Lexer:
             TokenType.BACKSPACE.value: TokenType.BACKSPACE,
         }
 
-    def error(self, error_code: ErrorCode = None, token:Token = None):
+    def error(self, error_code: ErrorCode = None, token:Token = None, message:str = None):
         context = self.get_context(token)
-        raise LexerError(error_code=error_code, token=token, context=context, file_path=self.file_path)
+        raise LexerError(error_code=error_code, token=token, context=context, file_path=self.file_path, message=message)
     
     def get_context(self, token: Token):
         # 出错时获取上下文
@@ -146,22 +146,14 @@ class Lexer:
             # print(i, token.lineno)
             if i != token.lineno:
                 context += lines[i] + '\n'
-            else:
-                
+            else:        
                 token_length = len(token.value)
-                if token.column == token_length:
-                    pre_context = ''
-                else:
-                    pre_context = lines[i][:token.column-token_length]
-                if token.column == len(lines[i]):
-                    end_context = ''
-                else:
-                    end_context = lines[i][token.column+1:]
+                # token 前面的部分
+                pre_context = lines[i][:token.column - token_length]
+                end_context = lines[i][token.column:]
 
-                # print(len(lines[i]), token_length, token.column, token.value)
-                # print(lines[i][:0])
                 context += pre_context + f'\033[31m{token.value}\033[0m' + end_context + '\n'
-                context += ' ' * (token.column - token_length) + '^' * token_length + '\n'
+                context += ' ' * len(pre_context) + '^' * token_length + '\n'
         return context
 
     def advance(self):
@@ -253,8 +245,8 @@ class Lexer:
         '''
         result = self.current_char
         if result != self.TokenType.QUOTO_MARK.value:
-            self.advance()
             token = Token(self.TokenType.STRING, result, self.line, self.column)
+            self.advance()
             self.error(ErrorCode.UNEXPECTED_TOKEN, token)
         end_character = self.TokenType.QUOTO_MARK.value
         self.advance()
@@ -267,10 +259,11 @@ class Lexer:
                     self.error()
                 result += self.current_char
             self.advance()
-        self.advance()
+        
         result += end_character
-
-        return Token(self.TokenType.STRING, result, self.line, self.column)
+        token = Token(self.TokenType.STRING, result, self.line, self.column)
+        self.advance()
+        return token
 
     def get_str(self):
         '''
@@ -278,8 +271,8 @@ class Lexer:
         '''
         result = self.current_char
         if result not in (self.TokenType.QUOTO_MARK.value, self.TokenType.APOSTROPHE.value):
-            self.advance()
             token = Token(self.TokenType.STRING, result, self.line, self.column)
+            self.advance()
             self.error(ErrorCode.UNEXPECTED_TOKEN, token)
         end_character = self.current_char  # 结束标志一定是和开始标志相同的
         self.advance()
@@ -292,10 +285,11 @@ class Lexer:
                     self.error(ErrorCode.UNEXPECTED_TOKEN, Token(self.TokenType.STRING, result, self.line, self.column))
                 result += self.current_char
             self.advance()
-        self.advance()
+        
         result += end_character
-
-        return Token(self.TokenType.STRING, result, self.line, self.column)
+        token = Token(self.TokenType.STRING, result, self.line, self.column)
+        self.advance()
+        return token
 
     def get_id(self):
         """Handle identifiers and reserved keywords"""

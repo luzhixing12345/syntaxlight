@@ -15,11 +15,11 @@ class AST(object):
         self.created_index = AST_CREATED_INDEX
         AST_CREATED_INDEX = AST_CREATED_INDEX + 1
 
-    def _self_elements(self):
-        self_elements_str = ""
-        for attr, value in self.__dict__.items():
-            self_elements_str += f'{attr} : {value}\n'
-        return self_elements_str
+    def visit(self):
+        '''
+        重写此方法
+        '''
+        raise NotImplementedError
 
 def display_ast(node, picture_name = 'ast.dot'):
 

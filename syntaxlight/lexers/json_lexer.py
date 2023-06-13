@@ -45,7 +45,8 @@ class JsonLexer(Lexer):
                 token_type = self.TokenType(self.current_char)
             except ValueError:
                 # no enum member with value equal to self.current_char
-                self.error()
+                token = Token(None, self.current_char, self.line, self.column)
+                self.error(ErrorCode.UNKNOWN_CHARACTER, token)
             else:
                 # create a token with a single-character lexeme as its value
                 token = Token(
