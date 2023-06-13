@@ -1,5 +1,5 @@
 
-from syntaxparser.lexers.lexer import TokenType
+from syntaxlight.lexers.lexer import TokenType
 from .lexer import Lexer, Token
 from enum import Enum
 
@@ -105,7 +105,7 @@ class LuaLexer(Lexer):
             result += self.current_char
             self.advance()
 
-        return Token(self.BaseTokenType.NUMBER, result, self.line, self.column)
+        return Token(self.TokenType.NUMBER, result, self.line, self.column)
 
     def get_next_token(self):
         """Lexical analyzer (also known as scanner or tokenizer)
@@ -113,7 +113,7 @@ class LuaLexer(Lexer):
         apart into tokens. One token at a time.
         """
         while self.current_char is not None:
-            if self.current_char == self.BaseTokenType.SPACE.value:
+            if self.current_char == self.TokenType.SPACE.value:
                 return self.skip_whitespace()     
             
             if self.current_char in self.invisible_characters:
@@ -132,7 +132,7 @@ class LuaLexer(Lexer):
             try:
                 # get enum member by value, e.g.
                 # TokenType(';') --> TokenType.SEMI
-                token_type = self.BaseTokenType(self.current_char)
+                token_type = self.TokenType(self.current_char)
             except ValueError:
                 # no enum member with value equal to self.current_char
                 self.error()
@@ -149,5 +149,5 @@ class LuaLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=self.BaseTokenType.EOF, value=None)
+        return Token(type=self.TokenType.EOF, value=None)
     

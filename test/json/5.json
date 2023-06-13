@@ -1,0 +1,23 @@
+{
+    "name": "John",
+    "age": 30,
+    "address": {
+      "street": "123 Main St",
+      "city": "New York",
+      "state": "NY"
+    },
+    "spouse": {
+      "$ref": "#/friends/0"
+    },
+    "friends": [
+      {
+        "name": "Jane",
+        "age": 28
+      },
+      {
+        "name": "Tom",
+        "age": 32
+      }
+    ]
+  }
+  

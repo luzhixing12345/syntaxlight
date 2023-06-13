@@ -13,7 +13,7 @@ class TokenType(Enum):
     LPAREN = '('
     RPAREN = ')'
     LSQUAR_PAREN = '['
-    RSQUAR_PAREN = '['
+    RSQUAR_PAREN = ']'
     LCURLY_BRACE = '{'
     RCURLY_BRACE = '}'
     LANGLE_BRACE = '<'
@@ -101,21 +101,23 @@ class Lexer:
         self.current_char: str = self.text[self.pos]  # 当前指针指向的字符
         self.line: int = 1
         self.column: int = 1
-        self.BaseTokenType:TokenType = TokenType
+        self.TokenType:TokenType = TokenType
+        self.LanguageTokenType:Enum = LanguageTokenType
         self.context_bias = 3 # 发生错误时 token 的前后文行数
+        self.file_path = None # 手动修改文件路径, 用于后期错误处理的输出
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
-        # tt_list = list(LanguageTokenType)
-        # try:
-        #     start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
-        #     end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
-        # except:
-        #     print("LanguageTokenType should keep the keywords between RESERVED_KEYWORD_START and RESERVED_KEYWORD_END")
-        #     exit(1)
-        # self.reserved_keywords = {
-        #     token_type.value: token_type
-        #     for token_type in tt_list[start_index+1:end_index]
-        # }
+        tt_list = list(LanguageTokenType)
+        try:
+            start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
+            end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
+        except:
+            print("LanguageTokenType should keep the keywords between RESERVED_KEYWORD_START and RESERVED_KEYWORD_END")
+            exit(1)
+        self.reserved_keywords = {
+            token_type.value: token_type
+            for token_type in tt_list[start_index+1:end_index]
+        }
         # 不可见字符, 一般情况下直接忽略即可, 这里考虑到为了不破坏原本的代码格式所以进行保留
         # \n \t \v \r \f \b
         self.invisible_characters = {
@@ -124,36 +126,42 @@ class Lexer:
             TokenType.VERTICAL_TAB.value: TokenType.VERTICAL_TAB,
             TokenType.CARRIAGE_RETURN.value: TokenType.CARRIAGE_RETURN,
             TokenType.FORM_FEED.value: TokenType.FORM_FEED,
-            TokenType.BACKSPACE.value: TokenType.BACKSPACE
+            TokenType.BACKSPACE.value: TokenType.BACKSPACE,
         }
 
-    def error(self, error_code: LexerErrorCode = None, token:Token = None):
+    def error(self, error_code: ErrorCode = None, token:Token = None):
         context = self.get_context(token)
-        raise LexerError(error_code=error_code, token=token, context=context)
+        raise LexerError(error_code=error_code, token=token, context=context, file_path=self.file_path)
     
     def get_context(self, token: Token):
         # 出错时获取上下文
+        
+        # token 的 lineno 和 column 从 1 开始的
         lines = self.text.split('\n')
-        start_line = max(token.lineno-self.context_bias,0)
-        end_line = min(token.lineno+self.context_bias, len(lines)-1)
-        context = '\n'
-        for i in range(start_line, end_line+1):
+        lines.insert(0, [])
+        start_line = max(token.lineno-self.context_bias,1)
+        end_line = min(token.lineno+self.context_bias, len(lines))
+        context = ''
+        for i in range(start_line, end_line):
             # print(i, token.lineno)
-            if i != token.lineno -1:
+            if i != token.lineno:
                 context += lines[i] + '\n'
             else:
+                
                 token_length = len(token.value)
-                if token.column == token_length + 1:
+                if token.column == token_length:
                     pre_context = ''
                 else:
-                    pre_context = lines[i][:token.column-token_length-1]
+                    pre_context = lines[i][:token.column-token_length]
                 if token.column == len(lines[i]):
                     end_context = ''
                 else:
-                    end_context = lines[i][token.column-1:]
+                    end_context = lines[i][token.column+1:]
+
+                # print(len(lines[i]), token_length, token.column, token.value)
+                # print(lines[i][:0])
                 context += pre_context + f'\033[31m{token.value}\033[0m' + end_context + '\n'
-                context += ' ' * (token.column - token_length - 1) + '^' * token_length + '\n'
-        context += '\n'
+                context += ' ' * (token.column - token_length) + '^' * token_length + '\n'
         return context
 
     def advance(self):
@@ -177,7 +185,7 @@ class Lexer:
         while self.current_char is not None and self.current_char == ' ':
             result += ' '
             self.advance()
-        return Token(self.BaseTokenType.SPACE, result, self.line, self.column)
+        return Token(self.TokenType.SPACE, result, self.line, self.column)
 
     def skip_invisiable_character(self):
         token = Token(
@@ -209,11 +217,11 @@ class Lexer:
             result += self.current_char
             self.advance()
 
-        if self.current_char == self.BaseTokenType.DOT.value:
+        if self.current_char == self.TokenType.DOT.value:
             result += self.current_char
             self.advance()
             if use_scientific_notation:
-                self.error(LexerErrorCode.ERROR_NUMBER_INVALID, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+                self.error(ErrorCode.NUMBER_INVALID, Token(self.TokenType.NUMBER, result,self.line, self.column))
 
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
@@ -223,32 +231,35 @@ class Lexer:
             result += self.current_char
             self.advance()
             if use_scientific_notation:
-                self.error(LexerErrorCode.ERROR_NUMBER_INVALID, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+                self.error(ErrorCode.NUMBER_INVALID, Token(self.TokenType.NUMBER, result,self.line, self.column))
         
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
 
-        if self.current_char == self.BaseTokenType.DOT.value or self.current_char == 'e' or self.current_char == 'E':
+        if self.current_char == self.TokenType.DOT.value or self.current_char == 'e' or self.current_char == 'E':
             result += self.current_char
             self.advance()
-            self.error(LexerErrorCode.ERROR_NUMBER_INVALID, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+            self.error(ErrorCode.NUMBER_INVALID, Token(self.TokenType.NUMBER, result,self.line, self.column))
 
         if result[-1] == 'e' or result[-1] == 'E':
-            self.error(LexerErrorCode.ERROR_EXPONENT_NO_DIGITS, Token(self.BaseTokenType.NUMBER, result,self.line, self.column))
+            self.error(ErrorCode.EXPONENT_NO_DIGITS, Token(self.TokenType.NUMBER, result,self.line, self.column))
 
-        return Token(self.BaseTokenType.NUMBER, result, self.line, self.column)
+        return Token(self.TokenType.NUMBER, result, self.line, self.column)
 
     def get_string(self):
         '''
         严格双引号 ""
         '''
         result = self.current_char
-        assert result == self.BaseTokenType.QUOTO_MARK.value
-        end_match = self.BaseTokenType.QUOTO_MARK.value
+        if result != self.TokenType.QUOTO_MARK.value:
+            self.advance()
+            token = Token(self.TokenType.STRING, result, self.line, self.column)
+            self.error(ErrorCode.UNEXPECTED_TOKEN, token)
+        end_character = self.TokenType.QUOTO_MARK.value
         self.advance()
 
-        while self.current_char is not None and self.current_char != end_match:
+        while self.current_char is not None and self.current_char != end_character:
             result += self.current_char
             if self.current_char == '\\':
                 self.advance()
@@ -257,31 +268,34 @@ class Lexer:
                 result += self.current_char
             self.advance()
         self.advance()
-        result += end_match
+        result += end_character
 
-        return Token(self.BaseTokenType.STRING, result, self.line, self.column)
+        return Token(self.TokenType.STRING, result, self.line, self.column)
 
     def get_str(self):
         '''
         单引号 ' 和 双引号 " 都可以
         '''
         result = self.current_char
-        assert result == self.BaseTokenType.AMPERSAND.value or result == self.BaseTokenType.QUOTO_MARK.value
-        end_match = self.current_char  # ' or "
+        if result not in (self.TokenType.QUOTO_MARK.value, self.TokenType.APOSTROPHE.value):
+            self.advance()
+            token = Token(self.TokenType.STRING, result, self.line, self.column)
+            self.error(ErrorCode.UNEXPECTED_TOKEN, token)
+        end_character = self.current_char  # 结束标志一定是和开始标志相同的
         self.advance()
 
-        while self.current_char is not None and self.current_char != end_match:
+        while self.current_char is not None and self.current_char != end_character:
             result += self.current_char
             if self.current_char == '\\':
                 self.advance()
                 if self.current_char is None:
-                    self.error()
+                    self.error(ErrorCode.UNEXPECTED_TOKEN, Token(self.TokenType.STRING, result, self.line, self.column))
                 result += self.current_char
             self.advance()
         self.advance()
-        result += end_match
+        result += end_character
 
-        return Token(self.BaseTokenType.STRING, result, self.line, self.column)
+        return Token(self.TokenType.STRING, result, self.line, self.column)
 
     def get_id(self):
         """Handle identifiers and reserved keywords"""
@@ -296,7 +310,7 @@ class Lexer:
 
         token_type = self.reserved_keywords.get(value)
         if token_type is None:
-            token.type = self.BaseTokenType.ID
+            token.type = self.TokenType.ID
             token.value = value
         else:
             # reserved keyword

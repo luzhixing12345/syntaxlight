@@ -1,6 +1,6 @@
 
 
-import syntaxparser
+import syntaxlight
 import sys
 
 file_type = sys.argv[1]
@@ -13,7 +13,7 @@ code = ''
 with open(file_path, 'r', encoding='utf-8') as f:
     code = f.read()
 
-lexer = syntaxparser.get_lexer(code, file_type)
+lexer = syntaxlight.get_lexer(code, file_type)
 token = lexer.get_next_token()
 
 while token.type.value != 'EOF':

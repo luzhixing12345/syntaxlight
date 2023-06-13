@@ -68,16 +68,16 @@ class CLexer(Lexer):
         apart into tokens. One token at a time.
         """
         while self.current_char is not None:
-            if self.current_char == self.BaseTokenType.SPACE.value:
+            if self.current_char == self.TokenType.SPACE.value:
                 return self.skip_whitespace()     
             
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit() or self.current_char == self.BaseTokenType.DOT.value:
+            if self.current_char.isdigit() or self.current_char == self.TokenType.DOT.value:
                 return self.get_number()
 
-            if self.current_char.isalpha() or self.current_char == self.BaseTokenType.UNDERLINE.value:
+            if self.current_char.isalpha() or self.current_char == self.TokenType.UNDERLINE.value:
                 return self.get_id()
         
             if self.current_char in ('\'','\"'):
@@ -87,7 +87,7 @@ class CLexer(Lexer):
             try:
                 # get enum member by value, e.g.
                 # TokenType(';') --> TokenType.SEMI
-                token_type = self.BaseTokenType(self.current_char)
+                token_type = self.TokenType(self.current_char)
             except ValueError:
                 # no enum member with value equal to self.current_char
                 self.error()
@@ -104,5 +104,5 @@ class CLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=self.BaseTokenType.EOF, value=None)
+        return Token(type=self.TokenType.EOF, value=None)
     

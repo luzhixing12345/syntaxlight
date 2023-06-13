@@ -1,16 +1,27 @@
 import os
 from .lexers import *
 from .error import *
+from .parsers import *
 
-
-def parse(text: str, language: str = 'guess') -> str:
+def parse(text: str, language: str = 'guess', file_path = None) -> str:
 
     assert type(text) == str
     assert type(language) == str
 
+    if len(text) == 0:
+        return ''
+
     language = language.lower()
     lexer = get_lexer(text, language)
-    tokens = get_tokens(lexer)
+    if file_path is not None:
+        lexer.file_path = file_path
+    parser = get_parser(lexer)
+
+    try:
+        parser.parse()
+    except Error as e:
+        print(e.message)
+        print(e.context)
     # print(tokens)
 
 
@@ -28,7 +39,7 @@ def parse_file(file_path: str, language: str = 'guess') -> str:
             print(f"未知文法类型 {file_path}")
             exit(1)
 
-    parse(text, language)
+    parse(text, language, file_path=file_path)
 
 
 def guess_language(file_path: str) -> str:
@@ -43,7 +54,8 @@ def guess_language(file_path: str) -> str:
         'java': ['java'],
         'rust': ['rs'],
         'javascript': ['js'],
-        'typescript': ['ts', 'tsx', 'tsc']
+        'typescript': ['ts', 'tsx', 'tsc'],
+        'pascal': ['pas']
     }
 
     if '.' in file_name:
@@ -63,18 +75,19 @@ def guess_language(file_path: str) -> str:
 def get_tokens(lexer: Lexer):
 
     tokens = []
-
     token = lexer.get_next_token()
+    
     while token.type.value != 'EOF':
-        # if token.type.value == 'NUMBER':
-        #     print(token)
+        # if token.type.value == 'ID':
+            # print(token)
+        # print(token)
         try:
             token = lexer.get_next_token()
             tokens.append(token)
         except Exception as e:
             e: Error
             print(e.message)
-
+            print(e.context)
     return tokens
 
 
@@ -85,12 +98,29 @@ def get_lexer(code: str, language: str) -> Lexer:
     lexers = {
         'c': CLexer,
         'lua': LuaLexer,
-        'json': JsonLexer
+        'json': JsonLexer,
+        'ebnf': EBNFLexer
     }
 
     lexer_class = lexers.get(language, None)
     if lexer_class is None:
-        print("未知文法")
+        print("unknown language type: ",language)
         exit(1)
 
     return lexers[language](code)
+
+
+def get_parser(lexer: Lexer):
+
+    parsers = {
+        'json': JsonParser,
+    }
+
+    syntax_type = lexer.__class__.__name__.replace('Lexer','').lower()
+    parser_class = parsers.get(syntax_type, None)
+
+    if parser_class is None:
+        print("unknown lexer type: ", lexer.__class__.__name__)
+        exit(1)
+
+    return parsers[syntax_type](lexer)

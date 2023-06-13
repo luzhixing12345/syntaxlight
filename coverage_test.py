@@ -1,7 +1,10 @@
 
 import unittest
 import os
-import syntaxparser
+import syntaxlight
+
+
+FILE_TYPES = ['json']
 
 
 test_folder_path = './test'
@@ -10,6 +13,8 @@ languages = os.listdir(test_folder_path)
 TEST_FILES = {}
 
 for language in languages:
+    if language not in FILE_TYPES:
+        continue
     files = os.listdir(os.path.join(test_folder_path, language))
     for i in range(len(files)):
         files[i] = os.path.join(test_folder_path, language, files[i])
@@ -22,7 +27,8 @@ class TestMyMdParser(unittest.TestCase):
 
         for language, files in TEST_FILES.items():
             for file in files:
-                syntaxparser.parse_file(file, language)
+                print('file = ', file)
+                syntaxlight.parse_file(file, language)
 
 
 if __name__ == "__main__":
