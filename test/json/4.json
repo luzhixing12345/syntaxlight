@@ -1,13 +1,12 @@
 {
     "students": [
-      {
-        "name": "John",
-        "age": 20
-      },
-      {
-        "name": "Jane",
-        "age": 22
-      }
+        {
+            "name": "John",
+            "age": 20
+        },
+        {
+            "name": "Jane",
+            "age": 22
+        }
     ]
-  }
-  
+}

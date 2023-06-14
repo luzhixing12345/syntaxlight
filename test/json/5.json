@@ -2,22 +2,25 @@
     "name": "John",
     "age": 30,
     "address": {
-      "street": "123 Main St",
-      "city": "New York",
-      "state": "NY"
+        "street": "123 Main St",
+        "city": "New York",
+        "state": "NY"
     },
     "spouse": {
-      "$ref": "#/friends/0"
+        "$ref": "#/friends/0"
     },
     "friends": [
-      {
-        "name": "Jane",
-        "age": 28
-      },
-      {
-        "name": "Tom",
-        "age": 32
-      }
+        {
+            "name": "Jane",
+            "age": 28,
+            "abc": {
+                "name": "Tom",
+                "age": 32
+            }
+        },
+        {
+            "name": "Tom",
+            "age": 32
+        }
     ]
-  }
-  
+}

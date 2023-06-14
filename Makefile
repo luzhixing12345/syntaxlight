@@ -1,12 +1,11 @@
 
+i = -1
+
 .PHONY: test update cover
 
 
 test:
-	python test.py
-
-update:
-	python update.py
+	@python test.py $(i)
 
 cover:
 	coverage run coverage_test.py

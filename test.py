@@ -1,25 +1,31 @@
-
-
+import os
 import syntaxlight
 import sys
 
-file_type = sys.argv[1]
-file_name = sys.argv[2]
+index = int(sys.argv[1]) - 1
 
-file_path = f'./test/{file_type}/{file_name}.{file_type}'
+FILE_TYPES = ['json']
 
-code = ''
+test_folder_path = './test'
+languages = os.listdir(test_folder_path)
 
-with open(file_path, 'r', encoding='utf-8') as f:
-    code = f.read()
+TEST_FILES = {}
 
-lexer = syntaxlight.get_lexer(code, file_type)
-token = lexer.get_next_token()
+for language in languages:
+    if language not in FILE_TYPES:
+        continue
+    files = os.listdir(os.path.join(test_folder_path, language))
+    for i in range(len(files)):
+        files[i] = os.path.join(test_folder_path, language, files[i])
+    TEST_FILES[language] = files
 
-while token.type.value != 'EOF':
-    if token.type.value == 'NUMBER':
-        print(token)
-    try:
-        token = lexer.get_next_token()
-    except Exception as e:
-        print(e.message)
+
+for language, files in TEST_FILES.items():
+
+    if index != -1:
+        syntaxlight.parse_file(files[index], language)
+        continue
+
+    for file in files:
+        print('file = ', file)
+        syntaxlight.parse_file(file, language)

@@ -2,6 +2,7 @@ import os
 from .lexers import *
 from .error import *
 from .parsers import *
+from .ast import display_ast
 
 def parse(text: str, language: str = 'guess', file_path = None) -> str:
 
@@ -18,11 +19,11 @@ def parse(text: str, language: str = 'guess', file_path = None) -> str:
     parser = get_parser(lexer)
 
     try:
-        parser.parse()
+        node = parser.parse()
+        display_ast(node)
     except Error as e:
         print(e.message)
         print(e.context)
-    # print(tokens)
 
 
 def parse_file(file_path: str, language: str = 'guess') -> str:

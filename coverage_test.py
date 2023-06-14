@@ -5,7 +5,8 @@ import syntaxlight
 
 
 FILE_TYPES = ['json']
-
+FILE_START_INDEX = 0
+FILE_END_INDEX = 1
 
 test_folder_path = './test'
 languages = os.listdir(test_folder_path)
@@ -26,7 +27,8 @@ class TestMyMdParser(unittest.TestCase):
     def test_number_lexer(self):
 
         for language, files in TEST_FILES.items():
-            for file in files:
+            check_files = files[FILE_START_INDEX:FILE_END_INDEX]
+            for file in check_files:
                 print('file = ', file)
                 syntaxlight.parse_file(file, language)
 

@@ -1,61 +1,129 @@
 
+from syntaxlight.ast import NodeVisitor
 from .parser import Parser
 from ..lexers import TokenType, JsonTokenType
 from ..error import ErrorCode
-from ..ast import AST
+from ..ast import AST, NodeVisitor
+
+from typing import List
 
 class Object(AST):
 
     def __init__(self, members) -> None:
         super().__init__()
-        self.members = members
+        self.members: List[Pair] = members
+        self.graph_node_info = f'member = {len(self.members)}'
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        
+        for member in self.members:
+            node_visitor.link(self, member)
+            member.visit(node_visitor)
+
+    def format(self, depth: int = 0, **kwargs):
+        # array 里套 object 的格式化需要特殊处理一下
+        if kwargs.get('object', None) == True:
+            depth += 1
+        result = '{'
+        if len(self.members) == 0:
+            result += ' }'
+        else:
+            result += '\n'
+            result +=  self.indent * (depth+1) + f'{self.members[0].format(depth)}'
+            for i in range(1, len(self.members)):
+                member = self.members[i]
+                result += f',\n{self.indent * (depth+1)}{member.format(depth)}'    
+            result += '\n' + self.indent * depth + '}'
+        return result
+
 
 class Array(AST):
 
     def __init__(self, elements) -> None:
         super().__init__()
-        self.elements = elements
+        self.elements:List[AST] = elements
+        self.graph_node_info = f'element = {len(self.elements)}'
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        
+        for element in self.elements:
+            node_visitor.link(self, element)
+            element.visit(node_visitor)
+
+    def format(self, depth: int = 0, **kwargs):
+        # array 里套 object 的格式化需要特殊处理一下
+        result = '['
+        if len(self.elements) == 0:
+            result += ' ]'
+        else:
+            result += '\n'
+            result +=  self.indent * (depth+1) + f'{self.elements[0].format(depth, object=self._object_in_array(self.elements[0]))}'
+            for i in range(1, len(self.elements)):
+                element = self.elements[i]
+                result += f',\n{self.indent * (depth+1)}{element.format(depth, object = self._object_in_array(element))}'    
+            result += '\n' + self.indent * depth + ']'
+        return result
+
+    def _object_in_array(self, element:AST):
+
+        return element.class_name == 'Object'
 
 
 class Pair(AST):
 
-    def __init__(self, key, value) -> None:
+    def __init__(self, key:str, value) -> None:
         super().__init__()
-        self.key = key
-        self.value = value
+        self.key:str = key
+        self.value:AST = value
+        self.graph_node_info = f'{self.key}:{self.value.class_name}'
 
-class Members(AST):
-
-    def __init__(self, pairs) -> None:
-        super().__init__()
-        self.pairs = pairs
-
-class Elements(AST):
-
-    def __init__(self, values) -> None:
-        super().__init__()
-        self.values = values
+    def visit(self, node_visitor: NodeVisitor = None):
+        
+        node_visitor.link(self, self.value)
+        self.value.visit(node_visitor)
+        
+    def format(self, depth: int = 0, **kwargs):
+        return f'{self.key}: {self.value.format(depth+1)}'
 
 
 class Keyword(AST):
 
     def __init__(self, name) -> None:
         super().__init__()
-        self.name = name
+        self.name:str = name
+        self.graph_node_info = self.name
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        return super().visit(node_visitor)
+        
+    def format(self, depth: int = 0, **kwargs):
+        return self.name
 
 class String(AST):
 
     def __init__(self, string) -> None:
         super().__init__()
         self.string = string
+        self.graph_node_info = self.string
 
+    def visit(self, node_visitor: NodeVisitor = None):
+        return super().visit(node_visitor)
+    
+    def format(self, depth: int = 0, **kwargs):
+        return self.string
 
 class Number(AST):
 
     def __init__(self, value) -> None:
         super().__init__()
         self.value = value
+        self.graph_node_info = self.value
 
+    def visit(self, node_visitor: NodeVisitor = None):
+        return super().visit(node_visitor)
+        
+    def format(self, depth: int = 0, **kwargs):
+        return self.value
 
 class JsonParser(Parser):
 
@@ -99,13 +167,10 @@ class JsonParser(Parser):
                    | '{' <Members> '}'
         '''
         
-        if self.current_token.type == TokenType.LCURLY_BRACE:
-            self.eat(TokenType.LCURLY_BRACE)
+        self.eat(TokenType.LCURLY_BRACE)
+        members = []
+        if self.current_token.type == TokenType.STRING:
             members = self.members()
-        else:
-            self.eat(TokenType.LCURLY_BRACE)
-            members = None
-
         self.eat(TokenType.RCURLY_BRACE)
         
         return Object(members)
@@ -124,7 +189,7 @@ class JsonParser(Parser):
         return Array(elements)
 
 
-    def members(self):
+    def members(self) -> List[Pair]:
         '''
         <Members> ::= <Pair>
                     | <Pair> ',' <Members>

@@ -7,9 +7,9 @@ class Parser:
     def __init__(self, lexer, skip_invisible_characters = True, skip_space = True):
         self.lexer: Lexer = lexer
         # set current token to the first token taken from the input
-        self.current_token: Token = self.get_next_token()
         self.skip_invisible_characters = skip_invisible_characters
         self.skip_space = skip_space
+        self.eat(None) # 初始化 current_token, 开头可能会需要跳过空格或不可见字符
 
     def get_next_token(self):
         return self.lexer.get_next_token()
@@ -28,7 +28,7 @@ class Parser:
         # type and if they match then "eat" the current token
         # and assign the next token to the self.current_token,
         # otherwise raise an exception.
-        if self.current_token.type == token_type:
+        if  token_type is None or self.current_token.type == token_type:
             self.current_token = self.get_next_token()
             if self.skip_invisible_characters:
                 while self.current_token.value in self.lexer.invisible_characters:
