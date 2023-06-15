@@ -1,29 +1,28 @@
-
 from ..lexers.lexer import Lexer, Token, TokenType
 from ..error import ParserError, ErrorCode
 from enum import Enum
-from ..ast import AST, NodeVisitor
+from .ast import AST, NodeVisitor
 from typing import List
 
+
 class Parser:
-    def __init__(self, lexer, skip_invisible_characters = True, skip_space = True):
+    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True):
         self.lexer: Lexer = lexer
         # set current token to the first token taken from the input
         self.skip_invisible_characters = skip_invisible_characters
         self.skip_space = skip_space
-        self.token_list:List[Token] = [] # 记录所有 token, 用于后期恢复原始文本
+        self.token_list: List[Token] = []
         self.node = None
-        self.current_token:Token = self.lexer.get_next_token()
+        self.current_token: Token = self.lexer.get_next_token()
         self.skip()
-         # 初始化 current_token, 开头可能会需要跳过空格或不可见字符
 
-    def error(self, error_code: ErrorCode, token: Token, message:str = ''):
+    def error(self, error_code: ErrorCode, token: Token, message: str = ""):
         raise ParserError(
             error_code=error_code,
             token=token,
             context=self.lexer.get_context(token),
             file_path=self.lexer.file_path,
-            message=message
+            message=message,
         )
 
     def eat(self, token_type: Enum):
@@ -32,7 +31,7 @@ class Parser:
         # and assign the next token to the self.current_token,
         # otherwise raise an exception.
         token = self.current_token
-        if  self.current_token.type == token_type:
+        if self.current_token.type == token_type:
             self._register_token()
             self.current_token = self.lexer.get_next_token()
             self.skip()
@@ -40,14 +39,16 @@ class Parser:
             self.error(
                 error_code=ErrorCode.UNEXPECTED_TOKEN,
                 token=self.current_token,
-                message = f'should match {token_type.value} but got {self.current_token.value}'
+                message=f"should match {token_type.value} but got {self.current_token.value}",
             )
         return token
 
     def skip(self):
-
         if self.skip_invisible_characters and self.skip_space:
-            while self.current_token.value in self.lexer.invisible_characters or self.current_token.type == TokenType.SPACE:
+            while (
+                self.current_token.value in self.lexer.invisible_characters
+                or self.current_token.type == TokenType.SPACE
+            ):
                 self._register_token()
                 self.current_token = self.lexer.get_next_token()
 
@@ -61,26 +62,24 @@ class Parser:
                 self.current_token = self.lexer.get_next_token()
 
     def _register_token(self):
-        # AST_type == None 对于特殊的字符(空格/换行)
         if self.current_token is None:
             return
         token = self.current_token
         # print(token)
         self.token_list.append(token)
-        
-    def to_html(self, node:AST = None):        
+
+    def to_html(self, node: AST = None):
         if node is None:
             node = self.node
-        
+
         node_visitor = NodeVisitor()
         node.visit(node_visitor)
         assert node_visitor.depth == -1
-        html = ''
-        
+        html = ""
+
         for token in self.token_list:
             html += f'<span class="{token.get_css_class()}">{token.value}</span>'
         return html
 
     def parse(self):
-
         raise NotImplementedError

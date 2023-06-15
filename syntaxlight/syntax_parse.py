@@ -1,10 +1,11 @@
 import os
-from .lexers import *
-from .error import *
-from .parsers import *
-from .ast import display_ast
+from .lexers import Lexer, CLexer, JsonLexer, LuaLexer, EBNFLexer
+from .error import Error
+from .parsers import JsonParser
+from .parsers.ast import display_ast
 
-def parse(text: str, language: str = 'guess', file_path = None) -> str:
+
+def parse(text: str, language: str = 'guess', file_path=None) -> str:
 
     assert type(text) == str
     assert type(language) == str
@@ -20,7 +21,7 @@ def parse(text: str, language: str = 'guess', file_path = None) -> str:
 
     try:
         parser.parse()
-        # display_ast(parser.node)
+        display_ast(parser.node)
     except Error as e:
         print(e.message)
         print(e.context)
@@ -31,7 +32,7 @@ def parse(text: str, language: str = 'guess', file_path = None) -> str:
 def parse_file(file_path: str, language: str = 'guess') -> str:
 
     if not os.path.exists(file_path):
-        print(f"{file_path} 文件不存在")
+        print(f"{file_path} file not exsist")
 
     with open(file_path, 'r', encoding='utf-8') as f:
         text = f.read()
@@ -39,11 +40,11 @@ def parse_file(file_path: str, language: str = 'guess') -> str:
     if language == 'guess':
         language = guess_language(file_path)
         if language is None:
-            print(f"未知文法类型 {file_path}")
+            print(f"unknown syntax {file_path}")
             exit(1)
 
     return parse(text, language, file_path=file_path)
-    
+
 
 def guess_language(file_path: str) -> str:
 
@@ -79,16 +80,15 @@ def get_tokens(lexer: Lexer):
 
     tokens = []
     token = lexer.get_next_token()
-    
+
     while token.type.value != 'EOF':
         # if token.type.value == 'ID':
-            # print(token)
+        # print(token)
         # print(token)
         try:
             token = lexer.get_next_token()
             tokens.append(token)
-        except Exception as e:
-            e: Error
+        except Error as e:
             print(e.message)
             print(e.context)
     return tokens
@@ -107,7 +107,7 @@ def get_lexer(code: str, language: str) -> Lexer:
 
     lexer_class = lexers.get(language, None)
     if lexer_class is None:
-        print("unknown language type: ",language)
+        print("unknown language type: ", language)
         exit(1)
 
     return lexers[language](code)
@@ -119,7 +119,7 @@ def get_parser(lexer: Lexer):
         'json': JsonParser,
     }
 
-    syntax_type = lexer.__class__.__name__.replace('Lexer','').lower()
+    syntax_type = lexer.__class__.__name__.replace('Lexer', '').lower()
     parser_class = parsers.get(syntax_type, None)
 
     if parser_class is None:

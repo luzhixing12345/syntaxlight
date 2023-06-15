@@ -1,106 +1,103 @@
-
 from syntaxlight.lexers.lexer import TokenType
 from .lexer import Lexer, Token
 from enum import Enum
 
 
 class LuaTokenType(Enum):
-    PLUS = '+'
-    MINUS = '-'
-    MUL = '*'
-    SLASH = '/'
-    ASSIGN = '='
-    BACK_SLASH = '\\'
-    LPAREN = '('
-    RPAREN = ')'
-    LSQUAR_PAREN = '['
-    RSQUAR_PAREN = '['
-    LCURLY_BRACE = '{'
-    RCURLY_BRACE = '}'
-    LANGLE_BRACE = '<'
-    RANGLE_BRACE = '>'
-    SEMI = ';'
-    DOT = '.'
-    COLON = ':'
-    COMMA = ','
-    HASH = '#'
-    DOLLAR = '$'
-    PERCENT = '%'
-    CARET = '^'
-    AMPERSAND = '&'
-    PIPE = '|'
-    QUSTION_MARK = '?'
-    APOSTROPHE = '\''
-    QUOTO_MARK = '\"'
-    SPACE = ' '
-    NEWLINE = '\n'
-    TAB = '\t'
-    VERTICAL_TAB = '\v'
-    CR = '\r'
-    FORM_FEED = '\f'
-    BELL = '\a'
-    BACKSPACE = '\b'
-    NULL = '\0'
-    BANG = '!'
-    BACKTICK = '`'
-    TILDE = '~'
-    AT_SIGN = '@'
-    EOF = 'EOF'
-    ID  = 'ID'
-    STRING = 'STRING'
-    NUMBER = 'NUMBER'
-    SHL = '<<'
-    SHR = '>>'
-    EQ = '=='
-    NE = '~='     # 这里不一样
-    LE = '<='
-    GE = '>='
-    VARARGS = '...'
-    DB_COLON = '::'
-    CONCAT = '..'
+    PLUS = "+"
+    MINUS = "-"
+    MUL = "*"
+    SLASH = "/"
+    ASSIGN = "="
+    BACK_SLASH = "\\"
+    LPAREN = "("
+    RPAREN = ")"
+    LSQUAR_PAREN = "["
+    RSQUAR_PAREN = "["
+    LCURLY_BRACE = "{"
+    RCURLY_BRACE = "}"
+    LANGLE_BRACE = "<"
+    RANGLE_BRACE = ">"
+    SEMI = ";"
+    DOT = "."
+    COLON = ":"
+    COMMA = ","
+    HASH = "#"
+    DOLLAR = "$"
+    PERCENT = "%"
+    CARET = "^"
+    AMPERSAND = "&"
+    PIPE = "|"
+    QUSTION_MARK = "?"
+    APOSTROPHE = "'"
+    QUOTO_MARK = '"'
+    SPACE = " "
+    NEWLINE = "\n"
+    TAB = "\t"
+    VERTICAL_TAB = "\v"
+    CR = "\r"
+    FORM_FEED = "\f"
+    BELL = "\a"
+    BACKSPACE = "\b"
+    NULL = "\0"
+    BANG = "!"
+    BACKTICK = "`"
+    TILDE = "~"
+    AT_SIGN = "@"
+    EOF = "EOF"
+    ID = "ID"
+    STRING = "STRING"
+    NUMBER = "NUMBER"
+    SHL = "<<"
+    SHR = ">>"
+    EQ = "=="
+    NE = "~="  # 这里不一样
+    LE = "<="
+    GE = ">="
+    VARARGS = "..."
+    DB_COLON = "::"
+    CONCAT = ".."
 
     # -----------------------------------------------
     # start - end 之间为对应语言的保留关键字
-    RESERVED_KEYWORD_START = 'RESERVED_KEYWORD_START'
+    RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
 
     # https://www.lua.org/manual/5.4/manual.html#8
-    
-    AND = 'and'
-    BREAK = 'break'
-    DO = 'do'
-    ELSE = 'else'
-    ELSEIF = 'elseif'
-    END = 'end'
-    FALSE = 'false'
-    FOR = 'for'
-    FUNCTION = 'function'
-    GOTO = 'goto'
-    IF = 'if'
-    IN = 'in'
-    LOCAL = 'local'
-    NIL = 'nil'
-    NOT = 'not'
-    OR = 'or'
-    REPEAT = 'repeat'
-    RETURN = 'return'
-    THEN = 'then'
-    TRUE = 'true'
-    UNTIL = 'until'
-    WHILE = 'while'
 
-    RESERVED_KEYWORD_END = 'RESERVED_KEYWORD_END'
+    AND = "and"
+    BREAK = "break"
+    DO = "do"
+    ELSE = "else"
+    ELSEIF = "elseif"
+    END = "end"
+    FALSE = "false"
+    FOR = "for"
+    FUNCTION = "function"
+    GOTO = "goto"
+    IF = "if"
+    IN = "in"
+    LOCAL = "local"
+    NIL = "nil"
+    NOT = "not"
+    OR = "or"
+    REPEAT = "repeat"
+    RETURN = "return"
+    THEN = "then"
+    TRUE = "true"
+    UNTIL = "until"
+    WHILE = "while"
+
+    RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
 
 
 class LuaLexer(Lexer):
-
     def __init__(self, text: str, TokenType: TokenType = LuaTokenType):
         super().__init__(text, TokenType)
 
     def get_number(self):
-
-        result = ''
+        result = ""
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
@@ -114,18 +111,18 @@ class LuaLexer(Lexer):
         """
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
-                return self.skip_whitespace()     
-            
+                return self.skip_whitespace()
+
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
                 return self.get_number()
 
-            if self.current_char.isalpha() or self.current_char == '_':
+            if self.current_char.isalpha() or self.current_char == "_":
                 return self.get_id()
-        
-            if self.current_char in ('\'','\"'):
+
+            if self.current_char in ("'", '"'):
                 return self.get_string()
 
             # single-character token
@@ -150,4 +147,3 @@ class LuaLexer(Lexer):
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
         return Token(type=TokenType.EOF, value=None)
-    
