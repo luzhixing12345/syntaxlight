@@ -28,7 +28,7 @@ class Error(Exception):
             error_place = f'[{file_path}][{self.token.lineno}:{self.token.column}]'
         else:
             error_place = f'[{self.token.lineno}:{self.token.column}]'
-        self.message = f'{error_place} {self.__class__.__name__} {message}'
+        self.message = f'{error_place} {self.__class__.__name__} {message}\n'
 
 
 class LexerError(Error):

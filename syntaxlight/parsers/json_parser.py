@@ -265,7 +265,8 @@ class JsonParser(Parser):
         '''
         # print(self.current_token.type)
         if self.current_token.type not in self.value_first_set:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+            message = f'"{self.current_token.value}" does not support for json value'
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token, message)
 
         if self.current_token.type in JsonTokenType:
             node = Keyword(self.current_token.value)
@@ -288,4 +289,4 @@ class JsonParser(Parser):
         if self.current_token.type in self.value_first_set:
             return self.array()
         
-        self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+        # should never arrive here

@@ -1,5 +1,5 @@
 
-from .lexer import Lexer, Token
+from .lexer import Lexer, Token, TokenType
 from ..error import ErrorCode
 from enum import Enum
 
@@ -24,23 +24,23 @@ class JsonLexer(Lexer):
 
         while self.current_char is not None:
 
-            if self.current_char == self.TokenType.QUOTO_MARK.value:
+            if self.current_char == TokenType.QUOTO.value:
                 return self.get_string()
             
-            if self.current_char == self.TokenType.SPACE.value:
+            if self.current_char == TokenType.SPACE.value:
                 return self.skip_whitespace()     
             
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit():
+            if self.current_char.isdigit() or self.current_char == TokenType.MINUS.value:
                 return self.get_number()
             
             if self.current_char.isalpha():
                 return self.get_id()
             
             try:
-                token_type = self.TokenType(self.current_char)
+                token_type = TokenType(self.current_char)
             except ValueError:
                 token = Token(None, self.current_char, self.line, self.column)
                 self.error(ErrorCode.UNKNOWN_CHARACTER, token)
@@ -56,4 +56,4 @@ class JsonLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=self.TokenType.EOF, value=None)
+        return Token(type=TokenType.EOF, value=None)

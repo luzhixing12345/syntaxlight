@@ -20,12 +20,12 @@ def parse(text: str, language: str = 'guess', file_path = None) -> str:
 
     try:
         parser.parse()
-        display_ast(parser.node)
+        # display_ast(parser.node)
     except Error as e:
         print(e.message)
         print(e.context)
-    
-    return parser.to_html()
+    else:
+        return parser.to_html()
 
 
 def parse_file(file_path: str, language: str = 'guess') -> str:

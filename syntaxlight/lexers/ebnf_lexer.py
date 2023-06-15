@@ -56,7 +56,7 @@ class EBNFLexer(Lexer):
             try:
                 # get enum member by value, e.g.
                 # TokenType(';') --> TokenType.SEMI
-                token_type = self.TokenType(self.current_char)
+                token_type = TokenType(self.current_char)
             except ValueError:
                 # no enum member with value equal to self.current_char
                 self.error()
@@ -71,4 +71,4 @@ class EBNFLexer(Lexer):
                 self.advance()
                 return token
 
-        return Token(type=self.TokenType.EOF, value=None)
+        return Token(type=TokenType.EOF, value=None)

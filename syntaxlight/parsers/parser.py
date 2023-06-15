@@ -1,9 +1,9 @@
 
-from ..lexers.lexer import Lexer, Token
+from ..lexers.lexer import Lexer, Token, TokenType
 from ..error import ParserError, ErrorCode
 from enum import Enum
 from ..ast import AST, NodeVisitor
-from typing import List, Tuple
+from typing import List
 
 class Parser:
     def __init__(self, lexer, skip_invisible_characters = True, skip_space = True):
@@ -17,7 +17,7 @@ class Parser:
         self.skip()
          # 初始化 current_token, 开头可能会需要跳过空格或不可见字符
 
-    def error(self, error_code: ErrorCode, token: Token, message:str = None):
+    def error(self, error_code: ErrorCode, token: Token, message:str = ''):
         raise ParserError(
             error_code=error_code,
             token=token,
@@ -47,7 +47,7 @@ class Parser:
     def skip(self):
 
         if self.skip_invisible_characters and self.skip_space:
-            while self.current_token.value in self.lexer.invisible_characters or self.current_token.type == self.lexer.TokenType.SPACE:
+            while self.current_token.value in self.lexer.invisible_characters or self.current_token.type == TokenType.SPACE:
                 self._register_token()
                 self.current_token = self.lexer.get_next_token()
 
@@ -56,7 +56,7 @@ class Parser:
                 self._register_token()
                 self.current_token = self.lexer.get_next_token()
         elif not self.skip_invisible_characters and self.skip_space:
-            while self.current_token.type == self.lexer.TokenType.SPACE:
+            while self.current_token.type == TokenType.SPACE:
                 self._register_token()
                 self.current_token = self.lexer.get_next_token()
 
