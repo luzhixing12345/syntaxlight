@@ -1,0 +1,39 @@
+pre[class*="language-"] {
+    background: #1f1f1f;
+}
+
+.Token {
+    color: white;
+}
+
+.Token.STRING {
+    color: #CE9178;
+}
+
+.Token.NUMBER {
+    color: #A2CEA8;
+}
+
+.Token.TRUE, .Token.FALSE, .Token.NULL {
+    color: #327ED0;
+}
+
+.Token.LCURLY_BRACE, .Token.RCURLY_BRACE, .Token.LSQUAR_PAREN, .Token.RSQUAR_PAREN {
+    color: #DBD700;
+}
+
+.Token.depth-0 {
+    color: #DBD700;
+}
+
+.Token.depth-1 {
+    color: #DA70D6;
+}
+
+.Token.depth-2 {
+    color: #1A9DFF;
+}
+
+.Token.COMMA, .Token.COLON {
+    color: white;
+}

@@ -163,3 +163,4 @@ docs/
 .vscode/
 a.py
 *.dot
+syntaxlight_example/

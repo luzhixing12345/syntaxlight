@@ -2,6 +2,8 @@
 from enum import Enum
 from ..error import *
 
+GLOBAL_TOKEN_ID = 0
+
 class TokenType(Enum):
     # 所有基本 Token 类型
     PLUS = '+'
@@ -68,22 +70,36 @@ class Token:
         self.value = value
         self.lineno:int = lineno
         self.column:int = column
-        self.ast_type = None # parser 语法分析阶段赋给 token
+        self.ast: None
+        self.ast_types = ['Token'] # parser 语法分析阶段赋给 token
+        self.brace_depth = -1 # ([{<>}]) 的深度
+        global GLOBAL_TOKEN_ID
+        self._id = GLOBAL_TOKEN_ID
+        GLOBAL_TOKEN_ID += 1
+        
 
+    def get_css_class(self):
+        # 转 html 时的 span class
+        css_class = ''
+        for ast_type in self.ast_types:
+            css_class += f'{ast_type} '
+        
+        if self.brace_depth != -1:
+            css_class += f'depth-{self.brace_depth%3} '
+        css_class += self.type.name
+        return css_class
+    
     def __str__(self):
         """
         String representation of the class instance.
         """
-        if self.ast_type is None:
-            ast_type = 'NoAST'
-        else:
-            ast_type = self.ast_type.__name__
-        return 'Token({type}, {value}, position={lineno}:{column}) {AST_type}'.format(
+        return 'Token[id:{ID}]({type}, {value}, position={lineno}:{column}) {AST_type}'.format(
+            ID=self._id,
             type=self.type,
             value=repr(self.value),
             lineno=self.lineno,
             column=self.column,
-            AST_type=ast_type
+            AST_type=self.get_css_class()
         )
 
     def __repr__(self):
@@ -310,14 +326,12 @@ class Lexer:
             self.advance()
 
         token_type = self.reserved_keywords.get(value)
-        token = Token(type=None, value=None,lineno=self.line, column=self.column -1)
+        
         if token_type is None:
-            token.type = self.TokenType.ID
-            token.value = value
+            token = Token(type=self.TokenType.ID, value=value,lineno=self.line, column=self.column -1)
         else:
             # reserved keyword
-            token.type = token_type
-            token.value = value
+            token = Token(type=token_type, value=value,lineno=self.line, column=self.column -1)
         return token
 
     def get_next_token(self) -> Token:

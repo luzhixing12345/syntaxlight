@@ -1,5 +1,7 @@
 
 import textwrap
+from .lexers import Token, TokenType
+from typing import List
 
 AST_CREATED_INDEX = 0
 
@@ -15,28 +17,52 @@ class AST(object):
         self.class_name:str = self.__class__.__name__
         self._node_info:str = f'[{self.class_name}:{self.created_index}]'
         self.graph_node_info:str = None
-
+        
         self.indent = ' ' * 4
+        self._tokens:List[Token] = []
 
-    def visit(self, node_visitor: 'NodeVisitor' = None):
-        return
+        self.depth = 0
+        
+
+    def register_token(self, token: Token):
+        token.ast_types.append(self.class_name)
+        self._tokens.append(token)
+        token.ast = self
+
+    def update(self, **kwargs):
+        raise NotImplementedError
+
+    def visit(self, node_visitor: 'NodeVisitor' = None, brace = False):
+        '''由 node visitor 访问时递归调用'''
+        node_visitor.depth -= 1 # 到达叶节点, 退出到上一层
+        # 括号的深度退出一层
+        if brace:
+            node_visitor.brace_depth -= 1
+        # print(f'visit {self.class_name}, depth = {self.depth}')
     
     def format(self, depth:int = 0, **kwargs):
         '''恢复为文本'''
         raise NotImplementedError
 
     def __str__(self) -> str:
-        return self._node_info + '\n' + self.format()
+        return self.format()
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    def get_node_info(self):
+        # f'depth={self.depth}\\n'
+        node_content = self._node_info + '\\n' + f'depth={self.depth}\\n' + self.graph_node_info.replace('"','\\"').replace("'","\\'")
+        return f'node{self.created_index} [label="{node_content}"]'
 
 class NodeVisitor:
     '''
     遍历 AST 节点构建 graphviz 图结构
     '''
-    def __init__(self, image_name) -> None:
+    def __init__(self, image_name ='ast.dot') -> None:
         self.image_name = image_name
+        self.depth = 0 # 当前的访问深度
+        self.brace_depth = 0 # ([{<>}]) 的深度
         self.count = 0
         self.dot_header = textwrap.dedent("""\
             digraph astgraph {
@@ -48,25 +74,27 @@ class NodeVisitor:
         self.dot_body = []
         self.visit_node_list = []
 
-    def _visit(self, node:AST):
+    def register(self, node:AST, depth:int):
         if node in self.visit_node_list:
             print("visit the same node!!!")
             exit(1)
         else:
+            # 更新 AST 节点的深度
+            node.depth = depth
             self.visit_node_list.append(node)
         
-        node_content = node._node_info + '\\n' + node.graph_node_info.replace('"','\\"').replace("'","\\'")
-        self.dot_body.append(f'node{node.created_index} [label="{node_content}"]')
+        self.dot_body.append(node.get_node_info())
 
     def link(self, root:AST, node:AST):
         
         if root not in self.visit_node_list:
-            self._visit(root)
+            self.register(root, self.depth)
 
         if node not in self.visit_node_list:
-            self._visit(node)
+            self.register(node, self.depth+1)
 
         self.dot_body.append(f'node{root.created_index} -> node{node.created_index}')
+        self.depth += 1
 
     def save(self):
         '''

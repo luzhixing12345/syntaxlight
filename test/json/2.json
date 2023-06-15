@@ -2,9 +2,8 @@
     "name": "John",
     "age": 30,
     "address": {
-      "street": "123 Main St",
-      "city": "New York",
-      "state": "NY"
+        "street": "123 Main St",
+        "city": "New York",
+        "state": "NY"
     }
-  }
-  
+}

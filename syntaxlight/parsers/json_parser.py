@@ -9,16 +9,24 @@ from typing import List
 
 class Object(AST):
 
-    def __init__(self, members) -> None:
+    def __init__(self, members = None) -> None:
         super().__init__()
         self.members: List[Pair] = members
+
+    def update(self, **kwargs):
+        self.members = kwargs['members']
         self.graph_node_info = f'member = {len(self.members)}'
 
     def visit(self, node_visitor: NodeVisitor = None):
+
+        for token in self._tokens:
+            token.brace_depth = node_visitor.brace_depth
+        node_visitor.brace_depth += 1
         
         for member in self.members:
             node_visitor.link(self, member)
             member.visit(node_visitor)
+        return super().visit(node_visitor, brace = True)
 
     def format(self, depth: int = 0, **kwargs):
         # array 里套 object 的格式化需要特殊处理一下
@@ -39,16 +47,27 @@ class Object(AST):
 
 class Array(AST):
 
-    def __init__(self, elements) -> None:
+    def __init__(self, elements = None) -> None:
         super().__init__()
+        self.elements:List[AST] = elements
+        
+    def update(self, **kwargs):
+        elements = kwargs['elements']
         self.elements:List[AST] = elements
         self.graph_node_info = f'element = {len(self.elements)}'
 
     def visit(self, node_visitor: NodeVisitor = None):
         
+        for token in self._tokens:
+            token.brace_depth = node_visitor.brace_depth
+
+        node_visitor.brace_depth += 1
+
         for element in self.elements:
             node_visitor.link(self, element)
             element.visit(node_visitor)
+        
+        return super().visit(node_visitor, brace=True)
 
     def format(self, depth: int = 0, **kwargs):
         # array 里套 object 的格式化需要特殊处理一下
@@ -71,9 +90,14 @@ class Array(AST):
 
 class Pair(AST):
 
-    def __init__(self, key:str, value) -> None:
+    def __init__(self, key:str, value:AST= None) -> None:
         super().__init__()
         self.key:str = key
+        self.value:AST = value
+
+    def update(self, **kwargs):
+        
+        value = kwargs['value']
         self.value:AST = value
         self.graph_node_info = f'{self.key}:{self.value.class_name}'
 
@@ -81,6 +105,7 @@ class Pair(AST):
         
         node_visitor.link(self, self.value)
         self.value.visit(node_visitor)
+        return super().visit(node_visitor)
         
     def format(self, depth: int = 0, **kwargs):
         return f'{self.key}: {self.value.format(depth+1)}'
@@ -91,10 +116,7 @@ class Keyword(AST):
     def __init__(self, name) -> None:
         super().__init__()
         self.name:str = name
-        self.graph_node_info = self.name
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        return super().visit(node_visitor)
+        self.graph_node_info = self.name  
         
     def format(self, depth: int = 0, **kwargs):
         return self.name
@@ -106,9 +128,6 @@ class String(AST):
         self.string = string
         self.graph_node_info = self.string
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        return super().visit(node_visitor)
-    
     def format(self, depth: int = 0, **kwargs):
         return self.string
 
@@ -118,9 +137,6 @@ class Number(AST):
         super().__init__()
         self.value = value
         self.graph_node_info = self.value
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        return super().visit(node_visitor)
         
     def format(self, depth: int = 0, **kwargs):
         return self.value
@@ -147,6 +163,7 @@ class JsonParser(Parser):
                 error_code=ErrorCode.UNEXPECTED_TOKEN,
                 token=self.current_token,
             )
+        # print(self.node)
         return self.node
 
     def json(self):
@@ -167,37 +184,39 @@ class JsonParser(Parser):
                    | '{' <Members> '}'
         '''
         
-        self.eat(TokenType.LCURLY_BRACE, Object)
-        members = []
+        node = Object()
+        node.register_token(self.eat(TokenType.LCURLY_BRACE))
         if self.current_token.type == TokenType.STRING:
-            members = self.members()
-        self.eat(TokenType.RCURLY_BRACE, Object)
-        
-        return Object(members)
+            members = self.members(node)
+            node.update(members=members)
+
+        node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        return node
 
     def array(self):
         '''
         <Array> ::= '[' ']'
                   | '[' <Elements> ']'
         '''
-        elements = []
-
-        self.eat(TokenType.LSQUAR_PAREN, Array)
+        node = Array()
+        node.register_token(self.eat(TokenType.LSQUAR_PAREN))
         if self.current_token.type in self.value_first_set:
-            elements = self.elements()
-        self.eat(TokenType.RSQUAR_PAREN, Array)
-        return Array(elements)
+            elements = self.elements(node)
+            node.update(elements=elements)
+        
+        node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+        return node
 
 
-    def members(self) -> List[Pair]:
+    def members(self, object: Object) -> List[Pair]:
         '''
         <Members> ::= <Pair>
                     | <Pair> ',' <Members>
         '''
         pairs = [self.pair()]
         if self.current_token.type == TokenType.COMMA:
-            self.eat(TokenType.COMMA, Object)
-            pairs.extend(self.members())
+            object.register_token(self.eat(TokenType.COMMA))
+            pairs.extend(self.members(object))
 
         return pairs
 
@@ -206,13 +225,20 @@ class JsonParser(Parser):
         <Pair> ::= String ':' <Value>
         '''
         key = self.current_token.value
-        self.eat(TokenType.STRING, Pair)
-        self.eat(TokenType.COLON, Pair)
+        node = Pair(key, None)
+
+        node.register_token(self.current_token)
+        self.eat(TokenType.STRING)
+
+        node.register_token(self.current_token)
+        self.eat(TokenType.COLON)
+
         value = self.value()
-        return Pair(key, value)
+        node.update(value=value)
+        return node
 
 
-    def elements(self):
+    def elements(self, array: Array):
         '''
         <Elements> ::= <Value>
                      | <Value> ',' <Elements>
@@ -223,8 +249,8 @@ class JsonParser(Parser):
         values = [self.value()]
         
         if self.current_token.type == TokenType.COMMA:
-            self.eat(TokenType.COMMA, Array)
-            values.extend(self.elements())
+            array.register_token(self.eat(TokenType.COMMA))
+            values.extend(self.elements(array))
         return values
 
     def value(self):
@@ -243,17 +269,17 @@ class JsonParser(Parser):
 
         if self.current_token.type in JsonTokenType:
             node = Keyword(self.current_token.value)
-            self.eat(self.current_token.type)
+            node.register_token(self.eat(self.current_token.type))
             return node
         
         if self.current_token.type == TokenType.STRING:
             node = String(self.current_token.value)
-            self.eat(TokenType.STRING)
+            node.register_token(self.eat(TokenType.STRING))
             return node
         
         if self.current_token.type == TokenType.NUMBER:
             node = Number(self.current_token.value)
-            self.eat(TokenType.NUMBER)
+            node.register_token(self.eat(TokenType.NUMBER))
             return node
         
         if self.current_token.type == TokenType.LCURLY_BRACE:

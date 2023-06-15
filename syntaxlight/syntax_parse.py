@@ -20,10 +20,12 @@ def parse(text: str, language: str = 'guess', file_path = None) -> str:
 
     try:
         parser.parse()
-        parser.to_html()
+        display_ast(parser.node)
     except Error as e:
         print(e.message)
         print(e.context)
+    
+    return parser.to_html()
 
 
 def parse_file(file_path: str, language: str = 'guess') -> str:
@@ -40,8 +42,8 @@ def parse_file(file_path: str, language: str = 'guess') -> str:
             print(f"未知文法类型 {file_path}")
             exit(1)
 
-    parse(text, language, file_path=file_path)
-
+    return parse(text, language, file_path=file_path)
+    
 
 def guess_language(file_path: str) -> str:
 

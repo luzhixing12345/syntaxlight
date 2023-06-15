@@ -23,7 +23,7 @@ for language in languages:
 for language, files in TEST_FILES.items():
 
     if index != -1:
-        syntaxlight.parse_file(files[index], language)
+        syntaxlight.example_display(files[index], language)
         continue
 
     for file in files:
