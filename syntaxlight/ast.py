@@ -40,9 +40,9 @@ class NodeVisitor:
         self.count = 0
         self.dot_header = textwrap.dedent("""\
             digraph astgraph {
-                node [shape=circle, fontsize=40, fontname="Consolas", height=5];
-                ranksep=2;
-                edge [arrowsize=2]
+                node [shape=circle, fontsize=50, fontname="Consolas Bold", height=2.5, width=2.5, style="filled", fillcolor="#DCDCDC", penwidth=2];
+                edge [arrowsize=2, penwidth=5];
+                graph [ranksep=1, pad=1];
             """)
         self.dot_footer = '}'
         self.dot_body = []
@@ -86,5 +86,5 @@ def display_ast(root:AST, image_name = 'ast.dot'):
 
     node_visitor = NodeVisitor(image_name)
     root.visit(node_visitor)
-    # node_visitor.save()
-    print(root)
+    node_visitor.save()
+    # print(root)

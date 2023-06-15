@@ -141,13 +141,13 @@ class JsonParser(Parser):
         ]
 
     def parse(self):
-        node = self.json()
+        self.node = self.json()
         if self.current_token.type != TokenType.EOF:
             self.error(
                 error_code=ErrorCode.UNEXPECTED_TOKEN,
                 token=self.current_token,
             )
-        return node
+        return self.node
 
     def json(self):
         '''
@@ -167,11 +167,11 @@ class JsonParser(Parser):
                    | '{' <Members> '}'
         '''
         
-        self.eat(TokenType.LCURLY_BRACE)
+        self.eat(TokenType.LCURLY_BRACE, Object)
         members = []
         if self.current_token.type == TokenType.STRING:
             members = self.members()
-        self.eat(TokenType.RCURLY_BRACE)
+        self.eat(TokenType.RCURLY_BRACE, Object)
         
         return Object(members)
 
@@ -182,10 +182,10 @@ class JsonParser(Parser):
         '''
         elements = []
 
-        self.eat(TokenType.LSQUAR_PAREN)
+        self.eat(TokenType.LSQUAR_PAREN, Array)
         if self.current_token.type in self.value_first_set:
             elements = self.elements()
-        self.eat(TokenType.RSQUAR_PAREN)
+        self.eat(TokenType.RSQUAR_PAREN, Array)
         return Array(elements)
 
 
@@ -196,7 +196,7 @@ class JsonParser(Parser):
         '''
         pairs = [self.pair()]
         if self.current_token.type == TokenType.COMMA:
-            self.eat(TokenType.COMMA)
+            self.eat(TokenType.COMMA, Object)
             pairs.extend(self.members())
 
         return pairs
@@ -206,8 +206,8 @@ class JsonParser(Parser):
         <Pair> ::= String ':' <Value>
         '''
         key = self.current_token.value
-        self.eat(TokenType.STRING)
-        self.eat(TokenType.COLON)
+        self.eat(TokenType.STRING, Pair)
+        self.eat(TokenType.COLON, Pair)
         value = self.value()
         return Pair(key, value)
 
@@ -223,7 +223,7 @@ class JsonParser(Parser):
         values = [self.value()]
         
         if self.current_token.type == TokenType.COMMA:
-            self.eat(TokenType.COMMA)
+            self.eat(TokenType.COMMA, Array)
             values.extend(self.elements())
         return values
 

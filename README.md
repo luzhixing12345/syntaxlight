@@ -57,5 +57,3 @@ syntaxlight.example_display()
 
 - [Let’s Build A Simple Interpreter](https://ruslanspivak.com/lsbasi-part1/)
 - [pygments](https://pygments.org/)
-- [C EBNF](https://cs.wmich.edu/~gupta/teaching/cs4850/sumII06/The%20syntax%20of%20C%20in%20Backus-Naur%20form.htm)
-- [Lua5.4 EBNF](https://www.lua.org/manual/5.4/manual.html#8)

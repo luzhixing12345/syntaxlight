@@ -68,19 +68,22 @@ class Token:
         self.value = value
         self.lineno:int = lineno
         self.column:int = column
+        self.ast_type = None # parser 语法分析阶段赋给 token
 
     def __str__(self):
-        """String representation of the class instance.
-        Examples:
-            Token(INTEGER_CONST, 3)
-            Token(PLUS, '+')
-            Token(MUL, '*')
         """
-        return 'Token({type}, {value}, position={lineno}:{column})'.format(
+        String representation of the class instance.
+        """
+        if self.ast_type is None:
+            ast_type = 'NoAST'
+        else:
+            ast_type = self.ast_type.__name__
+        return 'Token({type}, {value}, position={lineno}:{column}) {AST_type}'.format(
             type=self.type,
             value=repr(self.value),
             lineno=self.lineno,
             column=self.column,
+            AST_type=ast_type
         )
 
     def __repr__(self):
@@ -103,7 +106,7 @@ class Lexer:
         self.column: int = 1
         self.TokenType:TokenType = TokenType
         self.LanguageTokenType:Enum = LanguageTokenType
-        self.context_bias = 3 # 发生错误时 token 的前后文行数
+        self.context_bias = 10 # 发生错误时 token 的前后文行数
         self.file_path = None # 手动修改文件路径, 用于后期错误处理的输出
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
@@ -137,6 +140,10 @@ class Lexer:
         # 出错时获取上下文
         
         # token 的 lineno 和 column 从 1 开始的
+        #  abcdajk123123
+        #
+        # |
+        # column 指的是前面的位置
         lines = self.text.split('\n')
         lines.insert(0, [])
         start_line = max(token.lineno-self.context_bias,1)
@@ -154,6 +161,10 @@ class Lexer:
 
                 context += pre_context + f'\033[31m{token.value}\033[0m' + end_context + '\n'
                 context += ' ' * len(pre_context) + '^' * token_length + '\n'
+                print("error", token)
+                # print(len(lines[i]), token.column - token_length, lines[i][:token.column - token_length])
+                # print(pre_context)
+
         return context
 
     def advance(self):
@@ -177,7 +188,7 @@ class Lexer:
         while self.current_char is not None and self.current_char == ' ':
             result += ' '
             self.advance()
-        return Token(self.TokenType.SPACE, result, self.line, self.column)
+        return Token(self.TokenType.SPACE, result, self.line, self.column - 1)
 
     def skip_invisiable_character(self):
         token = Token(
@@ -237,7 +248,7 @@ class Lexer:
         if result[-1] == 'e' or result[-1] == 'E':
             self.error(ErrorCode.EXPONENT_NO_DIGITS, Token(self.TokenType.NUMBER, result,self.line, self.column))
 
-        return Token(self.TokenType.NUMBER, result, self.line, self.column)
+        return Token(self.TokenType.NUMBER, result, self.line, self.column -1)
 
     def get_string(self):
         '''
@@ -293,16 +304,13 @@ class Lexer:
 
     def get_id(self):
         """Handle identifiers and reserved keywords"""
-
-        token = Token(type=None, value=None,
-                      lineno=self.line, column=self.column)
-
         value = ''
         while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
             value += self.current_char
             self.advance()
 
         token_type = self.reserved_keywords.get(value)
+        token = Token(type=None, value=None,lineno=self.line, column=self.column -1)
         if token_type is None:
             token.type = self.TokenType.ID
             token.value = value
@@ -310,7 +318,6 @@ class Lexer:
             # reserved keyword
             token.type = token_type
             token.value = value
-
         return token
 
     def get_next_token(self) -> Token:

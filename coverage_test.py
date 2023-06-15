@@ -6,7 +6,7 @@ import syntaxlight
 
 FILE_TYPES = ['json']
 FILE_START_INDEX = 0
-FILE_END_INDEX = 1
+FILE_END_INDEX = -1
 
 test_folder_path = './test'
 languages = os.listdir(test_folder_path)

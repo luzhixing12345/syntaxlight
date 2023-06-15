@@ -19,8 +19,8 @@ def parse(text: str, language: str = 'guess', file_path = None) -> str:
     parser = get_parser(lexer)
 
     try:
-        node = parser.parse()
-        display_ast(node)
+        parser.parse()
+        parser.to_html()
     except Error as e:
         print(e.message)
         print(e.context)
