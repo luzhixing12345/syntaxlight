@@ -11,9 +11,8 @@ class ErrorCode(Enum):
 
     # parser error code
     UNEXPECTED_TOKEN = "Unexpected token"
-    ID_NOT_FOUND = "Identifier not found"
-    DUPLICATE_ID = "Duplicate id found"
-    PARAMETERS_NOT_MATCH = "parameter number not match"
+    MISS_EXPECTED_TOKEN = 'Miss expected token'
+    TRAILING_COMMA = 'Trailing comma not allowed'
 
 
 class Error(Exception):
@@ -62,7 +61,7 @@ class LexerError(Error):
         message: str = None,
     ):
         if error_code is not None:
-            message = error_code.value + " : " + message
+            message = error_code.value + ' ' + message
         super().__init__(error_code, token, message, context, file_path)
 
 
@@ -76,5 +75,5 @@ class ParserError(Error):
         message: str = None,
     ):
         if error_code is not None:
-            message = error_code.value + " : " + message
+            message = error_code.value + ' ' + message
         super().__init__(error_code, token, message, context, file_path)

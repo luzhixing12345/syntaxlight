@@ -3,8 +3,16 @@ from ..error import ErrorCode
 from enum import Enum
 
 
+class TomlTokenType(Enum):
+    
+    RESERVED_KEYWORD_START = 'RESERVED_KEYWORD_START'
+    TRUE = 'true'
+    FALSE = 'false'
+    RESERVED_KEYWORD_END = 'RESERVED_KEYWORD_END'
+
+
 class TomlLexer(Lexer):
-    def __init__(self, text: str, LanguageTokenType: Enum):
+    def __init__(self, text: str, LanguageTokenType: Enum = TomlTokenType):
         super().__init__(text, LanguageTokenType)
 
     def get_next_token(self):

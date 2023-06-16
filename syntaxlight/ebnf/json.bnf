@@ -1,11 +1,19 @@
 <Json> ::= <Object>
          | <Array>
 
-<Object> ::= '{' <Pair>? ( ',' <Pair> )* '}'
+<Object> ::= '{' '}'
+           | '{' <Members> '}'
+
+<Members> ::= <Pair>
+            | <Pair> ',' <Members>
 
 <Pair> ::= <:String:> ':' <Value>
 
-<Array> ::= '[' <Value>? ( ',' <Value> )* ']'
+<Array> ::= '[' ']'
+          | '[' <Elements> ']'
+
+<Elements> ::= <Value>
+             | <Value> ',' <Elements>
 
 <Value> ::= <:String:>
           | <:Number:>

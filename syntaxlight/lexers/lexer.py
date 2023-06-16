@@ -342,7 +342,7 @@ class Lexer:
             self.advance()
 
         result += end_character
-        token = Token(TokenType.STRING, result, self.line, self.column)
+        token = Token(TokenType.STR, result, self.line, self.column)
         self.advance()
         return token
 

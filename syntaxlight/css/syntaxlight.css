@@ -6,7 +6,7 @@ pre[class*="language-"] {
     color: white;
 }
 
-.Token.STRING {
+.Token.STRING, .Token.STR {
     color: #CE9178;
 }
 

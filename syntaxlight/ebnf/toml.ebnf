@@ -1,0 +1,23 @@
+<toml> ::= <expression> ( <CRLF> expression )*
+
+<expression> ::= <pair> | <table> | <comment>
+
+<comment> ::= '#' .* <CRLF>
+
+<pair> ::= <path> '=' <value>
+
+<path> ::= (<ID> | <str>) ( '.' (<ID> | <str>)) * ( '-' <ID> )*
+
+<table> ::= <table_header>       <CRLF> <table_entry>
+          | <table_array_header> <CRLF> <table_entry>
+
+<table_header>       ::=  '['     <path>     ']'
+<table_array_header> ::=  '[' '[' <path> ']' ']'
+
+<table_entry> ::= (<pair>)? ( <CRLF> <pair> )*
+
+<value> ::= <str> | <number> | 'true' | 'false' | <array> | <inline_table> | <date>
+
+<array> ::= '[' ( <value> (',' <value> )* ','?)? ']'
+
+<inline_table> ::= '{' ( <pair> (',' <pair>)* ','?)? '}'

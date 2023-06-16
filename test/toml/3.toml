@@ -1,0 +1,25 @@
+# 字符串
+str1 = "Hello, world!"
+str2 = 'Hello, "world"!'
+str3 = 'Hello, \'world\'!'
+str4 = """
+Hello,
+world!
+"""
+
+# 数字
+int1 = 42
+int2 = +42
+int3 = -42
+float1 = 3.14
+float2 = +3.14
+float3 = -3.14
+
+# 布尔值
+bool1 = true
+bool2 = false
+
+# 日期和时间
+date1 = 2023-06-16
+time1 = 13:30:00
+datetime1 = 2023-06-16T13:30:00Z

@@ -1,0 +1,20 @@
+
+.Token.Path {
+    color: #327ED0;
+}
+
+.Token.TableArrayHeader, .Token.TableHeader {
+    color: #88D6FE;
+}
+
+.Token.depth-0 {
+    color: #DBD700;
+}
+
+.Token.depth-1 {
+    color: #DA70D6;
+}
+
+.Token.depth-2 {
+    color: #1A9DFF;
+}

@@ -1,0 +1,36 @@
+# 数组
+arr1 = [1, 2, 3]
+arr2 = [
+    "apple",
+    "banana",
+    "cherry"
+]
+arr3 = [
+    { name = "Alice", age = 30 },
+    { name = "Bob", age = 40 }
+]
+
+# 嵌套数组
+arr4 = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+
+# 表
+[person1]
+name = "Alice"
+age = 30
+
+[person2]
+name = "Bob"
+age = 40
+
+# 嵌套表
+[person3]
+name = "Charlie"
+age = 50
+
+[person3.address]
+city = "New York"
+state = "NY"

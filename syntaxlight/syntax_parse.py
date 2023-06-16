@@ -1,8 +1,8 @@
 import os
-from .lexers import Lexer, CLexer, JsonLexer, LuaLexer, EBNFLexer
+from .lexers import Lexer, CLexer, JsonLexer, LuaLexer, EBNFLexer, TomlLexer
 from .error import Error
-from .parsers import JsonParser
-from .parsers.ast import display_ast
+from .parsers import Parser, JsonParser, TomlParser
+from .ast import display_ast
 
 
 def parse(text: str, language: str = 'guess', file_path=None) -> str:
@@ -26,6 +26,7 @@ def parse(text: str, language: str = 'guess', file_path=None) -> str:
         print(e.message)
         print(e.context)
     else:
+        
         return parser.to_html()
 
 
@@ -59,7 +60,8 @@ def guess_language(file_path: str) -> str:
         'rust': ['rs'],
         'javascript': ['js'],
         'typescript': ['ts', 'tsx', 'tsc'],
-        'pascal': ['pas']
+        'pascal': ['pas'],
+        'toml': ['toml']
     }
 
     if '.' in file_name:
@@ -102,7 +104,8 @@ def get_lexer(code: str, language: str) -> Lexer:
         'c': CLexer,
         'lua': LuaLexer,
         'json': JsonLexer,
-        'ebnf': EBNFLexer
+        'ebnf': EBNFLexer,
+        'toml': TomlLexer
     }
 
     lexer_class = lexers.get(language, None)
@@ -113,10 +116,11 @@ def get_lexer(code: str, language: str) -> Lexer:
     return lexers[language](code)
 
 
-def get_parser(lexer: Lexer):
+def get_parser(lexer: Lexer) -> Parser:
 
     parsers = {
         'json': JsonParser,
+        'toml': TomlParser
     }
 
     syntax_type = lexer.__class__.__name__.replace('Lexer', '').lower()
