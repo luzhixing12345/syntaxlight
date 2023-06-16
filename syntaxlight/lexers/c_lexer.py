@@ -96,7 +96,7 @@ class CLexer(Lexer):
                 token = Token(
                     type=token_type,
                     value=token_type.value,  # e.g. ';', '.', etc
-                    lineno=self.line,
+                    line=self.line,
                     column=self.column,
                 )
                 self.advance()

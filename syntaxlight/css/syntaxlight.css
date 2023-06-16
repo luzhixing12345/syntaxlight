@@ -37,3 +37,7 @@ pre[class*="language-"] {
 .Token.COMMA, .Token.COLON {
     color: white;
 }
+
+.Token.Comment {
+    color: #6A9955;
+}

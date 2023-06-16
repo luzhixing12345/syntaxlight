@@ -14,13 +14,13 @@ class Parser:
         self.token_list: List[Token] = []
         self.node = None
         self.current_token: Token = self.lexer.get_next_token()
-        self.skip()
+        self._skip()
 
     def error(self, error_code: ErrorCode, token: Token, message: str = ""):
         if message == "":
             if token.value in self.lexer.invisible_characters:
                 message = token.type.name
-            else:    
+            else:
                 message = token.value
         raise ParserError(
             error_code=error_code,
@@ -35,11 +35,12 @@ class Parser:
         # type and if they match then "eat" the current token
         # and assign the next token to the self.current_token,
         # otherwise raise an exception.
+        # print(self.current_token)
         tokens = [self.current_token]
         if self.current_token.type == token_type:
             self._register_token()
             self.current_token = self.lexer.get_next_token()
-            tokens.extend(self.skip())
+            tokens.extend(self._skip())
         else:
             current_value = self.current_token.value
             expected_value = token_type.value
@@ -54,7 +55,7 @@ class Parser:
             )
         return tokens
 
-    def skip(self):
+    def _skip(self):
         tokens = []
         if self.skip_invisible_characters and self.skip_space:
             while (
@@ -79,21 +80,16 @@ class Parser:
         return tokens
 
     def skip_crlf(self):
-        '''
+        """
         set `skip_invisible_characters` to False \n
         skip `\\n` or `\\r\\n`
-        '''
+        """
         while self.current_token.type in (TokenType.LF, TokenType.CR):
             self.eat(self.current_token.type)
 
-    def skip_comment(self, end_token_type: Enum) -> str:
-
-        result = ''
-        while self.current_token.type != end_token_type and self.current_token != TokenType.EOF:
-            result += self.current_token.value
-            self.current_token = self.lexer.get_next_token()
-        
-        return result
+    def skip_cr(self):
+        while self.current_token.type == TokenType.CR:
+            self.eat(self.current_token.type)
 
     def _register_token(self):
         if self.current_token is None:
@@ -114,13 +110,13 @@ class Parser:
         for token in self.token_list:
             html += f'<span class="{token.get_css_class()}">{token.value}</span>'
         return html
-    
-    def type_hint(self, array: List[Enum]):
 
-        result = ''
+    def type_hint(self, array: List[Enum]):
+        result = '()'
         for i in array:
-            result += ' ' + i.value
+            result += i.value + ' '
+        result[-1] = ')'
         return result
 
     def parse(self):
-        raise NotImplementedError
+        raise NotImplementedError(self.__class__.__name__ + ' must override the parse function')

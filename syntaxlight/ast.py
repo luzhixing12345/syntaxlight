@@ -14,7 +14,6 @@ class AST(object):
 
         self.class_name: str = self.__class__.__name__
         self._node_info: str = f"[{self.class_name}:{self.created_index}]"
-        self.graph_node_info: str = None
 
         self.indent = " " * 4
         self._tokens: List[Token] = []
@@ -29,8 +28,8 @@ class AST(object):
             token.ast = self
 
     def update(self, **kwargs):
-        '''{need override}'''
-        raise NotImplementedError
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def visit(self, node_visitor: "NodeVisitor" = None, brace=False):
         """由 node visitor 访问时递归调用"""
@@ -55,8 +54,7 @@ class AST(object):
         node_content = (
             self._node_info
             + "\\n"
-            + f"depth={self.depth}\\n"
-            + self.graph_node_info.replace('"', '\\"').replace("'", "\\'")
+            + f"depth={self.depth}"
         )
         return f'node{self.created_index} [label="{node_content}"]'
 
@@ -75,8 +73,8 @@ class Object(AST):
         self.pairs: List[Pair] = members
 
     def update(self, **kwargs):
-        self.pairs = kwargs['pairs']
-        self.graph_node_info = f'pairs = {len(self.pairs)}'
+        return super().update(**kwargs)
+        
 
     def visit(self, node_visitor: 'NodeVisitor' = None):
 
@@ -115,10 +113,8 @@ class Array(AST):
         self.elements: List[AST] = elements
 
     def update(self, **kwargs):
-        elements = kwargs['elements']
-        self.elements: List[AST] = elements
-        self.graph_node_info = f'element = {len(self.elements)}'
-
+        return super().update(**kwargs)
+        
     def visit(self, node_visitor: 'NodeVisitor' = None):
         for token in self._tokens:
             token.brace_depth = node_visitor.brace_depth
@@ -161,13 +157,9 @@ class Pair(AST):
         self.value: AST = value
 
     def update(self, **kwargs):
-
-        value = kwargs['value']
-        self.value: AST = value
-        self.graph_node_info = f'{self.key}:{self.value.class_name}'
-
+        return super().update(**kwargs)
+        
     def visit(self, node_visitor: 'NodeVisitor' = None):
-
         node_visitor.link(self, self.value)
         self.value.visit(node_visitor)
         return super().visit(node_visitor)
@@ -181,7 +173,6 @@ class Keyword(AST):
     def __init__(self, name) -> None:
         super().__init__()
         self.name: str = name
-        self.graph_node_info = self.name
 
     def format(self, depth: int = 0, **kwargs):
         return self.name
@@ -192,7 +183,6 @@ class String(AST):
     def __init__(self, string) -> None:
         super().__init__()
         self.string = string
-        self.graph_node_info = self.string
 
     def format(self, depth: int = 0, **kwargs):
         return self.string
@@ -203,21 +193,38 @@ class Number(AST):
     def __init__(self, value) -> None:
         super().__init__()
         self.value = value
-        self.graph_node_info = self.value
 
     def format(self, depth: int = 0, **kwargs):
         return self.value
 
 
+
+class Expression(AST):
+
+    def __init__(self, node:AST = None, comment:AST = None) -> None:
+        super().__init__()
+        self.node = node
+        self.comment = comment
+
+    def visit(self, node_visitor: 'NodeVisitor' = None, brace=False):
+        if self.node:
+            node_visitor.link(self, self.node)
+            self.node.visit(node_visitor)
+        if self.comment:
+            node_visitor.link(self, self.comment)
+            self.comment.visit(node_visitor)
+        return super().visit(node_visitor, brace)
+
 class Comment(AST):
 
-    def __init__(self, comment:str) -> None:
+    def __init__(self, start:str, comment:str = None) -> None:
         super().__init__()
+        self.start = start
         self.comment = comment
-        self.graph_node_info = self.comment
+
 
     def format(self, depth: int = 0, **kwargs):
-        return self.comment
+        return self.start + self.comment
 
 class NodeVisitor:
     """

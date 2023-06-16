@@ -1,6 +1,6 @@
 <toml> ::= <expression> ( <CRLF> expression )*
 
-<expression> ::= <pair> | <table> | <comment>
+<expression> ::= (<pair> | <table>)? (<comment>)?
 
 <comment> ::= '#' .* <CRLF>
 
@@ -16,7 +16,7 @@
 
 <table_entry> ::= (<pair>)? ( <CRLF> <pair> )*
 
-<value> ::= <str> | <number> | 'true' | 'false' | <array> | <inline_table> | <date>
+<value> ::= <str> | <number> | | <date> | 'true' | 'false' | <array> | <inline_table> 
 
 <array> ::= '[' ( <value> (',' <value> )* ','?)? ']'
 

@@ -31,10 +31,7 @@ class JsonLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if (
-                self.current_char.isdigit()
-                or self.current_char == TokenType.MINUS.value
-            ):
+            if self.current_char.isdigit() or self.current_char == TokenType.MINUS.value:
                 return self.get_number()
 
             if self.current_char.isalpha():
@@ -49,7 +46,7 @@ class JsonLexer(Lexer):
                 token = Token(
                     type=token_type,
                     value=token_type.value,  # e.g. ';', '.', etc
-                    lineno=self.line,
+                    line=self.line,
                     column=self.column,
                 )
                 self.advance()

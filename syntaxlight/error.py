@@ -31,9 +31,9 @@ class Error(Exception):
 
         if self.token is not None:
             if file_path is not None:
-                error_place = f"[{file_path}][{self.token.lineno}:{self.token.column}]"
+                error_place = f"[{file_path}][{self.token.line}:{self.token.column}]"
             else:
-                error_place = f"[{self.token.lineno}:{self.token.column}]"
+                error_place = f"[{self.token.line}:{self.token.column}]"
             self.message = f"{error_place} {self.__class__.__name__} {message}\n"
         else:
             self.message = message

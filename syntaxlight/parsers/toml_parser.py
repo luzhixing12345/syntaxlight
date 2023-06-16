@@ -2,7 +2,7 @@ from syntaxlight.ast import NodeVisitor
 from .parser import Parser
 from ..lexers import TokenType, TomlTokenType, Token
 from ..error import ErrorCode
-from ..ast import AST, NodeVisitor, Object, Array, String, Number, Keyword, Comment
+from ..ast import AST, NodeVisitor, Object, Array, String, Number, Keyword, Comment, Expression
 
 from typing import List
 
@@ -18,6 +18,8 @@ class Toml(AST):
             node_visitor.link(self, expression)
             expression.visit(node_visitor)
         return super().visit(node_visitor, brace)
+
+
 
 
 class Pair(AST):
@@ -61,8 +63,9 @@ class Table(AST):
 
     def visit(self, node_visitor: NodeVisitor = None, brace=False):
         node_visitor.link(self, self.header)
-        node_visitor.link(self, self.entries)
         self.header.visit(node_visitor)
+
+        node_visitor.link(self, self.entries)
         self.entries.visit(node_visitor)
         return super().visit(node_visitor, brace)
 
@@ -126,6 +129,16 @@ class TableEntry(AST):
             pair.visit(node_visitor)
         return super().visit(node_visitor, brace)
 
+class Date(AST):
+
+    def __init__(self, value) -> None:
+        super().__init__()
+        self.value = value
+        self.graph_node_info = self.value
+
+    def format(self, depth: int = 0, **kwargs):
+        return self.value
+
 
 class TomlParser(Parser):
     """
@@ -137,6 +150,7 @@ class TomlParser(Parser):
         self.value_first_set = [
             TokenType.STR,
             TokenType.NUMBER,
+            TomlTokenType.DATE,
             TomlTokenType.TRUE,
             TomlTokenType.FALSE,
             TokenType.LSQUAR_PAREN,
@@ -166,26 +180,31 @@ class TomlParser(Parser):
             TokenType.HASH,  # comment
         ]:
             expressions.append(self.expression())
+            self.skip_cr()
+            if self.current_token.type != TokenType.EOF:
+                self.eat(TokenType.LF)
             self.skip_crlf()
-
+        
         return Toml(expressions)
 
     def expression(self):
         """
-        <expression> ::= <pair>
-                       | <table>
-                       | <comment>
+        <expression> ::= (<pair> | <table>)? (<comment>)?
         """
+        node = None
+        comment = None
         if self.current_token.type in (TokenType.ID, TokenType.STR):
-            return self.pair()
+            node = self.pair()
         elif self.current_token.type == TokenType.LSQUAR_PAREN:
-            return self.table()
-        elif self.current_token.type == TokenType.HASH:
-            node = Comment(self.skip_comment(TokenType.LF))
-            self.skip_crlf()
-            return node
-        else:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token, 'should match ID or "["')
+            node = self.table()
+        
+        if self.current_token.type == TokenType.HASH:
+            comment = Comment(self.current_token.value)
+            comment.register_token(self.eat(TokenType.HASH))
+            comment.register_token(self.eat(TokenType.COMMENT))
+        
+        return Expression(node, comment)
+        
 
     def pair(self):
         """
@@ -253,7 +272,6 @@ class TomlParser(Parser):
 
             node.header = table_header
 
-        self.skip_crlf()
         entries = self.table_entry()
         node.update(entries=entries)
         return node
@@ -273,7 +291,7 @@ class TomlParser(Parser):
 
     def value(self):
         """
-        <value> ::= <str> | <number> | 'true' | 'false' | <array> | <inline_table> | <date>
+        <value> ::= <str> | <number> | <date> | 'true' | 'false' | <array> | <inline_table>
         """
 
         if self.current_token.type not in self.value_first_set:
@@ -286,24 +304,24 @@ class TomlParser(Parser):
         if self.current_token.type == TokenType.STR:
             node = String(self.current_token.value)
             node.register_token(self.eat(TokenType.STR))
-            return node
 
         elif self.current_token.type == TokenType.NUMBER:
-            # data ?
             node = Number(self.current_token.value)
             node.register_token(self.eat(TokenType.NUMBER))
-            return node
+        
+        elif self.current_token.type == TomlTokenType.DATE:
+            node = Date(self.current_token.value)
+            node.register_token(self.eat(TomlTokenType.DATE))
 
         elif self.current_token.type in (TomlTokenType.TRUE, TomlTokenType.FALSE):
             node = Keyword(self.current_token.value)
             node.register_token(self.eat(self.current_token.type))
-            return node
 
         elif self.current_token.type == TokenType.LSQUAR_PAREN:
-            return self.array()
+            node = self.array()
 
         elif self.current_token.type == TokenType.LCURLY_BRACE:
-            return self.inline_table()
+            node = self.inline_table()
 
         else:
             # should never reach here
@@ -312,6 +330,7 @@ class TomlParser(Parser):
                 self.current_token,
                 f"should be {self.type_hint(self.value_first_set)}",
             )
+        return node
 
     def array(self):
         """
@@ -321,7 +340,6 @@ class TomlParser(Parser):
         node = Array()
         node.register_token(self.eat(TokenType.LSQUAR_PAREN))
         self.skip_crlf()
-
         elements: List[AST] = []
         while self.current_token.type in self.value_first_set:
             elements.append(self.value())

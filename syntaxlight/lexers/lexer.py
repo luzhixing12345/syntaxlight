@@ -31,7 +31,7 @@ class TokenType(Enum):
     CARET = "^"
     AMPERSAND = "&"
     PIPE = "|"
-    QUSTION_MARK = "?"
+    QUSTION = "?"
     APOSTROPHE = "'"
     QUOTO = '"'
     SPACE = " "
@@ -55,6 +55,7 @@ class TokenType(Enum):
     NUMBER = "NUMBER"  # 整数 | 小数 | 科学计数法
     INT = "INT"  # 整数
     FLOAT = "FLOAT"  # 小数
+    COMMENT = "COMMENT"
     SHL = "<<"
     SHR = ">>"
     EQ = "=="
@@ -66,10 +67,10 @@ class TokenType(Enum):
 
 
 class Token:
-    def __init__(self, type: Enum, value, lineno=None, column=None):
+    def __init__(self, type: Enum, value, line=None, column=None):
         self.type: Enum = type
         self.value = value
-        self.lineno: int = lineno
+        self.line: int = line
         self.column: int = column
         self.ast: None
         self.ast_types = ["Token"]  # parser 语法分析阶段赋给 token
@@ -97,7 +98,7 @@ class Token:
             ID=self._id,
             type=self.type,
             value=repr(self.value),
-            lineno=self.lineno,
+            lineno=self.line,
             column=self.column,
             AST_type=self.get_css_class(),
         )
@@ -120,7 +121,7 @@ class Lexer:
         self.pos: int = 0  # 当前指针指向的字符
         self.current_char: str = self.text[self.pos]  # 当前指针指向的字符
         self.line: int = 1
-        self.column: int = 1
+        self.column: int = 1  # 指向 token 的 value 中最后出现的字符的位置
         self.LanguageTokenType: Enum = LanguageTokenType
         self.context_bias = 10  # 发生错误时 token 的前后文行数
         self.file_path = None  # 手动修改文件路径, 用于后期错误处理的输出
@@ -163,12 +164,12 @@ class Lexer:
         # column 指的是前面的位置
         lines = self.text.split("\n")
         lines.insert(0, [])
-        start_line = max(token.lineno - self.context_bias, 1)
-        end_line = min(token.lineno + self.context_bias, len(lines))
+        start_line = max(token.line - self.context_bias, 1)
+        end_line = min(token.line + self.context_bias, len(lines))
         context = ""
         for i in range(start_line, end_line):
             # print(i, token.lineno)
-            if i != token.lineno:
+            if i != token.line:
                 context += lines[i] + "\n"
             else:
                 token_length = len(token.value)
@@ -227,10 +228,11 @@ class Lexer:
 
     def get_number(self):
         result = ""
-        if self.current_char == TokenType.MINUS.value:
-            result += "-"
+        # start with +/-
+        if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+            result += self.current_char
             self.advance()
-
+        # digit
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
@@ -240,7 +242,12 @@ class Lexer:
             result += self.current_char
             self.advance()
             use_scientific_notation = True
+            # +/- follow e/E
+            if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+                result += self.current_char
+                self.advance()
 
+        # digit
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
@@ -266,6 +273,10 @@ class Lexer:
                     ErrorCode.NUMBER_INVALID,
                     Token(TokenType.NUMBER, result, self.line, self.column),
                 )
+            # +/- follow e/E
+            if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+                result += self.current_char
+                self.advance()
 
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
@@ -319,7 +330,7 @@ class Lexer:
 
     def get_str(self):
         """
-        单引号 ' 和 双引号 " 都可以
+        'xxx' "xxx" \"\"\"xxx\"\"\" '''xxx''' 都可以
         """
         result = self.current_char
         if result not in (TokenType.QUOTO.value, TokenType.APOSTROPHE.value):
@@ -342,27 +353,50 @@ class Lexer:
             self.advance()
 
         result += end_character
-        token = Token(TokenType.STR, result, self.line, self.column)
         self.advance()
+
+        # ''' or """
+        if len(result) == 2 and self.current_char == end_character:
+            result += self.current_char
+            self.advance()
+            count = 0
+            while self.current_char is not None and count != 3:
+                if self.current_char == end_character:
+                    count += 1
+                else:
+                    count = 0
+                result += self.current_char
+                if self.current_char == "\\":
+                    self.advance()
+                    if self.current_char is None:
+                        self.error(
+                            ErrorCode.UNEXPECTED_TOKEN,
+                            Token(TokenType.STRING, result, self.line, self.column),
+                        )
+                    count = 0
+                    result += self.current_char
+                self.advance()
+        token = Token(TokenType.STR, result, self.line, self.column-1)
         return token
 
     def get_id(self):
         """Handle identifiers and reserved keywords"""
-        value = ""
+        result = ""
         while self.current_char is not None and (
             self.current_char.isalnum() or self.current_char == "_"
         ):
-            value += self.current_char
+            result += self.current_char
             self.advance()
 
-        token_type = self.reserved_keywords.get(value)
+        token_type = self.reserved_keywords.get(result)
 
         if token_type is None:
-            token = Token(type=TokenType.ID, value=value, lineno=self.line, column=self.column - 1)
+            token = Token(type=TokenType.ID, value=result, line=self.line, column=self.column - 1)
         else:
             # reserved keyword
-            token = Token(type=token_type, value=value, lineno=self.line, column=self.column - 1)
+            token = Token(type=token_type, value=result, line=self.line, column=self.column - 1)
         return token
+
 
     def get_next_token(self) -> Token:
         """

@@ -1,6 +1,6 @@
 
 .Token.Path {
-    color: #327ED0;
+    color: #569cd6;
 }
 
 .Token.TableArrayHeader, .Token.TableHeader {
@@ -17,4 +17,8 @@
 
 .Token.depth-2 {
     color: #1A9DFF;
+}
+
+.Token.Date {
+    color: #A2CEA8;
 }
