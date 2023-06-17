@@ -102,4 +102,4 @@ class TomlLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=TokenType.EOF, value=None)
+        return Token(type=TokenType.EOF, value='', line=self.line, column=self.column+1)

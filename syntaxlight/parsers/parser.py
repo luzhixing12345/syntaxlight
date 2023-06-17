@@ -46,6 +46,8 @@ class Parser:
             expected_value = token_type.value
             if current_value in self.lexer.invisible_characters:
                 current_value = self.current_token.type.name
+            if self.current_token.type == TokenType.EOF:
+                current_value = 'EOF'
             if expected_value in self.lexer.invisible_characters:
                 expected_value = token_type.name
             self.error(
@@ -112,10 +114,10 @@ class Parser:
         return html
 
     def type_hint(self, array: List[Enum]):
-        result = '()'
+        result = ''
         for i in array:
-            result += i.value + ' '
-        result[-1] = ')'
+            result += i.value + ' | '
+        result = result[:-3]
         return result
 
     def parse(self):

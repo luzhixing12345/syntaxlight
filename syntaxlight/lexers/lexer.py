@@ -141,7 +141,7 @@ class Lexer:
             TokenType.VERTICAL_TAB.value: TokenType.VERTICAL_TAB,
             TokenType.CR.value: TokenType.CR,
             TokenType.FORM_FEED.value: TokenType.FORM_FEED,
-            TokenType.BACKSPACE.value: TokenType.BACKSPACE,
+            TokenType.BACKSPACE.value: TokenType.BACKSPACE
         }
 
     def error(self, error_code: ErrorCode = None, token: Token = None, message: str = ""):
@@ -156,32 +156,54 @@ class Lexer:
 
     def get_context(self, token: Token):
         # 出错时获取上下文
-
-        # token 的 lineno 和 column 从 1 开始的
-        #  abcdajk123123
-        #
-        # |
-        # column 指的是前面的位置
         lines = self.text.split("\n")
         lines.insert(0, [])
-        start_line = max(token.line - self.context_bias, 1)
-        end_line = min(token.line + self.context_bias, len(lines))
+        context_start_line = max(token.line - self.context_bias, 1)
+        context_end_line = min(token.line + self.context_bias, len(lines))
         context = ""
-        for i in range(start_line, end_line):
+
+        # token 为多行文本的处理
+        token_line = token.line # 当前处于哪一行, 从后往前找
+        token_length = len(token.value)
+        token_lines = [] # token 的行列数
+        column = token.column + 1
+        while column < token_length:
+            token_length -= column
+            token_lines.insert(0,token_line)
+            token_line -= 1
+            column = len(lines[token_line]) + 1
+        
+        if token_length != 0:
+            token_lines.insert(0, token_line)
+
+        # 单行 token
+        if len(token_lines) == 0:
+            token_lines.append(token.line)
+            token_length = len(token.value)
+
+
+        for i in range(context_start_line, context_end_line):
             # print(i, token.lineno)
-            if i != token.line:
+            if i not in token_lines:
                 context += lines[i] + "\n"
             else:
-                token_length = len(token.value)
-                # token 前面的部分
-                pre_context = lines[i][: token.column - token_length]
-                end_context = lines[i][token.column :]
+                if len(token_lines) == 1:
 
-                context += pre_context + f"\033[31m{token.value}\033[0m" + end_context + "\n"
-                context += " " * len(pre_context) + "^" * token_length + "\n"
-                # print("error", token)
-                # print(len(lines[i]), token.column - token_length)
-                # print(pre_context)
+                    # token 前面的部分
+                    pre_context = lines[i][: token.column - token_length]
+                    # token 后面的部分
+                    end_context = lines[i][token.column :]
+                    context += pre_context + f"\033[31m{token.value}\033[0m" + end_context + "\n"
+                    context += " " * len(pre_context) + "^" * token_length + "\n"
+                else:
+                    if i == token_lines[0]:
+                        pre_context = lines[i][:column-token_length]
+                        context += pre_context + f"\033[31m{lines[i][column-token_length:]}\033[0m\n"
+                    elif i == token_lines[-1]:
+                        end_context = lines[i][token.column+1:]
+                        context += f"\033[31m{lines[i][:token.column+1]}\033[0m{end_context}\n"
+                    else:
+                        context += f"\033[31m{lines[i]}\033[0m\n"        
 
         context = context[:-1]  # 去掉结尾换行
         return context
@@ -354,7 +376,6 @@ class Lexer:
 
         result += end_character
         self.advance()
-
         # ''' or """
         if len(result) == 2 and self.current_char == end_character:
             result += self.current_char
@@ -376,7 +397,8 @@ class Lexer:
                     count = 0
                     result += self.current_char
                 self.advance()
-        token = Token(TokenType.STR, result, self.line, self.column-1)
+            
+        token = Token(TokenType.STR, result, self.line, self.column)
         return token
 
     def get_id(self):
