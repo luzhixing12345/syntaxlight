@@ -84,7 +84,6 @@ class Object(AST):
 
         for pair in self.pairs:
             node_visitor.link(self, pair)
-            pair.visit(node_visitor)
         return super().visit(node_visitor, brace=True)
 
     def format(self, depth: int = 0):
@@ -123,7 +122,6 @@ class Array(AST):
 
         for element in self.elements:
             node_visitor.link(self, element)
-            element.visit(node_visitor)
 
         return super().visit(node_visitor, brace=True)
 
@@ -158,7 +156,6 @@ class Pair(AST):
         
     def visit(self, node_visitor: 'NodeVisitor' = None):
         node_visitor.link(self, self.value)
-        self.value.visit(node_visitor)
         return super().visit(node_visitor)
 
     def format(self, depth: int = 0):
@@ -194,8 +191,6 @@ class Number(AST):
     def format(self, depth: int = 0):
         return self.value
 
-
-
 class Expression(AST):
 
     def __init__(self, node:AST = None, comment:'Comment' = None) -> None:
@@ -206,10 +201,8 @@ class Expression(AST):
     def visit(self, node_visitor: 'NodeVisitor' = None, brace=False):
         if self.node:
             node_visitor.link(self, self.node)
-            self.node.visit(node_visitor)
         if self.comment:
             node_visitor.link(self, self.comment)
-            self.comment.visit(node_visitor)
         return super().visit(node_visitor, brace)
     
     def format(self, depth: int = 0):
@@ -273,6 +266,7 @@ class NodeVisitor:
 
         self.dot_body.append(f"node{root.created_index} -> node{node.created_index}")
         self.depth += 1
+        node.visit(self)
 
     def save(self):
         """

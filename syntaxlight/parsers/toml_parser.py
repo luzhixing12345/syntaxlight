@@ -16,7 +16,6 @@ class Toml(AST):
     def visit(self, node_visitor: NodeVisitor = None, brace=False):
         for expression in self.expressions:
             node_visitor.link(self, expression)
-            expression.visit(node_visitor)
         return super().visit(node_visitor, brace)
 
     def format(self, depth: int = 0):
@@ -38,7 +37,6 @@ class Pair(AST):
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.value)
-        self.value.visit(node_visitor)
         return super().visit(node_visitor)
 
     def format(self, depth: int = 0):
@@ -67,10 +65,7 @@ class Table(AST):
 
     def visit(self, node_visitor: NodeVisitor = None, brace=False):
         node_visitor.link(self, self.header)
-        self.header.visit(node_visitor)
-
         node_visitor.link(self, self.entries)
-        self.entries.visit(node_visitor)
         return super().visit(node_visitor, brace)
 
     def update(self, **kwargs):
@@ -90,7 +85,6 @@ class TableHeader(AST):
         for token in self._tokens:
             token.brace_depth = 0
         node_visitor.link(self, self.path)
-        self.path.visit(node_visitor)
         return super().visit(node_visitor, brace=brace)
 
     def update(self, **kwargs):
@@ -119,7 +113,6 @@ class TableArrayHeader(AST):
         square_paren_tokens[3].brace_depth = 0
 
         node_visitor.link(self, self.path)
-        self.path.visit(node_visitor)
         return super().visit(node_visitor, brace)
 
     def update(self, **kwargs):
@@ -127,7 +120,6 @@ class TableArrayHeader(AST):
         self.graph_node_info = "path"
 
     def format(self, depth):
-
         return f'[[{self.path.format(depth+1)}]]'
 
 
@@ -140,7 +132,6 @@ class TableEntry(AST):
     def visit(self, node_visitor: NodeVisitor = None, brace=False):
         for pair in self.pairs:
             node_visitor.link(self, pair)
-            pair.visit(node_visitor)
         return super().visit(node_visitor, brace)
     
     def format(self, depth):

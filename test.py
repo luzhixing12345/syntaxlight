@@ -4,7 +4,7 @@ import sys
 
 index = int(sys.argv[1]) - 1
 
-FILE_TYPES = ['toml']
+FILE_TYPES = ['json']
 
 test_folder_path = './test'
 languages = os.listdir(test_folder_path)
