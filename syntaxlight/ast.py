@@ -39,8 +39,7 @@ class AST(object):
             node_visitor.brace_depth -= 1
         # print(f'visit {self.class_name}, depth = {self.depth}')
 
-    def format(self, depth: int = 0, **kwargs):
-        '''{need override}: recovery to text'''
+    def format(self, depth: int = 0):
         raise NotImplementedError(self.class_name + ' should override format function to display')
 
     def __str__(self) -> str:
@@ -71,6 +70,7 @@ class Object(AST):
     def __init__(self, members=None) -> None:
         super().__init__()
         self.pairs: List[Pair] = members
+        self._inside_array = False # only use in format
 
     def update(self, **kwargs):
         return super().update(**kwargs)
@@ -87,8 +87,8 @@ class Object(AST):
             pair.visit(node_visitor)
         return super().visit(node_visitor, brace=True)
 
-    def format(self, depth: int = 0, **kwargs):
-        if kwargs.get('object', None) is True:
+    def format(self, depth: int = 0):
+        if self._inside_array:
             depth += 1
         result = '{'
         if len(self.pairs) == 0:
@@ -127,27 +127,24 @@ class Array(AST):
 
         return super().visit(node_visitor, brace=True)
 
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
 
         result = '['
+        for e in self.elements:
+            if e.class_name == "Object":
+                e._inside_array = True
         if len(self.elements) == 0:
             result += ' ]'
         else:
             result += '\n'
             result += self.indent * \
                 (depth+1) + \
-                f'{self.elements[0].format(depth, object=self._object_in_array(self.elements[0]))}'
+                f'{self.elements[0].format(depth)}'
             for i in range(1, len(self.elements)):
                 element = self.elements[i]
-                is_object = self._object_in_array(element)
-                result += f',\n{self.indent * (depth+1)}{element.format(depth, object = is_object)}'
+                result += f',\n{self.indent * (depth+1)}{element.format(depth)}'
             result += '\n' + self.indent * depth + ']'
         return result
-
-    def _object_in_array(self, element: AST):
-
-        return element.class_name == 'Object'
-
 
 class Pair(AST):
 
@@ -164,7 +161,7 @@ class Pair(AST):
         self.value.visit(node_visitor)
         return super().visit(node_visitor)
 
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
         return f'{self.key}: {self.value.format(depth+1)}'
 
 
@@ -174,7 +171,7 @@ class Keyword(AST):
         super().__init__()
         self.name: str = name
 
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
         return self.name
 
 
@@ -184,7 +181,7 @@ class String(AST):
         super().__init__()
         self.string = string
 
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
         return self.string
 
 
@@ -194,14 +191,14 @@ class Number(AST):
         super().__init__()
         self.value = value
 
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
         return self.value
 
 
 
 class Expression(AST):
 
-    def __init__(self, node:AST = None, comment:AST = None) -> None:
+    def __init__(self, node:AST = None, comment:'Comment' = None) -> None:
         super().__init__()
         self.node = node
         self.comment = comment
@@ -214,6 +211,15 @@ class Expression(AST):
             node_visitor.link(self, self.comment)
             self.comment.visit(node_visitor)
         return super().visit(node_visitor, brace)
+    
+    def format(self, depth: int = 0):
+        result = ''
+        if self.node:
+            result += self.node.format(depth+1)
+        if self.comment:
+            result += self.comment.format(depth+1)
+
+        return result + '\n'
 
 class Comment(AST):
 
@@ -222,8 +228,7 @@ class Comment(AST):
         self.start = start
         self.comment = comment
 
-
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
         return self.start + self.comment
 
 class NodeVisitor:

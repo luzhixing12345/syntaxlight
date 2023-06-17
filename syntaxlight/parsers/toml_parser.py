@@ -19,7 +19,11 @@ class Toml(AST):
             expression.visit(node_visitor)
         return super().visit(node_visitor, brace)
 
-
+    def format(self, depth: int = 0):
+        result = ''
+        for expression in self.expressions:
+            result += expression.format(depth+1)
+        return result
 
 
 class Pair(AST):
@@ -37,8 +41,8 @@ class Pair(AST):
         self.value.visit(node_visitor)
         return super().visit(node_visitor)
 
-    def format(self, depth: int = 0, **kwargs):
-        return f"{self.path.format(depth+1)}: {self.value.format(depth+1)}"
+    def format(self, depth: int = 0):
+        return f"{self.path.format(depth+1)} = {self.value.format(depth+1)}"
 
 
 class Path(AST):
@@ -50,7 +54,7 @@ class Path(AST):
         self.path = kwargs["path"]
         self.graph_node_info = f"path = {self.path}"
 
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
         return self.path
 
 
@@ -73,6 +77,9 @@ class Table(AST):
         self.entries = kwargs["entries"]
         self.graph_node_info = f"{self.header.class_name} : entries"
 
+    def format(self, depth: int = 0):
+        return f'{self.header.format(depth+1)}{self.entries.format(depth+1)}'
+
 
 class TableHeader(AST):
     def __init__(self, path: AST = None) -> None:
@@ -89,6 +96,9 @@ class TableHeader(AST):
     def update(self, **kwargs):
         self.path = kwargs["path"]
         self.graph_node_info = "path"
+
+    def format(self, depth):
+        return f'[{self.path.format(depth+1)}]'
 
 
 class TableArrayHeader(AST):
@@ -116,6 +126,10 @@ class TableArrayHeader(AST):
         self.path = kwargs["path"]
         self.graph_node_info = "path"
 
+    def format(self, depth):
+
+        return f'[[{self.path.format(depth+1)}]]'
+
 
 class TableEntry(AST):
     def __init__(self, pairs: List[Pair]) -> None:
@@ -128,6 +142,14 @@ class TableEntry(AST):
             node_visitor.link(self, pair)
             pair.visit(node_visitor)
         return super().visit(node_visitor, brace)
+    
+    def format(self, depth):
+
+        result = ''
+        for pair in self.pairs:
+            result += pair.format(depth+1) + '\n'
+
+        return result[:-1]
 
 class Date(AST):
 
@@ -136,7 +158,7 @@ class Date(AST):
         self.value = value
         self.graph_node_info = self.value
 
-    def format(self, depth: int = 0, **kwargs):
+    def format(self, depth: int = 0):
         return self.value
 
 
@@ -165,6 +187,7 @@ class TomlParser(Parser):
                 error_code=ErrorCode.UNEXPECTED_TOKEN,
                 token=self.current_token,
             )
+        # print(self.node)
         return self.node
 
     def toml(self):
@@ -201,6 +224,7 @@ class TomlParser(Parser):
         if self.current_token.type == TokenType.HASH:
             comment = Comment(self.current_token.value)
             comment.register_token(self.eat(TokenType.HASH))
+            comment.update(comment = self.current_token.value)
             comment.register_token(self.eat(TokenType.COMMENT))
         
         return Expression(node, comment)
