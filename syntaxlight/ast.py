@@ -146,20 +146,23 @@ class Array(AST):
 
 class Pair(AST):
 
-    def __init__(self, key: str, value: AST = None) -> None:
+    def __init__(self, key: AST, value: AST = None) -> None:
         super().__init__()
-        self.key: str = key
+        self.key: AST = key
         self.value: AST = value
 
     def update(self, **kwargs):
         return super().update(**kwargs)
         
     def visit(self, node_visitor: 'NodeVisitor' = None):
+        node_visitor.link(self, self.key)
         node_visitor.link(self, self.value)
         return super().visit(node_visitor)
 
     def format(self, depth: int = 0):
-        return f'{self.key}: {self.value.format(depth+1)}'
+        return f'{self.key.format(depth+1)}: {self.value.format(depth+1)}'
+    
+
 
 
 class Keyword(AST):

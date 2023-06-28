@@ -101,7 +101,7 @@ class JsonParser(Parser):
         '''
         <Pair> ::= String ':' <Value>
         '''
-        key = self.current_token.value
+        key = String(self.current_token.value)
         node = Pair(key, None)
 
         node.register_token(self.eat(TokenType.STRING))

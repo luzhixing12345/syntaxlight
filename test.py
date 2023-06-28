@@ -25,7 +25,6 @@ for language, files in TEST_FILES.items():
     if index != -1:
         syntaxlight.example_display(files[index], language)
         continue
-
     for file in files:
         print('file = ', file)
         syntaxlight.parse_file(file, language)

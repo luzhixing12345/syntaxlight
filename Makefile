@@ -1,5 +1,5 @@
 
-i = -1
+i = 0
 
 .PHONY: test update cover
 
