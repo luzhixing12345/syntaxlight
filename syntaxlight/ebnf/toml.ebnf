@@ -1,6 +1,6 @@
 <toml> ::= <expression> ( <CRLF> expression )*
 
-<expression> ::= (<pair> | <table>)? (<comment>)?
+<expression> ::= (<pair> | <table>)?
 
 <comment> ::= '#' .* <CRLF>
 

@@ -28,5 +28,6 @@ class TestUnit(unittest.TestCase):
         for files in TEST_FILES['toml']:
             syntaxlight.parse_file(files)
 
+
 if __name__ == "__main__":
     unittest.main()

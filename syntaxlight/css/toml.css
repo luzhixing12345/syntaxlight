@@ -22,3 +22,7 @@
 .Token.Date {
     color: #A2CEA8;
 }
+
+.Token.COMMENT {
+    color: #6A9955;
+}

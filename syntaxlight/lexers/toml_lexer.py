@@ -15,7 +15,6 @@ class TomlTokenType(Enum):
 class TomlLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = TomlTokenType):
         super().__init__(text, LanguageTokenType)
-        self.match_comment = False
 
     def get_id(self):
         """Handle identifiers and reserved keywords"""
@@ -36,8 +35,11 @@ class TomlLexer(Lexer):
         return token
 
     def get_comment(self):
-        self.match_comment = False
-        result = ''
+        '''
+        toml 中是以 # 作为单行注释的
+        '''
+        result = '#'
+        self.advance()
         while self.current_char is not None and self.current_char != TokenType.LF.value:
             result += self.current_char
             self.advance()
@@ -46,8 +48,6 @@ class TomlLexer(Lexer):
 
     def get_next_token(self):
         while self.current_char is not None:
-            if self.match_comment:
-                return self.get_comment()
             # TOML 单双引号都可以
             if (
                 self.current_char == TokenType.QUOTO.value
@@ -62,8 +62,8 @@ class TomlLexer(Lexer):
                 return self.skip_invisiable_character()
             
             if self.current_char == TokenType.HASH.value:
-                # match comment in next token
-                self.match_comment = True
+                # match comment
+                return self.get_comment()
 
             if self.current_char.isdigit():
                 token = self.get_number()

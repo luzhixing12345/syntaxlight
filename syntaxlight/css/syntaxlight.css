@@ -38,6 +38,6 @@ pre[class*="language-"] {
     color: white;
 }
 
-.Token.Comment {
+.Token.COMMENT {
     color: #6A9955;
 }

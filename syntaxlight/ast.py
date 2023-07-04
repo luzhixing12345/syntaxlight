@@ -203,36 +203,21 @@ class UnaryOp(AST):
 
 
 class Expression(AST):
-    def __init__(self, node: AST = None, comment: "Comment" = None) -> None:
+    def __init__(self, node: AST = None) -> None:
         super().__init__()
         self.node = node
-        self.comment = comment
 
     def visit(self, node_visitor: "NodeVisitor" = None, brace=False):
         if self.node:
             node_visitor.link(self, self.node)
-        if self.comment:
-            node_visitor.link(self, self.comment)
         return super().visit(node_visitor, brace)
 
     def formatter(self, depth: int = 0):
         result = ""
         if self.node:
             result += self.node.formatter(depth + 1)
-        if self.comment:
-            result += self.comment.formatter(depth + 1)
 
         return result + "\n"
-
-
-class Comment(AST):
-    def __init__(self, start: str, comment: str = None) -> None:
-        super().__init__()
-        self.start = start
-        self.comment = comment
-
-    def formatter(self, depth: int = 0):
-        return self.start + self.comment
 
 
 class NodeVisitor:
@@ -288,8 +273,8 @@ class NodeVisitor:
         for dot in self.dot_body:
             graphviz_content += f"    {dot}\n"
         graphviz_content += self.dot_footer
-        # with open(self.image_name, "w", encoding="utf-8") as f:
-        #     f.write(graphviz_content)
+        with open(self.image_name, "w", encoding="utf-8") as f:
+            f.write(graphviz_content)
         # print(f"ast tree saved in [{self.image_name}], view by grpahviz")
 
 

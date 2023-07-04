@@ -66,8 +66,14 @@ class Parser:
             )
         return tokens
 
-    def _skip(self):
+    def _skip(self) -> List[Token]:
         tokens = []
+
+        if self.current_token.type == TokenType.COMMENT:
+            self._register_token()
+            tokens.append(self.current_token)
+            self.current_token = self.lexer.get_next_token()
+
         if self.skip_invisible_characters and self.skip_space:
             while (
                 self.current_token.value in self.lexer.invisible_characters
@@ -88,19 +94,30 @@ class Parser:
                 tokens.append(self.current_token)
                 self.current_token = self.lexer.get_next_token()
 
+        if self.current_token.type == TokenType.COMMENT:
+            self._register_token()
+            tokens.append(self.current_token)
+            self.current_token = self.lexer.get_next_token()
         return tokens
 
     def skip_crlf(self):
         """
         set `skip_invisible_characters` to False \n
-        skip `\\n` or `\\r\\n`
+        跳过连续的换行 `\\n` or `\\r\\n`
         """
         while self.current_token.type in (TokenType.LF, TokenType.CR):
             self.eat(self.current_token.type)
 
-    def skip_cr(self):
-        while self.current_token.type == TokenType.CR:
+    def eat_lf(self):
+        """
+        跳过一个换行
+        """
+        if self.current_token.type == TokenType.CR:
             self.eat(self.current_token.type)
+        if self.current_token.type == TokenType.EOF:
+            return
+        else:
+            self.eat(TokenType.LF)
 
     def _register_token(self):
         if self.current_token is None:

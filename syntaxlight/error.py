@@ -76,7 +76,7 @@ class ParserError(Error):
     ):
         if error_code is not None:
             if error_code == ErrorCode.UNEXPECTED_TOKEN:
-                message = error_code.value + f" {token.value}: " + message
+                message = error_code.value + f" {token.type.name}: " + message
             else:
                 message = error_code.value + ": " + message
         super().__init__(error_code, token, message, context, file_path)

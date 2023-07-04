@@ -106,7 +106,7 @@ class Token:
         ID 指创建的索引值
         column 指该 token 最后一个字符的位置
         """
-        return "Token[id:{ID}]({type}, {value}, position={lineno}:{column}) {AST_type}".formatter(
+        return "Token[id:{ID}]({type}, {value}, position={lineno}:{column}) {AST_type}".format(
             ID=self._id,
             type=self.type,
             value=repr(self.value),

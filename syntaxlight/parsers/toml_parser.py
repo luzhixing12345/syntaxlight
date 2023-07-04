@@ -10,7 +10,6 @@ from ..ast import (
     String,
     Number,
     Keyword,
-    Comment,
     Expression,
     UnaryOp,
 )
@@ -72,7 +71,9 @@ class Table(AST):
         return super().visit(node_visitor, brace)
 
     def formatter(self, depth: int = 0):
-        return f"{self.header.formatter(depth+1)}{self.entries.formatter(depth+1)}"
+        header_formatter = self.header.formatter(depth + 1)
+        entries_formatter = self.entries.formatter(depth + 1)
+        return f"{header_formatter}{entries_formatter}"
 
 
 class TableHeader(AST):
@@ -165,10 +166,7 @@ class TomlParser(Parser):
     def parse(self):
         self.node = self.toml()
         if self.current_token.type != TokenType.EOF:
-            self.error(
-                error_code=ErrorCode.UNEXPECTED_TOKEN,
-                token=self.current_token,
-            )
+            self.error(ErrorCode.UNEXPECTED_TOKEN)
         # print(self.node)
         return self.node
 
@@ -182,34 +180,24 @@ class TomlParser(Parser):
             TokenType.STR,  # "key" - value
             TokenType.ID,  # key - value
             TokenType.LSQUAR_PAREN,  # [] | [[]]
-            TokenType.HASH,  # comment
         ]:
             expressions.append(self.expression())
-            self.skip_cr()
-            if self.current_token.type != TokenType.EOF:
-                self.eat(TokenType.LF)
-            self.skip_crlf()
 
         return Toml(expressions)
 
     def expression(self):
         """
-        <expression> ::= (<pair> | <table>)? (<comment>)?
+        <expression> ::= (<pair> | <table>)?
         """
         node = None
-        comment = None
         if self.current_token.type in (TokenType.ID, TokenType.STR):
             node = self.pair()
+            self.eat_lf()
+            self.skip_crlf()
         elif self.current_token.type == TokenType.LSQUAR_PAREN:
             node = self.table()
 
-        if self.current_token.type == TokenType.HASH:
-            comment = Comment(self.current_token.value)
-            comment.register_token(self.eat(TokenType.HASH))
-            comment.update(comment=self.current_token.value)
-            comment.register_token(self.eat(TokenType.COMMENT))
-
-        return Expression(node, comment)
+        return Expression(node)
 
     def pair(self) -> Pair:
         """
@@ -226,7 +214,7 @@ class TomlParser(Parser):
         """
         <path> ::= (<ID> | <str>) ('.' (<ID> | <str>)) *
         """
-        if self.current_token.type not in self.path_first_set:
+        if self.current_token.type not in self.path_first_set: # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be ID or str")
 
         node = Path()
@@ -277,21 +265,23 @@ class TomlParser(Parser):
 
             node.header = table_header
 
+        self.eat_lf()
+        self.skip_crlf()
         entries = self.table_entry()
         node.update(entries=entries)
         return node
 
     def table_entry(self):
         """
-        <table_entry> ::= (<pair>)? ( <CRLF> <pair> )*
+        <table_entry> ::= ( <pair> )*
         """
         pairs = []
-
         accepted_token_types = [TokenType.ID, TokenType.STR]
         while self.current_token.type in accepted_token_types:
             pairs.append(self.pair())
+            self.eat_lf()
             self.skip_crlf()
-        
+
         return TableEntry(pairs)
 
     def value(self):
@@ -337,7 +327,7 @@ class TomlParser(Parser):
         elif self.current_token.type == TokenType.LCURLY_BRACE:
             node = self.inline_table()
 
-        else:
+        else: # pragma: no cover
             # should never reach here
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
