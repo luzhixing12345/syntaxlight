@@ -2,7 +2,18 @@ from syntaxlight.ast import NodeVisitor
 from .parser import Parser
 from ..lexers import TokenType, TomlTokenType, Token
 from ..error import ErrorCode
-from ..ast import AST, NodeVisitor, Object, Array, String, Number, Keyword, Comment, Expression
+from ..ast import (
+    AST,
+    NodeVisitor,
+    Object,
+    Array,
+    String,
+    Number,
+    Keyword,
+    Comment,
+    Expression,
+    UnaryOp,
+)
 
 from typing import List
 
@@ -18,10 +29,10 @@ class Toml(AST):
             node_visitor.link(self, expression)
         return super().visit(node_visitor, brace)
 
-    def format(self, depth: int = 0):
-        result = ''
+    def formatter(self, depth: int = 0):
+        result = ""
         for expression in self.expressions:
-            result += expression.format(depth+1)
+            result += expression.formatter(depth + 1)
         return result
 
 
@@ -31,16 +42,12 @@ class Pair(AST):
         self.path: Path = path
         self.value: AST = value
 
-    def update(self, **kwargs):
-        self.value: AST = kwargs["value"]
-        self.graph_node_info = f"{self.path}:{self.value.class_name}"
-
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.value)
         return super().visit(node_visitor)
 
-    def format(self, depth: int = 0):
-        return f"{self.path.format(depth+1)} = {self.value.format(depth+1)}"
+    def formatter(self, depth: int = 0):
+        return f"{self.path.formatter(depth+1)} = {self.value.formatter(depth+1)}"
 
 
 class Path(AST):
@@ -48,11 +55,7 @@ class Path(AST):
         super().__init__()
         self.path = path
 
-    def update(self, **kwargs):
-        self.path = kwargs["path"]
-        self.graph_node_info = f"path = {self.path}"
-
-    def format(self, depth: int = 0):
+    def formatter(self, depth: int = 0):
         return self.path
 
 
@@ -68,12 +71,8 @@ class Table(AST):
         node_visitor.link(self, self.entries)
         return super().visit(node_visitor, brace)
 
-    def update(self, **kwargs):
-        self.entries = kwargs["entries"]
-        self.graph_node_info = f"{self.header.class_name} : entries"
-
-    def format(self, depth: int = 0):
-        return f'{self.header.format(depth+1)}{self.entries.format(depth+1)}'
+    def formatter(self, depth: int = 0):
+        return f"{self.header.formatter(depth+1)}{self.entries.formatter(depth+1)}"
 
 
 class TableHeader(AST):
@@ -87,12 +86,8 @@ class TableHeader(AST):
         node_visitor.link(self, self.path)
         return super().visit(node_visitor, brace=brace)
 
-    def update(self, **kwargs):
-        self.path = kwargs["path"]
-        self.graph_node_info = "path"
-
-    def format(self, depth):
-        return f'[{self.path.format(depth+1)}]'
+    def formatter(self, depth: int = 0):
+        return f"[{self.path.formatter(depth+1)}]"
 
 
 class TableArrayHeader(AST):
@@ -101,8 +96,7 @@ class TableArrayHeader(AST):
         self.path = path
 
     def visit(self, node_visitor: NodeVisitor = None, brace=False):
-        
-        square_paren_tokens:List[Token] = []
+        square_paren_tokens: List[Token] = []
         for token in self._tokens:
             if token.type in (TokenType.LSQUAR_PAREN, TokenType.RSQUAR_PAREN):
                 square_paren_tokens.append(token)
@@ -115,41 +109,36 @@ class TableArrayHeader(AST):
         node_visitor.link(self, self.path)
         return super().visit(node_visitor, brace)
 
-    def update(self, **kwargs):
-        self.path = kwargs["path"]
-        self.graph_node_info = "path"
-
-    def format(self, depth):
-        return f'[[{self.path.format(depth+1)}]]'
+    def formatter(self, depth):
+        return f"[[{self.path.formatter(depth+1)}]]"
 
 
 class TableEntry(AST):
     def __init__(self, pairs: List[Pair]) -> None:
         super().__init__()
         self.pairs = pairs
-        self.graph_node_info = f"paris = {len(self.pairs)}"
 
     def visit(self, node_visitor: NodeVisitor = None, brace=False):
+        # print(self.pairs,'!')
         for pair in self.pairs:
             node_visitor.link(self, pair)
         return super().visit(node_visitor, brace)
-    
-    def format(self, depth):
 
-        result = ''
+    def formatter(self, depth):
+        result = ""
         for pair in self.pairs:
-            result += pair.format(depth+1) + '\n'
+            result += pair.formatter(depth + 1) + "\n"
 
         return result[:-1]
 
-class Date(AST):
 
+class Date(AST):
     def __init__(self, value) -> None:
         super().__init__()
         self.value = value
         self.graph_node_info = self.value
 
-    def format(self, depth: int = 0):
+    def formatter(self, depth: int = 0):
         return self.value
 
 
@@ -162,6 +151,8 @@ class TomlParser(Parser):
         super().__init__(lexer, skip_invisible_characters, skip_space)
         self.value_first_set = [
             TokenType.STR,
+            TokenType.MINUS,
+            TokenType.PLUS,
             TokenType.NUMBER,
             TomlTokenType.DATE,
             TomlTokenType.TRUE,
@@ -198,7 +189,7 @@ class TomlParser(Parser):
             if self.current_token.type != TokenType.EOF:
                 self.eat(TokenType.LF)
             self.skip_crlf()
-        
+
         return Toml(expressions)
 
     def expression(self):
@@ -211,17 +202,16 @@ class TomlParser(Parser):
             node = self.pair()
         elif self.current_token.type == TokenType.LSQUAR_PAREN:
             node = self.table()
-        
+
         if self.current_token.type == TokenType.HASH:
             comment = Comment(self.current_token.value)
             comment.register_token(self.eat(TokenType.HASH))
-            comment.update(comment = self.current_token.value)
+            comment.update(comment=self.current_token.value)
             comment.register_token(self.eat(TokenType.COMMENT))
-        
-        return Expression(node, comment)
-        
 
-    def pair(self):
+        return Expression(node, comment)
+
+    def pair(self) -> Pair:
         """
         <pair> ::= <path> '=' <value>
         """
@@ -237,7 +227,7 @@ class TomlParser(Parser):
         <path> ::= (<ID> | <str>) ('.' (<ID> | <str>)) *
         """
         if self.current_token.type not in self.path_first_set:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token, "should be ID or str")
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be ID or str")
 
         node = Path()
         path = self.current_token.value
@@ -246,7 +236,7 @@ class TomlParser(Parser):
             path += TokenType.DOT.value
             node.register_token(self.eat(TokenType.DOT))
             if self.current_token.type not in self.path_first_set:
-                self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token, "should be ID or str")
+                self.error(ErrorCode.UNEXPECTED_TOKEN, "should be ID or str")
             path += self.current_token.value
             node.register_token(self.eat(self.current_token.type))
 
@@ -301,7 +291,7 @@ class TomlParser(Parser):
         while self.current_token.type in accepted_token_types:
             pairs.append(self.pair())
             self.skip_crlf()
-
+        
         return TableEntry(pairs)
 
     def value(self):
@@ -312,7 +302,6 @@ class TomlParser(Parser):
         if self.current_token.type not in self.value_first_set:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
-                self.current_token,
                 f"should be {self.type_hint(self.value_first_set)}",
             )
 
@@ -323,7 +312,17 @@ class TomlParser(Parser):
         elif self.current_token.type == TokenType.NUMBER:
             node = Number(self.current_token.value)
             node.register_token(self.eat(TokenType.NUMBER))
-        
+
+        elif self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+            node = UnaryOp(op=self.current_token.value)
+            node.register_token(self.eat(self.current_token.type))
+            if self.current_token.type == TokenType.NUMBER:
+                number = Number(self.current_token.value)
+                number.register_token(self.eat(TokenType.NUMBER))
+            else:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, f"should match number")
+            node.update(value=number)
+
         elif self.current_token.type == TomlTokenType.DATE:
             node = Date(self.current_token.value)
             node.register_token(self.eat(TomlTokenType.DATE))
@@ -342,7 +341,6 @@ class TomlParser(Parser):
             # should never reach here
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
-                self.current_token,
                 f"should be {self.type_hint(self.value_first_set)}",
             )
         return node
@@ -363,7 +361,7 @@ class TomlParser(Parser):
                 node.register_token(self.eat(TokenType.COMMA))
                 self.skip_crlf()
             elif self.current_token.type in self.value_first_set:
-                self.error(ErrorCode.MISS_EXPECTED_TOKEN, self.current_token, TokenType.COMMA.value)
+                self.error(ErrorCode.MISS_EXPECTED_TOKEN, TokenType.COMMA.value)
 
         node.update(elements=elements)
         node.register_token(self.eat(TokenType.RSQUAR_PAREN))
@@ -383,7 +381,7 @@ class TomlParser(Parser):
             if self.current_token.type == TokenType.COMMA:
                 node.register_token(self.eat(TokenType.COMMA))
             elif self.current_token.type in self.path_first_set:
-                self.error(ErrorCode.MISS_EXPECTED_TOKEN, self.current_token, TokenType.COMMA.value)
+                self.error(ErrorCode.MISS_EXPECTED_TOKEN, TokenType.COMMA.value)
 
         node.update(pairs=pairs)
         node.register_token(self.eat(TokenType.RCURLY_BRACE))

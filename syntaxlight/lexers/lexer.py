@@ -66,6 +66,17 @@ class TokenType(Enum):
     DB_COLON = "::"
 
 
+class TTYColor(Enum):
+    BLACK = 30
+    RED = 31
+    GREEN = 32
+    YELLOW = 33
+    BLUE = 34
+    MAGENTA = 35
+    CYAN = 36
+    WHITE = 37
+
+
 class Token:
     def __init__(self, type: Enum, value, line=None, column=None):
         self.type: Enum = type
@@ -92,9 +103,10 @@ class Token:
 
     def __str__(self):
         """
-        String representation of the class instance.
+        ID 指创建的索引值
+        column 指该 token 最后一个字符的位置
         """
-        return "Token[id:{ID}]({type}, {value}, position={lineno}:{column}) {AST_type}".format(
+        return "Token[id:{ID}]({type}, {value}, position={lineno}:{column}) {AST_type}".formatter(
             ID=self._id,
             type=self.type,
             value=repr(self.value),
@@ -141,11 +153,19 @@ class Lexer:
             TokenType.VERTICAL_TAB.value: TokenType.VERTICAL_TAB,
             TokenType.CR.value: TokenType.CR,
             TokenType.FORM_FEED.value: TokenType.FORM_FEED,
-            TokenType.BACKSPACE.value: TokenType.BACKSPACE
+            TokenType.BACKSPACE.value: TokenType.BACKSPACE,
         }
 
+    def colorful_info(self, text: str, color: TTYColor = TTYColor.RED) -> str:
+        """
+        tty 彩色输出, 默认红色
+        """
+        ESC = "\033"
+        UNDERLINE = 4
+        return f"{ESC}[{color.value}m{ESC}[{UNDERLINE}m{text}{ESC}[0m"
+
     def error(self, error_code: ErrorCode = None, token: Token = None, message: str = ""):
-        context = self.get_context(token)
+        context = self.get_error_token_context(token)
         raise LexerError(
             error_code=error_code,
             token=token,
@@ -154,25 +174,29 @@ class Lexer:
             message=message,
         )
 
-    def get_context(self, token: Token):
+    def get_error_token_context(self, token: Token) -> str:
         # 出错时获取上下文
+
         lines = self.text.split("\n")
         lines.insert(0, [])
+
+        if token.type == TokenType.EOF:
+            return ""
         context_start_line = max(token.line - self.context_bias, 1)
         context_end_line = min(token.line + self.context_bias, len(lines))
         context = ""
 
         # token 为多行文本的处理
-        token_line = token.line # 当前处于哪一行, 从后往前找
+        token_line = token.line  # 当前处于哪一行, 从后往前找
         token_length = len(token.value)
-        token_lines = [] # token 的行列数
+        token_lines = []  # token 的行列数
         column = token.column + 1
         while column < token_length:
             token_length -= column
-            token_lines.insert(0,token_line)
+            token_lines.insert(0, token_line)
             token_line -= 1
             column = len(lines[token_line]) + 1
-        
+
         if token_length != 0:
             token_lines.insert(0, token_line)
 
@@ -181,42 +205,47 @@ class Lexer:
             token_lines.append(token.line)
             token_length = len(token.value)
 
-
         for i in range(context_start_line, context_end_line):
             # print(i, token.lineno)
             if i not in token_lines:
                 context += lines[i] + "\n"
             else:
                 if len(token_lines) == 1:
-
                     # token 前面的部分
                     pre_context = lines[i][: token.column - token_length]
                     # token 后面的部分
                     end_context = lines[i][token.column :]
-                    context += pre_context + f"\033[31m{token.value}\033[0m" + end_context + "\n"
-                    context += " " * len(pre_context) + "^" * token_length + "\n"
+                    context += pre_context + self.colorful_info(token.value) + end_context + "\n"
                 else:
                     if i == token_lines[0]:
-                        pre_context = lines[i][:column-token_length]
-                        context += pre_context + f"\033[31m{lines[i][column-token_length:]}\033[0m\n"
+                        pre_context = lines[i][: column - token_length]
+                        context += (
+                            pre_context
+                            + self.colorful_info(lines[i][column - token_length :])
+                            + "\n"
+                        )
                     elif i == token_lines[-1]:
-                        end_context = lines[i][token.column+1:]
-                        context += f"\033[31m{lines[i][:token.column+1]}\033[0m{end_context}\n"
+                        end_context = lines[i][token.column + 1 :]
+                        context += (
+                            self.colorful_info(lines[i][: token.column + 1]) + f"{end_context}\n"
+                        )
                     else:
-                        context += f"\033[31m{lines[i]}\033[0m\n"        
+                        context += self.colorful_info(lines[i]) + "\n"
 
-        context = context[:-1]  # 去掉结尾换行
         return context
 
     def advance(self):
-        """Advance the `pos` pointer and set the `current_char` variable."""
+        """
+        获取下一个字符, 遇到换行则更新 line
+        """
         if self.current_char == "\n":
             self.line += 1
             self.column = 0
 
         self.pos += 1
         if self.pos > len(self.text) - 1:
-            self.current_char = None  # Indicates end of input
+            self.current_char = None  # 结束
+            self.column += 1
         else:
             self.current_char = self.text[self.pos]
             self.column += 1
@@ -248,79 +277,38 @@ class Lexer:
         else:
             return self.text[peek_pos]
 
-    def get_number(self):
+    def get_number(self) -> Token:
+        """
+         <digit> ::= [0-9]
+        <digits> ::= <digit>*
+        <number> ::= <digits>(.<digits>)?(E|e[+-]?<digits>)?
+        """
+
         result = ""
-        # start with +/-
-        if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
-            result += self.current_char
-            self.advance()
-        # digit
+        # <digits>
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
 
-        use_scientific_notation = False  # 科学计数法
-        if self.current_char == "e" or self.current_char == "E":
+        # (.<digits>)?
+        if self.current_char == ".":
             result += self.current_char
             self.advance()
-            use_scientific_notation = True
-            # +/- follow e/E
-            if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+            while self.current_char is not None and self.current_char.isdigit():
                 result += self.current_char
                 self.advance()
 
-        # digit
-        while self.current_char is not None and self.current_char.isdigit():
-            result += self.current_char
-            self.advance()
-
-        if self.current_char == TokenType.DOT.value:
-            result += self.current_char
-            self.advance()
-            if use_scientific_notation:
-                self.error(
-                    ErrorCode.NUMBER_INVALID,
-                    Token(TokenType.NUMBER, result, self.line, self.column),
-                )
-
-        while self.current_char is not None and self.current_char.isdigit():
-            result += self.current_char
-            self.advance()
-
+        # (E|e[+-]?<digits>)?
         if self.current_char == "e" or self.current_char == "E":
             result += self.current_char
             self.advance()
-            if use_scientific_notation:
-                self.error(
-                    ErrorCode.NUMBER_INVALID,
-                    Token(TokenType.NUMBER, result, self.line, self.column),
-                )
-            # +/- follow e/E
             if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
                 result += self.current_char
                 self.advance()
-
-        while self.current_char is not None and self.current_char.isdigit():
-            result += self.current_char
-            self.advance()
-
-        if (
-            self.current_char == TokenType.DOT.value
-            or self.current_char == "e"
-            or self.current_char == "E"
-        ):
-            result += self.current_char
-            self.advance()
-            self.error(
-                ErrorCode.NUMBER_INVALID,
-                Token(TokenType.NUMBER, result, self.line, self.column),
-            )
-
-        if result[-1] == "e" or result[-1] == "E":
-            self.error(
-                ErrorCode.EXPONENT_NO_DIGITS,
-                Token(TokenType.NUMBER, result, self.line, self.column),
-            )
+            while self.current_char is not None and self.current_char.isdigit():
+                result += self.current_char
+                self.advance()
+        # column - 1, 因为判断结束需要跳出 number
 
         return Token(TokenType.NUMBER, result, self.line, self.column - 1)
 
@@ -397,12 +385,20 @@ class Lexer:
                     count = 0
                     result += self.current_char
                 self.advance()
-            
+
         token = Token(TokenType.STR, result, self.line, self.column)
         return token
 
     def get_id(self):
-        """Handle identifiers and reserved keywords"""
+        """
+        获取标识符, 留给后续的语法分析处理
+
+        <letter> ::= [A-Za-z]
+         <digit> ::= [0-9]
+            <id> ::= (<letter>|_)(<letter>|_|<digit>)*
+
+        此函数应次于 get_number 调用
+        """
         result = ""
         while self.current_char is not None and (
             self.current_char.isalnum() or self.current_char == "_"
@@ -418,7 +414,6 @@ class Lexer:
             # reserved keyword
             token = Token(type=token_type, value=result, line=self.line, column=self.column - 1)
         return token
-
 
     def get_next_token(self) -> Token:
         """

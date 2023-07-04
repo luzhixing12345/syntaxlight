@@ -8,7 +8,7 @@
 <Array> ::= '[' <Value>? ( ',' <Value> )* ']'
 
 <Value> ::= <:String:>
-          | <:Number:>
+          | '-'? <:Number:>
           | <Object>
           | <Array>
           | 'true'

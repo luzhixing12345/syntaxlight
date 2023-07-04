@@ -21,7 +21,7 @@ class JsonLexer(Lexer):
 
     def get_next_token(self):
         while self.current_char is not None:
-            # json only support '
+            # json 仅支持 ""
             if self.current_char == TokenType.QUOTO.value:
                 return self.get_string()
 
@@ -31,15 +31,15 @@ class JsonLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit() or self.current_char == TokenType.MINUS.value:
+            if self.current_char.isdigit():
                 return self.get_number()
 
-            if self.current_char.isalpha():
+            if self.current_char.isalnum() or self.current_char == '_':
                 return self.get_id()
-
+            
             try:
                 token_type = TokenType(self.current_char)
-            except ValueError:
+            except ValueError: # pragma: no cover
                 token = Token(None, self.current_char, self.line, self.column)
                 self.error(ErrorCode.UNKNOWN_CHARACTER, token)
             else:
@@ -51,7 +51,6 @@ class JsonLexer(Lexer):
                 )
                 self.advance()
                 return token
-
-        # EOF (end-of-file) token indicates that there is no more
-        # input left for lexical analysis
-        return Token(type=TokenType.EOF, value=None)
+        
+        # End of File
+        return Token(type=TokenType.EOF, value='EOF', line=self.line, column=self.column)

@@ -16,16 +16,25 @@ class Parser:
         self.current_token: Token = self.lexer.get_next_token()
         self._skip()
 
-    def error(self, error_code: ErrorCode, token: Token, message: str = ""):
+    def error(
+        self,
+        error_code: ErrorCode,
+        message: str = "",
+        token: Token = None,
+    ):
+        if token is None:
+            token = self.current_token
+
         if message == "":
             if token.value in self.lexer.invisible_characters:
                 message = token.type.name
             else:
                 message = token.value
+
         raise ParserError(
             error_code=error_code,
             token=token,
-            context=self.lexer.get_context(token),
+            context=self.lexer.get_error_token_context(token),
             file_path=self.lexer.file_path,
             message=message,
         )
@@ -47,7 +56,7 @@ class Parser:
             if current_value in self.lexer.invisible_characters:
                 current_value = self.current_token.type.name
             if self.current_token.type == TokenType.EOF:
-                current_value = 'EOF'
+                current_value = "EOF"
             if expected_value in self.lexer.invisible_characters:
                 expected_value = token_type.name
             self.error(
@@ -106,6 +115,10 @@ class Parser:
 
         node_visitor = NodeVisitor()
         node.visit(node_visitor)
+
+        node_visitor.save()
+        node.formatter()
+
         assert node_visitor.depth == -1
         html = ""
 
@@ -114,11 +127,11 @@ class Parser:
         return html
 
     def type_hint(self, array: List[Enum]):
-        result = ''
+        result = ""
         for i in array:
-            result += i.value + ' | '
+            result += i.value + " | "
         result = result[:-3]
         return result
 
     def parse(self):
-        raise NotImplementedError(self.__class__.__name__ + ' must override the parse function')
+        raise NotImplementedError(self.__class__.__name__ + " must override the parse function")

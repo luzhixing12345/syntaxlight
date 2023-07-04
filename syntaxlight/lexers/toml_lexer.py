@@ -65,7 +65,7 @@ class TomlLexer(Lexer):
                 # match comment in next token
                 self.match_comment = True
 
-            if self.current_char.isdigit() or self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+            if self.current_char.isdigit():
                 token = self.get_number()
                 # https://datatracker.ietf.org/doc/html/rfc3339
                 # a tricky implementation
@@ -87,7 +87,7 @@ class TomlLexer(Lexer):
 
             try:
                 token_type = TokenType(self.current_char)
-            except ValueError:
+            except ValueError: # pragma: no cover
                 token = Token(None, self.current_char, self.line, self.column)
                 self.error(ErrorCode.UNKNOWN_CHARACTER, token)
             else:
@@ -102,4 +102,4 @@ class TomlLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=TokenType.EOF, value='', line=self.line, column=self.column+1)
+        return Token(type=TokenType.EOF, value='EOF', line=self.line, column=self.column)

@@ -1,11 +1,11 @@
 import os
-from .lexers import Lexer, CLexer, JsonLexer, LuaLexer, EBNFLexer, TomlLexer
+from .lexers import *
 from .error import Error
-from .parsers import Parser, JsonParser, TomlParser, CParser
-from .ast import display_ast
+from .parsers import *
+import sys
 
 
-def parse(text: str, language: str = "guess", file_path=None) -> str:
+def parse(text: str, language: str = "guess", file_path=None, show_error_context = True) -> str:
     assert type(text) == str
     assert type(language) == str
 
@@ -22,13 +22,14 @@ def parse(text: str, language: str = "guess", file_path=None) -> str:
         parser.parse()
         # display_ast(parser.node)
     except Error as e:
-        print(e.message)
-        print(e.context)
+        sys.stderr.write(e.message)
+        if show_error_context:
+            sys.stderr.write(e.context)
     else:
         return parser.to_html()
 
 
-def parse_file(file_path: str, language: str = "guess") -> str:
+def parse_file(file_path: str, language: str = "guess", show_error_context = True) -> str:
     if not os.path.exists(file_path):
         print(f"{file_path} file not exsist")
 
@@ -41,13 +42,14 @@ def parse_file(file_path: str, language: str = "guess") -> str:
             print(f"unknown syntax {file_path}")
             exit(1)
 
-    return parse(text, language, file_path=file_path)
+    return parse(text, language, file_path=file_path, show_error_context = show_error_context)
 
 
 def guess_language(file_path: str) -> str:
     file_name = file_path.split(os.sep)[-1]
 
     languages = {
+        "json": ['json'],
         "c": ["c", "h"],
         "lua": ["lua"],
         "bnf": ["bnf"],

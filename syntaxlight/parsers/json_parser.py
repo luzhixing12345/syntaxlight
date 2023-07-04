@@ -1,50 +1,47 @@
-
 from .parser import Parser
 from ..lexers import TokenType, JsonTokenType
 from ..error import ErrorCode
-from ..ast import Object, Array, Pair, String, Number, Keyword
+from ..ast import Object, Array, Pair, String, Number, Keyword, UnaryOp
+
 
 class JsonParser(Parser):
-
     def __init__(self, lexer):
         super().__init__(lexer)
 
         self.value_first_set = [
             TokenType.STRING,
+            TokenType.MINUS,
             TokenType.NUMBER,
             TokenType.LSQUAR_PAREN,
             TokenType.LCURLY_BRACE,
             JsonTokenType.TRUE,
             JsonTokenType.FALSE,
-            JsonTokenType.NULL
+            JsonTokenType.NULL,
         ]
 
     def parse(self):
         self.node = self.json()
         if self.current_token.type != TokenType.EOF:
-            self.error(
-                error_code=ErrorCode.UNEXPECTED_TOKEN,
-                token=self.current_token,
-            )
+            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
         # print(self.node)
         return self.node
 
     def json(self):
-        '''
+        """
         <Json> ::= <Object>
                  | <Array>
-        '''
+        """
         if self.current_token.type == TokenType.LCURLY_BRACE:
             return self.object()
         elif self.current_token.type == TokenType.LSQUAR_PAREN:
             return self.array()
         else:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be object or array")
 
     def object(self):
-        '''
+        """
         <Object> ::= '{' <Pair>? ( ',' <Pair> )* '}'
-        '''
+        """
 
         node = Object()
         node.register_token(self.eat(TokenType.LCURLY_BRACE))
@@ -60,23 +57,23 @@ class JsonParser(Parser):
                 #                                    |
                 # }                             trailing comma
                 if self.current_token.type == TokenType.RCURLY_BRACE:
-                    self.error(ErrorCode.TRAILING_COMMA, comma, TokenType.COMMA.value)
+                    self.error(ErrorCode.TRAILING_COMMA, token=comma, message=TokenType.COMMA.value)
                 pairs.append(self.pair())
-            
+
             # { pair1   pair2}
             #         |
             #   miss ',' here
             if self.current_token.type != TokenType.RCURLY_BRACE:
-                self.error(ErrorCode.MISS_EXPECTED_TOKEN, self.current_token, TokenType.COMMA.value)
-            
+                self.error(ErrorCode.MISS_EXPECTED_TOKEN, message=TokenType.COMMA.value)
+
         node.update(pairs=pairs)
         node.register_token(self.eat(TokenType.RCURLY_BRACE))
         return node
 
     def array(self):
-        '''
+        """
         <Array> ::= '[' <Value>? ( ',' <Value> )* ']'
-        '''
+        """
         node = Array()
         node.register_token(self.eat(TokenType.LSQUAR_PAREN))
 
@@ -87,20 +84,20 @@ class JsonParser(Parser):
                 comma = self.current_token
                 node.register_token(self.eat(TokenType.COMMA))
                 if self.current_token.type == TokenType.RSQUAR_PAREN:
-                    self.error(ErrorCode.TRAILING_COMMA, comma, TokenType.COMMA.value)
+                    self.error(ErrorCode.TRAILING_COMMA, token= comma,message= TokenType.COMMA.value)
                 elements.append(self.value())
 
             if self.current_token.type != TokenType.RSQUAR_PAREN:
-                self.error(ErrorCode.MISS_EXPECTED_TOKEN, self.current_token, TokenType.COMMA.value)
-    
+                self.error(ErrorCode.MISS_EXPECTED_TOKEN,message= TokenType.COMMA.value)
+
         node.update(elements=elements)
         node.register_token(self.eat(TokenType.RSQUAR_PAREN))
         return node
 
     def pair(self):
-        '''
+        """
         <Pair> ::= String ':' <Value>
-        '''
+        """
         key = String(self.current_token.value)
         node = Pair(key, None)
 
@@ -112,7 +109,7 @@ class JsonParser(Parser):
         return node
 
     def value(self):
-        '''
+        """
         <Value> ::= String
                   | Number
                   | <Object>
@@ -120,11 +117,11 @@ class JsonParser(Parser):
                   | true
                   | false
                   | null
-        '''
+        """
         # print(self.current_token.type)
         if self.current_token.type not in self.value_first_set:
             message = f'"{self.current_token.value}" does not support for json value'
-            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token, message)
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message)
 
         if self.current_token.type in JsonTokenType:
             node = Keyword(self.current_token.value)
@@ -139,6 +136,17 @@ class JsonParser(Parser):
         if self.current_token.type == TokenType.NUMBER:
             node = Number(self.current_token.value)
             node.register_token(self.eat(TokenType.NUMBER))
+            return node
+
+        if self.current_token.type == TokenType.MINUS:
+            node = UnaryOp(op=self.current_token.value)
+            node.register_token(self.eat(TokenType.MINUS))
+            if self.current_token.type == TokenType.NUMBER:
+                number = Number(self.current_token.value)
+                number.register_token(self.eat(TokenType.NUMBER))
+            else:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, "- should match number")
+            node.update(value=number)
             return node
 
         if self.current_token.type == TokenType.LCURLY_BRACE:
