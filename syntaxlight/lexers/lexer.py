@@ -85,7 +85,6 @@ class Token:
         self.column: int = column
         self.ast: None
         self.ast_types = ["Token"]  # parser 语法分析阶段赋给 token
-        self.brace_depth = -1  # ([{<>}]) 的深度
         global GLOBAL_TOKEN_ID
         self._id = GLOBAL_TOKEN_ID
         GLOBAL_TOKEN_ID += 1
@@ -96,8 +95,6 @@ class Token:
         for ast_type in self.ast_types:
             css_class += f"{ast_type} "
 
-        if self.brace_depth != -1:
-            css_class += f"depth-{self.brace_depth%3} "
         css_class += self.type.name
         return css_class
 

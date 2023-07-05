@@ -1,7 +1,7 @@
 from ..lexers.lexer import Lexer, Token, TokenType
 from ..error import ParserError, ErrorCode
 from enum import Enum
-from ..ast import AST, NodeVisitor
+from ..ast import AST
 from typing import List
 
 
@@ -12,7 +12,19 @@ class Parser:
         self.skip_invisible_characters = skip_invisible_characters
         self.skip_space = skip_space
         self.token_list: List[Token] = []
-        self.node = None
+        self.brace_list: List[TokenType] = [
+            TokenType.LPAREN,
+            TokenType.LPAREN,
+            TokenType.RPAREN,
+            TokenType.LSQUAR_PAREN,
+            TokenType.RSQUAR_PAREN,
+            TokenType.LCURLY_BRACE,
+            TokenType.RCURLY_BRACE,
+            TokenType.LANGLE_BRACE,
+            TokenType.RANGLE_BRACE,
+        ]
+        self.brace_max_depth = 3  # 深度循环轮次
+        self.node: AST = None
         self.current_token: Token = self.lexer.get_next_token()
         self._skip()
 
@@ -120,26 +132,42 @@ class Parser:
             self.eat(TokenType.LF)
 
     def _register_token(self):
-        if self.current_token is None:
-            return
+        """
+        将一个 token 注册到 token_list 当中
+
+        每一个 token 都需要间接的执行此过程, 以便最终恢复高亮文本信息
+        """
         token = self.current_token
         # print(token)
         self.token_list.append(token)
 
-    def to_html(self, node: AST = None):
-        if node is None:
-            node = self.node
-
-        node_visitor = NodeVisitor()
-        node.visit(node_visitor)
-
-        node_visitor.save()
-        node.formatter()
-
-        assert node_visitor.depth == -1
+    def to_html(self):
+        """
+        将一个解析完成的 AST node 输出其 token 流的 HTML 格式
+        """
         html = ""
-
+        # 对于 ([{<>}]) 计算括号深度
+        brace_depth = 0
+        brace_stack: List[TokenType] = []
         for token in self.token_list:
+            if token.type in self.brace_list:
+                if len(brace_stack) == 0:
+                    brace_stack.append(token.type)
+                    token.ast_types.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                    brace_depth += 1
+                else:
+                    # 括号匹配
+                    if self.brace_list.index(brace_stack[-1]) + 1 == self.brace_list.index(
+                        token.type
+                    ):
+                        brace_stack.pop()
+                        brace_depth -= 1
+                        token.ast_types.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                    else:
+                        brace_stack.append(token.type)
+                        token.ast_types.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                        brace_depth += 1
+
             html += f'<span class="{token.get_css_class()}">{token.value}</span>'
         return html
 

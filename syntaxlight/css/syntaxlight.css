@@ -22,15 +22,15 @@ pre[class*="language-"] {
     color: #DBD700;
 }
 
-.Token.depth-0 {
+.Token.brace-depth-0 {
     color: #DBD700;
 }
 
-.Token.depth-1 {
+.Token.brace-depth-1 {
     color: #DA70D6;
 }
 
-.Token.depth-2 {
+.Token.brace-depth-2 {
     color: #1A9DFF;
 }
 

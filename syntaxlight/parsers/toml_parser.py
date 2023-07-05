@@ -23,10 +23,10 @@ class Toml(AST):
         self.expressions: List[AST] = expressions
         self.graph_node_info = f"expression = {len(self.expressions)}"
 
-    def visit(self, node_visitor: NodeVisitor = None, brace=False):
+    def visit(self, node_visitor: NodeVisitor = None):
         for expression in self.expressions:
             node_visitor.link(self, expression)
-        return super().visit(node_visitor, brace)
+        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         result = ""
@@ -65,10 +65,10 @@ class Table(AST):
         self.header: AST = header
         self.entries = entries
 
-    def visit(self, node_visitor: NodeVisitor = None, brace=False):
+    def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.header)
         node_visitor.link(self, self.entries)
-        return super().visit(node_visitor, brace)
+        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         header_formatter = self.header.formatter(depth + 1)
@@ -81,11 +81,9 @@ class TableHeader(AST):
         super().__init__()
         self.path = path
 
-    def visit(self, node_visitor: NodeVisitor = None, brace=False):
-        for token in self._tokens:
-            token.brace_depth = 0
+    def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.path)
-        return super().visit(node_visitor, brace=brace)
+        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         return f"[{self.path.formatter(depth+1)}]"
@@ -96,19 +94,9 @@ class TableArrayHeader(AST):
         super().__init__()
         self.path = path
 
-    def visit(self, node_visitor: NodeVisitor = None, brace=False):
-        square_paren_tokens: List[Token] = []
-        for token in self._tokens:
-            if token.type in (TokenType.LSQUAR_PAREN, TokenType.RSQUAR_PAREN):
-                square_paren_tokens.append(token)
-
-        square_paren_tokens[0].brace_depth = 0
-        square_paren_tokens[1].brace_depth = 1
-        square_paren_tokens[2].brace_depth = 1
-        square_paren_tokens[3].brace_depth = 0
-
+    def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.path)
-        return super().visit(node_visitor, brace)
+        return super().visit(node_visitor)
 
     def formatter(self, depth):
         return f"[[{self.path.formatter(depth+1)}]]"
@@ -119,11 +107,11 @@ class TableEntry(AST):
         super().__init__()
         self.pairs = pairs
 
-    def visit(self, node_visitor: NodeVisitor = None, brace=False):
+    def visit(self, node_visitor: NodeVisitor = None):
         # print(self.pairs,'!')
         for pair in self.pairs:
             node_visitor.link(self, pair)
-        return super().visit(node_visitor, brace)
+        return super().visit(node_visitor)
 
     def formatter(self, depth):
         result = ""
@@ -214,7 +202,7 @@ class TomlParser(Parser):
         """
         <path> ::= (<ID> | <str>) ('.' (<ID> | <str>)) *
         """
-        if self.current_token.type not in self.path_first_set: # pragma: no cover
+        if self.current_token.type not in self.path_first_set:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be ID or str")
 
         node = Path()
@@ -327,7 +315,7 @@ class TomlParser(Parser):
         elif self.current_token.type == TokenType.LCURLY_BRACE:
             node = self.inline_table()
 
-        else: # pragma: no cover
+        else:  # pragma: no cover
             # should never reach here
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,

@@ -36,14 +36,11 @@ class AST(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def visit(self, node_visitor: "NodeVisitor" = None, brace=False):
+    def visit(self, node_visitor: "NodeVisitor" = None):
         """
         由 node visitor 访问时递归调用
         """
         node_visitor.depth -= 1  # 到达叶节点, 退出到上一层
-        # 括号的深度退出一层
-        if brace:
-            node_visitor.brace_depth -= 1
         # print(f'visit {self.class_name}, depth = {self.depth}')
 
     def formatter(self, depth: int = 0):
@@ -79,13 +76,9 @@ class Object(AST):
         return super().update(**kwargs)
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        for token in self._tokens:
-            token.brace_depth = node_visitor.brace_depth
-        node_visitor.brace_depth += 1
-
         for pair in self.pairs:
             node_visitor.link(self, pair)
-        return super().visit(node_visitor, brace=True)
+        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         if self._inside_array:
@@ -116,17 +109,12 @@ class Array(AST):
         return super().update(**kwargs)
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        for token in self._tokens:
-            token.brace_depth = node_visitor.brace_depth
-
-        node_visitor.brace_depth += 1
-
         for element in self.elements:
             node_visitor.link(self, element)
 
-        return super().visit(node_visitor, brace=True)
+        return super().visit(node_visitor)
 
-    def formatter(self, depth: int = 0):
+    def formatter(self, depth: int = 0): 
         result = "["
         for e in self.elements:
             if e.class_name == "Object":
@@ -194,9 +182,9 @@ class UnaryOp(AST):
         self.value = value
         self.op = op  # +/-
 
-    def visit(self, node_visitor: "NodeVisitor" = None, brace=False):
+    def visit(self, node_visitor: "NodeVisitor" = None):
         node_visitor.link(self, self.value)
-        return super().visit(node_visitor, brace)
+        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         return self.op + self.value.formatter(depth + 1)
@@ -207,10 +195,10 @@ class Expression(AST):
         super().__init__()
         self.node = node
 
-    def visit(self, node_visitor: "NodeVisitor" = None, brace=False):
+    def visit(self, node_visitor: "NodeVisitor" = None):
         if self.node:
             node_visitor.link(self, self.node)
-        return super().visit(node_visitor, brace)
+        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         result = ""
@@ -228,7 +216,6 @@ class NodeVisitor:
     def __init__(self, image_name="ast.dot") -> None:
         self.image_name = image_name
         self.depth = 0  # 当前的访问深度
-        self.brace_depth = 0  # ([{<>}]) 的深度
         self.count = 0
         self.dot_header = textwrap.dedent(
             """\
@@ -273,13 +260,16 @@ class NodeVisitor:
         for dot in self.dot_body:
             graphviz_content += f"    {dot}\n"
         graphviz_content += self.dot_footer
-        with open(self.image_name, "w", encoding="utf-8") as f:
-            f.write(graphviz_content)
+        # with open(self.image_name, "w", encoding="utf-8") as f:
+        #     f.write(graphviz_content)
         # print(f"ast tree saved in [{self.image_name}], view by grpahviz")
 
 
-def display_ast(root: AST, image_name="ast.dot"):
+def display_ast(node: AST, image_name="ast.dot"):
     node_visitor = NodeVisitor(image_name)
-    root.visit(node_visitor)
+    node.visit(node_visitor)
+
     node_visitor.save()
-    # print(root)
+    node.formatter()
+
+    assert node_visitor.depth == -1
