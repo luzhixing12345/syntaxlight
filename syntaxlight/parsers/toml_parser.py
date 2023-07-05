@@ -235,7 +235,6 @@ class TomlParser(Parser):
             table_array_header.register_token(token)  # [
             table_array_header.register_token(self.eat(TokenType.LSQUAR_PAREN))  # [
             path = self.path()
-            path.add_ast_type(table_array_header.class_name)
             table_array_header.update(path=path)
             table_array_header.register_token(self.eat(TokenType.RSQUAR_PAREN))  # ]
             table_array_header.register_token(self.eat(TokenType.RSQUAR_PAREN))  # ]
@@ -247,7 +246,6 @@ class TomlParser(Parser):
             table_header = TableHeader()
             table_header.register_token(token)  # [
             path = self.path()
-            path.add_ast_type(table_header.class_name)
             table_header.update(path=path)
             table_header.register_token(self.eat(TokenType.RSQUAR_PAREN))  # ]
 

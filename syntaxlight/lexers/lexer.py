@@ -84,7 +84,7 @@ class Token:
         self.line: int = line
         self.column: int = column
         self.ast: None
-        self.ast_types = ["Token"]  # parser 语法分析阶段赋给 token
+        self.class_list = ["Token"]  # parser 语法分析阶段赋给 token
         global GLOBAL_TOKEN_ID
         self._id = GLOBAL_TOKEN_ID
         GLOBAL_TOKEN_ID += 1
@@ -92,8 +92,8 @@ class Token:
     def get_css_class(self):
         # 转 html 时的 span class
         css_class = ""
-        for ast_type in self.ast_types:
-            css_class += f"{ast_type} "
+        for class_type in self.class_list:
+            css_class += f"{class_type} "
 
         css_class += self.type.name
         return css_class

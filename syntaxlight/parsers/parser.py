@@ -153,7 +153,7 @@ class Parser:
             if token.type in self.brace_list:
                 if len(brace_stack) == 0:
                     brace_stack.append(token.type)
-                    token.ast_types.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                    token.class_list.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
                     brace_depth += 1
                 else:
                     # 括号匹配
@@ -162,10 +162,10 @@ class Parser:
                     ):
                         brace_stack.pop()
                         brace_depth -= 1
-                        token.ast_types.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                        token.class_list.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
                     else:
                         brace_stack.append(token.type)
-                        token.ast_types.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                        token.class_list.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
                         brace_depth += 1
 
             html += f'<span class="{token.get_css_class()}">{token.value}</span>'

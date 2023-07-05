@@ -25,7 +25,7 @@ class AST(object):
         将 token 注册到 AST 树中以更新 token 的属性
         """
         for token in tokens:
-            token.ast_types.append(self.class_name)
+            token.class_list.append(self.class_name)
             self._tokens.append(token)
             token.ast = self
 
@@ -35,6 +35,11 @@ class AST(object):
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
+            # update 的时候将子元素的 token 也添加当前 AST 的 class
+            if isinstance(value, AST):
+                for token in value._tokens:
+                    token: Token
+                    token.class_list.append(self.class_name)
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         """
@@ -59,7 +64,7 @@ class AST(object):
 
     def add_ast_type(self, class_name: str):
         for token in self._tokens:
-            token.ast_types.append(class_name)
+            token.class_list.append(class_name)
 
 
 class Object(AST):
@@ -114,7 +119,7 @@ class Array(AST):
 
         return super().visit(node_visitor)
 
-    def formatter(self, depth: int = 0): 
+    def formatter(self, depth: int = 0):
         result = "["
         for e in self.elements:
             if e.class_name == "Object":
