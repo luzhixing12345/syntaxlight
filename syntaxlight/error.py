@@ -39,19 +39,6 @@ class Error(Exception):
         else:
             self.message = message
 
-
-class ProcessError(Error):
-    def __init__(
-        self,
-        error_code=None,
-        token=None,
-        message: str = None,
-        context: str = None,
-        file_path: str = None,
-    ):
-        super().__init__(error_code, token, message, context, file_path)
-
-
 class LexerError(Error):
     def __init__(
         self,

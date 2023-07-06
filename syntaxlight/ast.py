@@ -31,14 +31,13 @@ class AST(object):
 
     def update(self, **kwargs):
         """
-        对于一些无法在初始化阶段获取, 需要后续才可以获取的属性, 调用此方法更新 AST 对象内部的元素
+        对于一些后续才可以获取的属性, 或者子 AST 节点的注册, 调用此方法更新子 AST 对象内部的元素
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
             # update 的时候将子元素的 token 也添加当前 AST 的 class
             if isinstance(value, AST):
                 for token in value._tokens:
-                    token: Token
                     token.class_list.append(self.class_name)
 
     def visit(self, node_visitor: "NodeVisitor" = None):

@@ -92,6 +92,7 @@ class Token:
     def get_css_class(self):
         # 转 html 时的 span class
         css_class = ""
+        
         for class_type in self.class_list:
             css_class += f"{class_type} "
 
@@ -467,3 +468,21 @@ class Lexer:
             # do something
         """
         raise NotImplementedError
+
+class TokenSet:
+
+    def __init__(self, *args) -> None:
+        
+        self._token_set = set()
+        for arg in args:
+            if isinstance(arg, Enum):
+                self._token_set.add(arg)
+                
+            elif isinstance(arg, TokenSet):
+                for token_type in arg._token_set:
+                    self._token_set.add(token_type)
+            else:
+                raise TypeError(args)
+            
+    def __contains__(self, item):
+        return item in self._token_set
