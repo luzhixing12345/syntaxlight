@@ -9,21 +9,21 @@
                           | <type-specifier>
                           | <type-qualifier>
 
-<storage-class-specifier> ::= auto
-                            | register
-                            | static
-                            | extern
-                            | typedef
+<storage-class-specifier> ::= 'auto'  
+                            | 'register'
+                            | 'static'
+                            | 'extern'
+                            | 'typedef'
 
-<type-specifier> ::= void
-                   | char
-                   | short
-                   | int
-                   | long
-                   | float
-                   | double
-                   | signed
-                   | unsigned
+<type-specifier> ::= 'void'
+                   | 'char'
+                   | 'short'
+                   | 'int'
+                   | 'long'
+                   | 'float'
+                   | 'double'
+                   | 'signed'
+                   | 'unsigned'
                    | <struct-or-union-specifier>
                    | <enum-specifier>
                    | <typedef-name>

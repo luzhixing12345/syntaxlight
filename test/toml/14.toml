@@ -1,0 +1,11 @@
+[[fruits.varieties]]  # 嵌套表数组
+name = "red delicious"
+
+[[fruits.varieties]]
+name = "granny smith"
+
+[[fruits]]
+name = "banana"
+
+[[fruits.varieties]]
+name = "plantain" name = "plantain" name = "plantain"

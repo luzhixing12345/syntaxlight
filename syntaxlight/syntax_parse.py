@@ -79,9 +79,9 @@ def guess_language(file_path: str) -> str:
 
 
 def get_tokens(lexer: Lexer):
-    tokens = []
+    
     token = lexer.get_next_token()
-
+    tokens = [token]
     while token.type.value != "EOF":
         # if token.type.value == 'ID':
         # print(token)

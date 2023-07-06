@@ -1,0 +1,5 @@
+
+<program> ::= <program-heading> <block> "."
+
+<program-heading> ::= 'program' <identifier> "(" <identifier-list> ")" ";"
+

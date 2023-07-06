@@ -153,7 +153,7 @@ class Lexer:
             TokenType.BACKSPACE.value: TokenType.BACKSPACE,
         }
 
-    def colorful_info(self, text: str, color: TTYColor = TTYColor.RED) -> str:
+    def ttyinfo(self, text: str, color: TTYColor = TTYColor.RED) -> str:
         """
         tty 彩色输出, 默认红色
         """
@@ -162,18 +162,18 @@ class Lexer:
         return f"{ESC}[{color.value}m{ESC}[{UNDERLINE}m{text}{ESC}[0m"
 
     def error(self, error_code: ErrorCode = None, token: Token = None, message: str = ""):
-        context = self.get_error_token_context(token)
         raise LexerError(
             error_code=error_code,
             token=token,
-            context=context,
+            context=self.get_error_token_context(token),
             file_path=self.file_path,
             message=message,
         )
 
     def get_error_token_context(self, token: Token) -> str:
-        # 出错时获取上下文
-
+        '''
+        出错时获取上下文
+        '''
         lines = self.text.split("\n")
         lines.insert(0, [])
 
@@ -183,19 +183,23 @@ class Lexer:
         context_end_line = min(token.line + self.context_bias, len(lines))
         context = ""
 
+
         # token 为多行文本的处理
-        token_line = token.line  # 当前处于哪一行, 从后往前找
+        current_context_line = token.line  # 当前处于哪一行, 从下往上找
         token_length = len(token.value)
-        token_lines = []  # token 的行列数
-        column = token.column + 1
+        token_lines = []  # token 的所占行
+        column = token.column # 当前行
+        
+        #  如果当前行的列数少于 token 的长度, 说明 token 跨行, 将当前行加入到 token_lines 中并且继续到上一行去找
         while column < token_length:
             token_length -= column
-            token_lines.insert(0, token_line)
-            token_line -= 1
-            column = len(lines[token_line]) + 1
+            token_lines.insert(0, current_context_line)
+            current_context_line -= 1
+            column = len(lines[current_context_line]) + 1 # +1 是考虑结尾的换行符
 
+        # 多行退出时和单行的情况
         if token_length != 0:
-            token_lines.insert(0, token_line)
+            token_lines.insert(0, current_context_line)
 
         # 单行 token
         if len(token_lines) == 0:
@@ -212,23 +216,23 @@ class Lexer:
                     pre_context = lines[i][: token.column - token_length]
                     # token 后面的部分
                     end_context = lines[i][token.column :]
-                    context += pre_context + self.colorful_info(token.value) + end_context + "\n"
+                    context += pre_context + self.ttyinfo(token.value) + end_context + "\n"
                 else:
                     if i == token_lines[0]:
                         pre_context = lines[i][: column - token_length]
                         context += (
                             pre_context
-                            + self.colorful_info(lines[i][column - token_length :])
+                            + self.ttyinfo(lines[i][column - token_length :])
                             + "\n"
                         )
                     elif i == token_lines[-1]:
                         end_context = lines[i][token.column + 1 :]
                         context += (
-                            self.colorful_info(lines[i][: token.column + 1]) + f"{end_context}\n"
+                            self.ttyinfo(lines[i][: token.column + 1]) + f"{end_context}\n"
                         )
                     else:
-                        context += self.colorful_info(lines[i]) + "\n"
-
+                        context += self.ttyinfo(lines[i]) + "\n"
+        
         return context
 
     def advance(self):
@@ -267,12 +271,15 @@ class Lexer:
         self.advance()
         return token
 
-    def peek(self):
-        peek_pos = self.pos + 1
+    def peek(self, n: int = 1):
+        """
+        向后看 n 个字符
+        """
+        peek_pos = self.pos + n
         if peek_pos > len(self.text) - 1:
             return None
         else:
-            return self.text[peek_pos]
+            return self.text[self.pos + 1 : peek_pos + 1]
 
     def get_number(self) -> Token:
         """
@@ -386,9 +393,10 @@ class Lexer:
         token = Token(TokenType.STR, result, self.line, self.column)
         return token
 
-    def get_id(self):
+    def get_id(self, ignore_case=False):
         """
         获取标识符, 留给后续的语法分析处理
+        @ignore_case : 是否忽略大小写
 
         <letter> ::= [A-Za-z]
          <digit> ::= [0-9]
@@ -403,13 +411,54 @@ class Lexer:
             result += self.current_char
             self.advance()
 
-        token_type = self.reserved_keywords.get(result)
+        # 忽略关键字的大小写
+        if ignore_case:
+            token_type = self.reserved_keywords.get(result.upper())
+        else:
+            token_type = self.reserved_keywords.get(result)
 
         if token_type is None:
             token = Token(type=TokenType.ID, value=result, line=self.line, column=self.column - 1)
         else:
-            # reserved keyword
+            # 作为保留关键字
             token = Token(type=token_type, value=result, line=self.line, column=self.column - 1)
+        return token
+
+    def get_comment(self, comment_symbol=("#", "\n")):
+        """
+        跳过注释部分
+
+        python 风格: ("#", "\n")
+             C 风格: ("//", "\n"), ("/*", "*/")
+        pascal 风格: ("//", "\n"), ("{", "}"), ("(*", "*)")
+           lua 风格: ("--[[", "]]"), ("--", "\n") # 有二义性的放前面
+        """
+
+        start_symbol, end_symbol = comment_symbol
+        assert start_symbol[0] == self.current_char
+
+        result = ""
+        end_p = 0
+        while self.current_char is not None:
+            if self.current_char != end_symbol[end_p]:
+                end_p = 0 # 重新计数
+                result += self.current_char
+                self.advance()
+            else:
+                if end_p == len(end_symbol) - 1:
+                    result += self.current_char
+                    break
+                else:
+                    end_p += 1
+                    result += self.current_char
+                    self.advance()
+        # 除单行注释外抛异常
+        if self.current_char is None and end_symbol != "\n":
+            token = Token(TokenType.COMMENT, result, self.line, self.column-1)
+            self.error(ErrorCode.UNTERMINATED_COMMENT, token)
+        
+        token = Token(TokenType.COMMENT, result, self.line, self.column)
+        self.advance()
         return token
 
     def get_next_token(self) -> Token:

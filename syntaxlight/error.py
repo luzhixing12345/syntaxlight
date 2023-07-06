@@ -8,6 +8,7 @@ class ErrorCode(Enum):
     EXPONENT_NO_DIGITS = "Exponent has no digits"
     NUMBER_INVALID = "Number invalid"
     UNKNOWN_CHARACTER = "unknown character"
+    UNTERMINATED_COMMENT = "unterminated comment"
 
     # parser error code
     UNEXPECTED_TOKEN = "Unexpected token"
@@ -61,7 +62,10 @@ class LexerError(Error):
         message: str = None,
     ):
         if error_code is not None:
-            message = error_code.value + " " + message
+            if error_code == ErrorCode.UNEXPECTED_TOKEN:
+                message = error_code.value + f" {token.type.name}: " + message
+            else:
+                message = error_code.value + ": " + message
         super().__init__(error_code, token, message, context, file_path)
 
 

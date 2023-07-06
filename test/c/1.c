@@ -11,9 +11,3 @@ int main() {
     float y = .102;
     double j = 1e1023;
 }
-
-1e2e
-
-3e
-
-1.e3.1

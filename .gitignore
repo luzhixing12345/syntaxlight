@@ -164,3 +164,6 @@ docs/
 a.py
 *.dot
 syntaxlight_example/
+
+*.exe
+*.o

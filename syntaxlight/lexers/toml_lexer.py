@@ -34,18 +34,6 @@ class TomlLexer(Lexer):
             token = Token(type=token_type, value=value, line=self.line, column=self.column - 1)
         return token
 
-    def get_comment(self):
-        '''
-        toml 中是以 # 作为单行注释的
-        '''
-        result = '#'
-        self.advance()
-        while self.current_char is not None and self.current_char != TokenType.LF.value:
-            result += self.current_char
-            self.advance()
-        
-        return Token(TokenType.COMMENT, result, self.line, self.column -1)
-
     def get_next_token(self):
         while self.current_char is not None:
             # TOML 单双引号都可以

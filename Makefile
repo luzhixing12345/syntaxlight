@@ -1,11 +1,14 @@
 
 i = 0
 
-.PHONY: test update cover
+.PHONY: test lexer cover
 
 
 test:
 	@python test.py $(i)
+
+lexer:
+	@python test.py $(i) lexer
 
 cover:
 	coverage run coverage_test.py

@@ -63,16 +63,17 @@ class CLexer(Lexer):
         super().__init__(text, TokenType)
 
     def get_next_token(self):
-        """Lexical analyzer (also known as scanner or tokenizer)
-        This method is responsible for breaking a sentence
-        apart into tokens. One token at a time.
-        """
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
                 return self.skip_whitespace()
 
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
+
+            if self.current_char == "/" and self.peek() == "/":
+                return self.get_comment(("//", "\n"))
+            if self.current_char == "/" and self.peek() == "*":
+                return self.get_comment(("/*", "*/"))
 
             if self.current_char.isdigit() or self.current_char == TokenType.DOT.value:
                 return self.get_number()
@@ -82,7 +83,7 @@ class CLexer(Lexer):
 
             if self.current_char in ("'", '"'):
                 return self.get_string()
-
+            
             # single-character token
             try:
                 # get enum member by value, e.g.
@@ -104,4 +105,4 @@ class CLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=TokenType.EOF, value=None)
+        return Token(type=TokenType.EOF, value='EOF',line=self.line, column=self.column)
