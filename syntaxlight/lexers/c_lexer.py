@@ -57,7 +57,9 @@ class CTokenType(Enum):
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
 
-    POINTER = '*'
+    POINTER = "*"
+    PLUSPLUS = "++"
+    MINUSMINUS = "--"
 
 
 class CLexer(Lexer):
@@ -117,12 +119,10 @@ class CTokenSet:
             CTokenType.REGISTER,
             CTokenType.STATIC,
             CTokenType.EXTERN,
-            CTokenType.TYPEDEF
+            CTokenType.TYPEDEF,
         )
-        self.struct_or_union_specifier = TokenSet(
-            CTokenType.STRUCT,
-            CTokenType.UNION
-        )
+        self.struct_or_union = TokenSet(CTokenType.STRUCT, CTokenType.UNION)
+        self.struct_or_union_specifier = TokenSet(self.struct_or_union)
         self.enum_specifier = TokenSet(CTokenType.ENUM)
         self.type_specifier = TokenSet(
             CTokenType.VOID,
@@ -136,43 +136,63 @@ class CTokenSet:
             CTokenType.UNSIGNED,
             self.struct_or_union_specifier,
             self.enum_specifier,
-            TokenType.ID # identifier
+            TokenType.ID,  # identifier
         )
-        self.type_qualifier = TokenSet(
-            CTokenType.CONST,
-            CTokenType.VOLATILE
-        )
+        self.type_qualifier = TokenSet(CTokenType.CONST, CTokenType.VOLATILE)
         self.declaration_specifier = TokenSet(
-            self.storage_class_specifier,
-            self.type_specifier,
-            self.type_qualifier
+            self.storage_class_specifier, self.type_specifier, self.type_qualifier
         )
         self.declarator = TokenSet(
-            CTokenType.POINTER,
-            TokenType.ID,
-            TokenType.LPAREN
+            TokenType.MUL, TokenType.ID, TokenType.LPAREN  # => CTokenType.POINTER
         )
-        self.function_definition = TokenSet(
-            self.declaration_specifier,
-            self.declarator
-        )
-        self.declaration = TokenSet(
-            self.declaration_specifier
-        )
-        self.external_declaration = TokenSet(
-            self.function_definition,
-            self.declaration
-        )
+        self.function_definition = TokenSet(self.declaration_specifier, self.declarator)
+        self.declaration = TokenSet(self.declaration_specifier)
+        self.external_declaration = TokenSet(self.function_definition, self.declaration)
         self.typedef_name = TokenSet(TokenType.ID)
-        self.specifier_qualifier = TokenSet(
-            self.type_qualifier,
-            self.type_specifier
+        self.specifier_qualifier = TokenSet(self.type_qualifier, self.type_specifier)
+        self.struct_declarator = TokenSet(self.declarator, TokenType.COLON)
+        self.struct_declaration = TokenSet(self.specifier_qualifier, self.struct_declarator)
+        self.direct_declaractor = TokenSet(TokenType.ID, TokenType.LPAREN)
+        self.direct_delcartor_postfix = TokenSet(
+            TokenType.LPAREN, TokenType.LSQUAR_PAREN, TokenType.LPAREN
         )
-        self.struct_declarator = TokenSet(
-            self.declarator,
-            TokenType.COLON
+        self.compound_statement = TokenSet(
+            TokenType.LCURLY_BRACE
         )
-        self.struct_declaration = TokenSet(
-            self.specifier_qualifier,
-            self.struct_declarator
+        self.assignment_operator = TokenSet(
+            TokenType.ASSIGN,
+            TokenType.MUL_ASSIGN,
+            TokenType.DIV_ASSIGN,
+            TokenType.MOD_ASSIGN,
+            TokenType.ADD_ASSIGN,
+            TokenType.SUB_ASSIGN,
+            TokenType.LSHIFT_ASSIGN,
+            TokenType.RSHIFT_ASSIGN,
+            TokenType.AND_ASSIGN,
+            TokenType.XOR_ASSIGN,
+            TokenType.OR_ASSIGN,
+        )
+        self.unary_operator = TokenSet(
+            TokenType.AMPERSAND,
+            TokenType.MUL,
+            TokenType.PLUS,
+            TokenType.MINUS,
+            TokenType.TILDE,
+            TokenType.BANG
+        )
+        self.constant_expression = TokenSet(
+            TokenType.LPAREN,
+            CTokenType.SIZEOF,
+            CTokenType.PLUSPLUS,
+            CTokenType.MINUSMINUS,
+            TokenType.STRING,
+            TokenType.ID,
+            TokenType.NUMBER,
+            self.assignment_operator,
+            self.unary_operator
+        )
+        self.identifier = TokenSet(TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.CHAR)
+
+        self.parameter_list = TokenSet(
+            self.declaration_specifier
         )

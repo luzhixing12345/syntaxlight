@@ -30,8 +30,8 @@ for language, files in TEST_FILES.items():
             with open(files[index], 'r',encoding='utf-8') as f:
                 lexer = syntaxlight.get_lexer(f.read(),FILE_TYPES[0])
                 tokens = syntaxlight.get_tokens(lexer)
-                # for token in tokens:
-                #     print(token)
+                for token in tokens:
+                    print(token)
             break
         syntaxlight.example_display(files[index], language)
         continue

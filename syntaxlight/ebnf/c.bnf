@@ -3,7 +3,7 @@
 <external-declaration> ::= <function-definition>
                          | <declaration>
 
-<function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
+<function-definition> ::= {<declaration-specifier>}* <declarator> (<compound-statement>)?
 
 <declaration-specifier> ::= <storage-class-specifier>
                           | <type-specifier>
@@ -28,8 +28,11 @@
                    | <enum-specifier>
                    | <typedef-name>
 
-<struct-or-union-specifier> ::= ("struct"|"union") <identifier> ("{" {<struct-declaration>}+ "}")?
-                              | ("struct"|"union") "{" {<struct-declaration>}+ "}"
+<struct-or-union-specifier> ::= <struct-or-union> <identifier> ("{" {<struct-declaration>}* "}")?
+                              | <struct-or-union> "{" {<struct-declaration>}* "}"
+
+<struct-or-union> ::= "struct"
+                    | "union"
 
 <struct-declaration> ::= {<specifier-qualifier>}* <struct-declarator-list>
 
@@ -48,10 +51,12 @@
 <type-qualifier> ::= "const"
                    | "volatile"
 
-<direct-declarator> ::= <identifier>
-                      | "(" <declarator> ")"
-                      | <direct-declarator> "[" {<constant-expression>}? "]"
-                      | <direct-declarator> "(" (<parameter-type-list>| {<identifier>}*) ")"
+<direct-declarator> ::=     <identifier>     (<direct-declarator-postfix>)?
+                      | "(" <declarator> ")" (<direct-declarator-postfix>)?
+
+<direct-declarator-postfix> ::= "[" {<constant-expression>}? "]" (<direct-declarator-postfix>)?
+                              | "(" (<parameter-type-list>)? ")" (<direct-declarator-postfix>)?
+                              | ("," <declarator>)* (<direct-declarator-postfix>)?
 
 <constant-expression> ::= <conditional-expression>
 
@@ -132,10 +137,7 @@
 
 <type-name> ::= {<specifier-qualifier>}+ {<abstract-declarator>}?
 
-<parameter-type-list> ::= <parameter-list>
-                        | <parameter-list> "," "..."
-
-<parameter-list> ::= (<parameter-list> ",")? <parameter-declaration>
+<parameter-list> ::= <parameter-declaration> ("," <parameter-declaration>)* ("," "...")?
 
 <parameter-declaration> ::= {<declaration-specifier>}+ <declarator>
                           | {<declaration-specifier>}+ <abstract-declarator>

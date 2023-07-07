@@ -1,4 +1,9 @@
-//123*1
-123/*
-123sdula
-*
+
+
+int f(int x) {
+
+}
+
+int main() {
+    return 1;
+}

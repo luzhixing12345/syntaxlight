@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 
+int a, f(int x);
 // 123
 int main() {
     auto int x = 10; // 123

@@ -1,16 +1,18 @@
-from ..lexers.lexer import Lexer, Token, TokenType
+from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
 from ..error import ParserError, ErrorCode
 from enum import Enum
 from ..ast import AST
 from typing import List
+import sys
 
 
 class Parser:
-    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True):
+    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning = True):
         self.lexer: Lexer = lexer
         # set current token to the first token taken from the input
         self.skip_invisible_characters = skip_invisible_characters
         self.skip_space = skip_space
+        self.display_warning = display_warning
         self.token_list: List[Token] = []
         self.brace_list: List[TokenType] = [
             TokenType.LPAREN,
@@ -50,6 +52,18 @@ class Parser:
             file_path=self.lexer.file_path,
             message=message,
         )
+    
+    def warning(self, message = None, ast:AST = None):
+        '''
+        语法解析过程中的警告信息
+        '''
+        if not self.display_warning:
+            return
+
+        warning_color = TTYColor.MAGENTA
+        
+        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color) + message + '\n')
+        sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
     def eat(self, token_type: Enum) -> List[Token]:
         # compare the current token type with the passed token

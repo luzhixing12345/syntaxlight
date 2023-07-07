@@ -15,27 +15,26 @@ class TranslationUnit(AST):
             node_visitor.link(self, declaration)
         return super().visit(node_visitor)
 
-class Function(AST):
 
-    def __init__(self, declaration_specifiers, declarator, declarations) -> None:
+class Function(AST):
+    def __init__(self, declaration_specifiers, declarator, compound_statement) -> None:
         super().__init__()
         self.declaration_specifiers = declaration_specifiers
         self.declarator = declarator
-        self.declarations = declarations
+        self.compound_statement = compound_statement
 
     def visit(self, node_visitor: NodeVisitor = None):
         for declaration_specifier in self.declaration_specifiers:
             node_visitor.link(self, declaration_specifier)
         node_visitor.link(self, self.declarator)
-        for declaration in self.declarations:
-            node_visitor.link(self, declaration)
+        node_visitor.link(self, self.compound_statement)
         return super().visit(node_visitor)
 
+
 class Structure(AST):
-    
-    def __init__(self, type:str) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.type = type
+        self.structure_type = None
         self.id = None
         self.declarations = None
 
@@ -43,40 +42,92 @@ class Structure(AST):
         for token in self._tokens:
             if token.type == TokenType.ID:
                 self.id = token
-                break
-        
+                return
+
         assert False, "struct or union should have id by update_id not found!"  # pragma: no cover
 
     def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.structure_type)
         if self.declarations:
             for declaration in self.declarations:
                 node_visitor.link(self, declaration)
         return super().visit(node_visitor)
 
-class StructDeclaration(AST):
 
+class StructDeclaration(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.specifier_qualifiers = None
         self.declarators = None
-    
+
     def visit(self, node_visitor: NodeVisitor = None):
+        for specifier_qualifier in self.specifier_qualifiers:
+            node_visitor.link(self, specifier_qualifier)
         for declarator in self.declarators:
             node_visitor.link(self, declarator)
         return super().visit(node_visitor)
 
-class StructDeclarator(AST):
 
+class StructDeclarator(AST):
     def __init__(self) -> None:
         super().__init__()
         self.declarator = None
         self.expression = None
-    
+
     def visit(self, node_visitor: NodeVisitor = None):
         if self.declarator:
             node_visitor.link(self, self.declarator)
         if self.expression:
             node_visitor.link(self, self.expression)
         return super().visit(node_visitor)
+
+
+class Declarator(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.pointer = None
+        self.direct_declarator: DirectDeclaractor = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.pointer)
+        node_visitor.link(self, self.direct_declarator)
+        return super().visit(node_visitor)
+
+
+class Pointer(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.type_qualifiers = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        for type_qualifier in self.type_qualifiers:
+            node_visitor.link(self, type_qualifier)
+        return super().visit(node_visitor)
+
+
+class DirectDeclaractor(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.id = None
+        self.declarator: Declarator = None
+        self.constant_expression = None
+
+    def update_id(self):
+        for token in self._tokens:
+            if token.type == TokenType.ID:
+                self.id = token
+                return
+        # 找到子 declarator 的子 DirectDeclaractor 的 id
+        self.id = self.declarator.direct_declarator.id
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        if self.declarator:
+            node_visitor.link(self, self.declarator)
+        if self.direct_delcartor_postfix:
+            node_visitor.link(self, self.direct_delcartor_postfix)
+        return super().visit(node_visitor)
+
+
 
 class CParser(Parser):
     def __init__(self, lexer, skip_invisible_characters=True, skip_space=True):
@@ -107,21 +158,24 @@ class CParser(Parser):
             return self.function_definition()
         elif self.current_token.type in self.cfirst_set.declaration:
             return self.declaration()
-        else: # pragma: no cover
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "token type should inside function definition and declaration")
+        else:  # pragma: no cover
+            self.error(
+                ErrorCode.UNEXPECTED_TOKEN,
+                "token type should inside function definition and declaration",
+            )
 
     def function_definition(self):
         """
-        <function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
+        <function-definition> ::= {<declaration-specifier>}* <declarator> (<compound-statement>)?
         """
         declaration_specifiers = []
+        compound_statement = None
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
         declarator = self.declarator()
-        declarations = []
-        while self.current_token.type in self.cfirst_set.declaration:
-            declarations.append(self.declaration())
-        return Function(declaration_specifiers, declarator, declarations)
+        if self.current_token.type in self.cfirst_set.compound_statement:
+            compound_statement = self.compound_statement()
+        return Function(declaration_specifiers, declarator, compound_statement)
 
     def declaration_sepcifier(self):
         """
@@ -137,7 +191,7 @@ class CParser(Parser):
             node = self.type_qualifier()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be StorageClass or Type or QualifyType")
-        
+
         return node
 
     def storage_class_specifier(self):
@@ -150,7 +204,7 @@ class CParser(Parser):
         """
         node = Keyword(self.current_token.value)
         node.register_token(self.eat(self.current_token.type))
-        node.class_name = 'StorageClass'
+        node.class_name = "StorageType"
         return node
 
     def type_specifier(self):
@@ -177,49 +231,70 @@ class CParser(Parser):
         elif self.current_token.type in self.cfirst_set.type_specifier:
             node = Keyword(self.current_token.value)
             node.register_token(self.eat(self.current_token.type))
-            node.class_name = 'Type'
-        else: # pragma: no cover
+            node.class_name = "BaseType"
+        else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type specifier")
 
     def struct_or_union_specifier(self):
         """
-        <struct-or-union-specifier> ::= ("struct"|"union") <identifier> ("{" {<struct-declaration>}+ "}")?
-                                      | ("struct"|"union") "{" {<struct-declaration>}+ "}"
+        <struct-or-union-specifier> ::= <struct-or-union> <identifier> ("{" {<struct-declaration>}* "}")?
+                                      | <struct-or-union>              "{" {<struct-declaration>}* "}"
         """
         if self.current_token.type not in self.cfirst_set.struct_or_union_specifier:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be struct or union")
-        
-        node = Structure(self.current_token.value)
-        node.register_token(self.eat(self.current_token.type)) # struct or union
+
+        node = Structure()
+        node.update(structure_type=self.struct_or_union())
         if self.current_token.type == TokenType.ID:
             node.register_token(self.eat(TokenType.ID))
-            node.update_id() # 手动更新一下 Structure 中的 id 信息
-        
+            node.update_id()  # 手动更新一下 Structure 中的 id 信息
+        else:
+            # 匿名 struct
+            if self.current_token.type != TokenType.LPAREN:
+                self.error(
+                    ErrorCode.UNEXPECTED_TOKEN,
+                    "Declaration of anonymous struct must be a definition",
+                )
         # struct or union 有定义 {}
         if self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             struct_declarations = []
             while self.current_token.type in self.cfirst_set.struct_declaration:
                 struct_declarations.append(self.struct_declaration())
-            node.update(declarations = struct_declarations)
+            node.update(declarations=struct_declarations)
             node.register_token(self.eat(TokenType.RPAREN))
-        
+
+            # 匿名 struct 且未定义成员
+            if len(struct_declarations) == 0 and node.id is None:
+                self.warning("unnamed struct/union that defines no instances", node)
+
         return node
 
+    def struct_or_union(self):
+        """
+        <struct-or-union> ::= "struct"
+                            | "union"
+        """
+        node = Keyword(self.current_token.value)
+        node.register_token(self.eat(self.current_token.type))
+        node.class_name = "StructureType"
+        return node
 
     def struct_declaration(self):
         """
         <struct-declaration> ::= {<specifier-qualifier>}* <struct-declarator> ("," <struct-declarator>)*
         """
         node = StructDeclaration()
+        specifier_qualifiers = []
         while self.current_token.type in self.cfirst_set.specifier_qualifier:
-            node.register_token(self.eat(self.current_token.type))
-        
+            specifier_qualifiers.append(self.specifier_qualifier())
+        node.update(specifier_qualifiers=specifier_qualifiers)
+
         struct_declarators = [self.struct_declarator()]
         while self.current_token.type == TokenType.COMMA:
             node.register_token(self.eat(TokenType.COMMA))
             struct_declarators.append(self.struct_declarator())
-        node.update(declarators = struct_declarators)
+        node.update(declarators=struct_declarators)
         return node
 
     def specifier_qualifier(self):
@@ -231,7 +306,7 @@ class CParser(Parser):
             return self.type_specifier()
         elif self.current_token.type in self.cfirst_set.type_qualifier:
             return self.type_qualifier()
-        else: # pragma: no cover
+        else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type specifier or type qualifier")
 
     def struct_declarator(self):
@@ -241,47 +316,107 @@ class CParser(Parser):
         """
         node = StructDeclarator()
         if self.current_token.type in self.cfirst_set.declarator:
-            node.update(declarator = self.declarator())
+            node.update(declarator=self.declarator())
+            # 位宽
             if self.current_token.type == TokenType.COLON:
                 node.register_token(self.eat(TokenType.COLON))
-                node.update(expression = self.constant_expression())
+                node.update(expression=self.constant_expression())
         elif self.current_token.type == TokenType.COLON:
             node.register_token(self.eat(TokenType.COLON))
-            node.update(expression = self.constant_expression())
+            node.update(expression=self.constant_expression())
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "struct declarator should match declarator or :")
         return node
-
 
     def declarator(self):
         """
         <declarator> ::= {<pointer>}? <direct-declarator>
         """
-        
+        node = Declarator()
+        if self.current_token.type == TokenType.MUL:
+            node.update(pointer=self.pointer())
+        node.update(direct_declarator=self.direct_declaractor())
+        return node
 
     def pointer(self):
         """
-        <pointer> ::= "*" {<type-qualifier>}* {<pointer>}?
+        <pointer> ::= "*" ({<type-qualifier>}? "*"?)*
         """
+        node = Pointer()
+        # 对于二义性的 * 将其属性从 TokenType.MUL 改为 CTokenType.POINTER
+        if self.current_token.type == TokenType.MUL:
+            self.current_token.type = CTokenType.POINTER
+            node.register_token(self.eat(CTokenType.POINTER))
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be * as pointer")
+
+        type_qualifiers = []
+        while (
+            self.current_token.type == TokenType.MUL
+            or self.current_token.type in self.cfirst_set.type_qualifier
+        ):
+            if self.current_token.type == TokenType.MUL:
+                self.current_token.type = CTokenType.POINTER
+                node.register_token(self.eat(CTokenType.POINTER))
+            else:
+                type_qualifiers.append(self.type_qualifier())
+        node.update(type_qualifiers=type_qualifiers)
+        return node
 
     def type_qualifier(self):
         """
-        <type-qualifier> ::= const
-                           | volatile
+        <type-qualifier> ::= "const"
+                           | "volatile"
         """
         node = Keyword(self.current_token.value)
         node.register_token(self.eat(self.current_token.type))
-        node.class_name = 'QualifyType'
+        node.class_name = "QualifyType"
         return node
 
     def direct_declaractor(self):
         """
-        <direct-declarator> ::= <identifier>
-                              | "(" <declarator> ")"
-                              | <direct-declarator> "[" {<constant-expression>}? "]"
-                              | <direct-declarator> "(" <parameter-type-list>    ")"
-                              | <direct-declarator> "(" {<identifier>}*          ")"
+        <direct-declarator> ::=     <identifier>     (<direct-declarator-postfix>)?
+                              | "(" <declarator> ")" (<direct-declarator-postfix>)?
+
+        <direct-declarator-postfix> ::= "[" {<constant-expression>}? "]" (<direct-declarator-postfix>)?
+                                      | "(" (<parameter-list>)?      ")" (<direct-declarator-postfix>)?
+                                      | ("," <declarator>)?
+        
+        最后的匹配使用("," <declarator>)?, 将逗号后的所有情况放到下一级的 declarator 中去嵌套解决
         """
+        node = DirectDeclaractor()
+        if self.current_token.type == TokenType.ID:
+            node.register_token(self.eat(TokenType.ID))
+            node.update_id()
+
+        elif self.current_token.type == TokenType.LPAREN:
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(declarator=self.declarator())
+            node.register_token(self.eat(TokenType.RPAREN))
+            # declarator 与 direct_declaractor 是一个嵌套调用
+            node.update_id()
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be id or (")
+        
+        # 先在这里统一保存, 后续根据 token [] () 来分析具体的 [3](int,int)[4]
+        constant_expressions = []
+        parameter_lists = []
+        while self.current_token.type in self.cfirst_set.direct_delcartor_postfix:
+            if self.current_token.type == TokenType.LSQUAR_PAREN:
+                node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+                if self.current_token.type in self.cfirst_set.constant_expression:
+                    constant_expressions.append(self.constant_expression())
+                node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+            if self.current_token.type == TokenType.LPAREN:
+                node.register_token(self.eat(TokenType.LPAREN))
+                if self.current_token.type in self.cfirst_set.parameter_list:
+                    parameter_lists.append(self.parameter_list())
+                node.register_token(self.eat(TokenType.RPAREN))
+            if self.current_token.type == TokenType.COMMA:
+                ...
+
+        return node
+            
 
     def constant_expression(self):
         """
@@ -428,15 +563,9 @@ class CParser(Parser):
         <type-name> ::= {<specifier-qualifier>}+ {<abstract-declarator>}?
         """
 
-    def parameter_type_list(self):
-        """
-        <parameter-type-list> ::= <parameter-list>
-                                | <parameter-list> "," "..."
-        """
-
     def parameter_list(self):
         """
-        <parameter-list> ::= (<parameter-list> ",")? <parameter-declaration>
+        <parameter-list> ::= <parameter-declaration> ("," <parameter-declaration>)* ("," "...")?
         """
 
     def parameter_declaration(self):
@@ -445,6 +574,7 @@ class CParser(Parser):
                                   | {<declaration-specifier>}+ <abstract-declarator>
                                   | {<declaration-specifier>}+
         """
+        self.declaration_sepcifier()
 
     def abstract_declarator(self):
         """
@@ -457,7 +587,7 @@ class CParser(Parser):
         """
         <direct-abstract-declarator> ::=  "(" <abstract-declarator> ")"
                                        | {<direct-abstract-declarator>}? "[" {<constant-expression>}? "]"
-                                       | {<direct-abstract-declarator>}? "(" {<parameter-type-list>}? ")"
+                                       | {<direct-abstract-declarator>}? "(" {<parameter-list>}? ")"
         """
 
     def enum_specifier(self):
@@ -486,6 +616,7 @@ class CParser(Parser):
         """
         <declaration> ::=  {<declaration-specifier>}+ {<init-declarator>}* ";"
         """
+        self.declaration_sepcifier()
 
     def init_declarator(self):
         """
