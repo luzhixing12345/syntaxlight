@@ -1,4 +1,6 @@
 import textwrap
+
+from syntaxlight.ast import NodeVisitor
 from .lexers import Token
 from typing import List
 
@@ -193,6 +195,35 @@ class UnaryOp(AST):
     def formatter(self, depth: int = 0):
         return self.op + self.value.formatter(depth + 1)
 
+
+class BinaryOp(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.expr_left = None
+        self.expr_right = None
+        self.op = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.expr_left)
+        if self.expr_right:
+            node_visitor.link(self, self.expr_right)
+        return super().visit(node_visitor)
+
+
+class ConditionalExpression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.condition_expr = None
+        self.value_true = None
+        self.value_false = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.condition_expr)
+        if self.value_true:
+            node_visitor.link(self, self.value_true)
+        if self.value_false:
+            node_visitor.link(self, self.value_false)
+        return super().visit(node_visitor)
 
 class Expression(AST):
     def __init__(self, node: AST = None) -> None:

@@ -1,5 +1,6 @@
 from enum import Enum
 from ..error import ErrorCode, LexerError
+from typing import Dict, List
 
 GLOBAL_TOKEN_ID = 0
 
@@ -18,8 +19,8 @@ class TokenType(Enum):
     RSQUAR_PAREN = "]"
     LCURLY_BRACE = "{"
     RCURLY_BRACE = "}"
-    LANGLE_BRACE = "<"
-    RANGLE_BRACE = ">"
+    LANGLE_BRACE = "<"  # => LT
+    RANGLE_BRACE = ">"  # => GT
     UNDERLINE = "_"
     SEMI = ";"
     DOT = "."
@@ -59,7 +60,11 @@ class TokenType(Enum):
     SHL = "<<"
     SHR = ">>"
     EQ = "=="
+    STRICT_EQ = "==="
     NE = "!="
+    STRICT_NE = "!=="
+    LT = "<"  # => LANGLE_BRACE
+    GT = ">"  # => RANGLE_BRACE
     LE = "<="
     GE = ">="
     MUL_ASSIGN = "*="
@@ -74,6 +79,11 @@ class TokenType(Enum):
     OR_ASSIGN = "|="
     VARARGS = "..."
     DB_COLON = "::"
+    PLUS_PLUS = "++"
+    MINUS_MINUS = "--"
+    OR = "||"
+    AND = "&&"
+    POINT = "->"
 
 
 class TTYColor(Enum):
@@ -102,7 +112,7 @@ class Token:
     def get_css_class(self):
         # 转 html 时的 span class
         css_class = ""
-        
+
         for class_type in self.class_list:
             css_class += f"{class_type} "
 
@@ -163,6 +173,53 @@ class Lexer:
             TokenType.FORM_FEED.value: TokenType.FORM_FEED,
             TokenType.BACKSPACE.value: TokenType.BACKSPACE,
         }
+        self.long_ops = [
+            "<<=", # 要排在 << 前面
+            ">>=", # 要排在 >> 前面
+            "<<",
+            ">>",
+            "===", # 要排在 == 前面
+            "==",
+            "!==", # 要排在 != 前面
+            "!=",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "*=",
+            "/=",
+            "%=",
+            "+=",
+            "-=",
+            "&=",
+            "^=",
+            "|=",
+            "...",
+            "::",
+            "++",
+            "--",
+            "||",
+            "&&",
+            "->"
+        ]        
+        self.long_op_dict:Dict[str,List] = {
+            # "+": ["+","="],
+            # "-": ["-","=",">"],
+            # "<": ["<=","<","="],
+            # ">": [">=",">","="]
+        }
+        
+    def build_long_op_dict(self, disable_long_op: List[str] = []):
+        '''
+        选择去除不想要的长运算符匹配
+
+        C:   ["===","!==","::"]
+        '''
+        self.long_ops = [x for x in self.long_ops if x not in disable_long_op]
+        for long_op in self.long_ops:
+            if self.long_op_dict.get(long_op[0], None) is None:
+                self.long_op_dict[long_op[0]] = []
+            self.long_op_dict[long_op[0]].append(long_op[1:])
 
     def ttyinfo(self, text: str, color: TTYColor = TTYColor.RED) -> str:
         """
@@ -182,9 +239,9 @@ class Lexer:
         )
 
     def get_error_token_context(self, token: Token) -> str:
-        '''
+        """
         出错时获取上下文
-        '''
+        """
         lines = self.text.split("\n")
         lines.insert(0, [])
 
@@ -194,19 +251,18 @@ class Lexer:
         context_end_line = min(token.line + self.context_bias, len(lines))
         context = ""
 
-
         # token 为多行文本的处理
         current_context_line = token.line  # 当前处于哪一行, 从下往上找
         token_length = len(token.value)
         token_lines = []  # token 的所占行
-        column = token.column # 当前行
-        
+        column = token.column  # 当前行
+
         #  如果当前行的列数少于 token 的长度, 说明 token 跨行, 将当前行加入到 token_lines 中并且继续到上一行去找
         while column < token_length:
             token_length -= column
             token_lines.insert(0, current_context_line)
             current_context_line -= 1
-            column = len(lines[current_context_line]) + 1 # +1 是考虑结尾的换行符
+            column = len(lines[current_context_line]) + 1  # +1 是考虑结尾的换行符
 
         # 多行退出时和单行的情况
         if token_length != 0:
@@ -232,18 +288,14 @@ class Lexer:
                     if i == token_lines[0]:
                         pre_context = lines[i][: column - token_length]
                         context += (
-                            pre_context
-                            + self.ttyinfo(lines[i][column - token_length :])
-                            + "\n"
+                            pre_context + self.ttyinfo(lines[i][column - token_length :]) + "\n"
                         )
                     elif i == token_lines[-1]:
                         end_context = lines[i][token.column + 1 :]
-                        context += (
-                            self.ttyinfo(lines[i][: token.column + 1]) + f"{end_context}\n"
-                        )
+                        context += self.ttyinfo(lines[i][: token.column + 1]) + f"{end_context}\n"
                     else:
                         context += self.ttyinfo(lines[i]) + "\n"
-        
+
         return context
 
     def advance(self):
@@ -452,7 +504,7 @@ class Lexer:
         end_p = 0
         while self.current_char is not None:
             if self.current_char != end_symbol[end_p]:
-                end_p = 0 # 重新计数
+                end_p = 0  # 重新计数
                 result += self.current_char
                 self.advance()
             else:
@@ -465,10 +517,30 @@ class Lexer:
                     self.advance()
         # 除单行注释外抛异常
         if self.current_char is None and end_symbol != "\n":
-            token = Token(TokenType.COMMENT, result, self.line, self.column-1)
+            token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
-        
+
         token = Token(TokenType.COMMENT, result, self.line, self.column)
+        self.advance()
+        return token
+
+    def get_long_op(self):
+        """
+        对于 '+','-','=','!','<','>','*','/','&','^','|','.',':'
+        字符可能需要读入多个以匹配完整
+        """
+        assert self.current_char in self.long_op_dict
+        result = self.current_char
+        token_type = TokenType(self.current_char)
+        for long_op in self.long_op_dict[self.current_char]:
+            if self.peek(len(long_op)) == long_op:
+                token_type = TokenType(self.current_char + long_op)
+                for _ in range(len(long_op)):
+                    self.advance()
+                    result += self.current_char
+                break
+        
+        token = Token(token_type, result, self.line, self.column)
         self.advance()
         return token
 
@@ -479,20 +551,19 @@ class Lexer:
         """
         raise NotImplementedError
 
-class TokenSet:
 
+class TokenSet:
     def __init__(self, *args) -> None:
-        
         self._token_set = set()
         for arg in args:
             if isinstance(arg, Enum):
                 self._token_set.add(arg)
-                
+
             elif isinstance(arg, TokenSet):
                 for token_type in arg._token_set:
                     self._token_set.add(token_type)
             else:
                 raise TypeError(args)
-            
+
     def __contains__(self, item):
         return item in self._token_set

@@ -3,7 +3,7 @@
 <external-declaration> ::= <function-definition>
                          | <declaration>
 
-<function-definition> ::= {<declaration-specifier>}* <declarator> (<compound-statement>)?
+<function-definition> ::= {<declaration-specifier>}* <declarator_list> (<compound-statement>)?
 
 <declaration-specifier> ::= <storage-class-specifier>
                           | <type-specifier>
@@ -44,6 +44,8 @@
 <struct-declarator> ::= <declarator> (":" <constant-expression>)?
                       | ":" <constant-expression>
 
+<declarator_list> ::= <declarator> ("," <declarator>)*
+
 <declarator> ::= {<pointer>}? <direct-declarator>
 
 <pointer> ::= * {<type-qualifier>}* {<pointer>}?
@@ -56,7 +58,6 @@
 
 <direct-declarator-postfix> ::= "[" {<constant-expression>}? "]" (<direct-declarator-postfix>)?
                               | "(" (<parameter-type-list>)? ")" (<direct-declarator-postfix>)?
-                              | ("," <declarator>)* (<direct-declarator-postfix>)?
 
 <constant-expression> ::= <conditional-expression>
 
@@ -163,7 +164,7 @@
 
 <declaration> ::=  {<declaration-specifier>}+ {<init-declarator>}* ";"
 
-<init-declarator> ::= <declarator> ("=" <initializer>)?
+<init-declarator> ::= <declarator_list> ("=" <initializer>)?
 
 <initializer> ::= <assignment-expression>
                 | "{" <initializer-list> "}"

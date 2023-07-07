@@ -58,13 +58,13 @@ class CTokenType(Enum):
     # -----------------------------------------------
 
     POINTER = "*"
-    PLUSPLUS = "++"
-    MINUSMINUS = "--"
 
 
 class CLexer(Lexer):
     def __init__(self, text: str, TokenType: TokenType = CTokenType):
         super().__init__(text, TokenType)
+        disable_long_op = ["===","!==","::"]
+        self.build_long_op_dict(disable_long_op)
 
     def get_next_token(self):
         while self.current_char is not None:
@@ -88,27 +88,22 @@ class CLexer(Lexer):
             if self.current_char in ("'", '"'):
                 return self.get_string()
 
-            # single-character token
+            if self.current_char in self.long_op_dict:
+                return self.get_long_op()
             try:
-                # get enum member by value, e.g.
-                # TokenType(';') --> TokenType.SEMI
                 token_type = TokenType(self.current_char)
             except ValueError:
-                # no enum member with value equal to self.current_char
                 self.error()
             else:
-                # create a token with a single-character lexeme as its value
                 token = Token(
                     type=token_type,
-                    value=token_type.value,  # e.g. ';', '.', etc
+                    value=token_type.value,
                     line=self.line,
                     column=self.column,
                 )
                 self.advance()
                 return token
 
-        # EOF (end-of-file) token indicates that there is no more
-        # input left for lexical analysis
         return Token(type=TokenType.EOF, value="EOF", line=self.line, column=self.column)
 
 
@@ -156,9 +151,7 @@ class CTokenSet:
         self.direct_delcartor_postfix = TokenSet(
             TokenType.LPAREN, TokenType.LSQUAR_PAREN, TokenType.LPAREN
         )
-        self.compound_statement = TokenSet(
-            TokenType.LCURLY_BRACE
-        )
+        self.compound_statement = TokenSet(TokenType.LCURLY_BRACE)
         self.assignment_operator = TokenSet(
             TokenType.ASSIGN,
             TokenType.MUL_ASSIGN,
@@ -178,21 +171,19 @@ class CTokenSet:
             TokenType.PLUS,
             TokenType.MINUS,
             TokenType.TILDE,
-            TokenType.BANG
+            TokenType.BANG,
         )
         self.constant_expression = TokenSet(
             TokenType.LPAREN,
             CTokenType.SIZEOF,
-            CTokenType.PLUSPLUS,
-            CTokenType.MINUSMINUS,
+            TokenType.PLUS_PLUS,
+            TokenType.MINUS_MINUS,
             TokenType.STRING,
             TokenType.ID,
             TokenType.NUMBER,
             self.assignment_operator,
-            self.unary_operator
+            self.unary_operator,
         )
         self.identifier = TokenSet(TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.CHAR)
 
-        self.parameter_list = TokenSet(
-            self.declaration_specifier
-        )
+        self.parameter_list = TokenSet(self.declaration_specifier)

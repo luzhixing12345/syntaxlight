@@ -2,7 +2,19 @@ from syntaxlight.ast import NodeVisitor
 from .parser import Parser
 from ..lexers import TokenType, CTokenType, CTokenSet
 from ..error import ErrorCode
-from ..ast import AST, Object, Array, Pair, String, Number, Keyword, UnaryOp
+from ..ast import (
+    AST,
+    Object,
+    Array,
+    Pair,
+    String,
+    Number,
+    Keyword,
+    UnaryOp,
+    BinaryOp,
+    ConditionalExpression,
+)
+from typing import List
 
 
 class TranslationUnit(AST):
@@ -17,16 +29,19 @@ class TranslationUnit(AST):
 
 
 class Function(AST):
-    def __init__(self, declaration_specifiers, declarator, compound_statement) -> None:
+    def __init__(
+        self, declaration_specifiers, declarator_list: List["Declarator"], compound_statement
+    ) -> None:
         super().__init__()
         self.declaration_specifiers = declaration_specifiers
-        self.declarator = declarator
+        self.declarator_list = declarator_list
         self.compound_statement = compound_statement
 
     def visit(self, node_visitor: NodeVisitor = None):
         for declaration_specifier in self.declaration_specifiers:
             node_visitor.link(self, declaration_specifier)
-        node_visitor.link(self, self.declarator)
+        for declarator in self.declarator_list:
+            node_visitor.link(self, declarator)
         node_visitor.link(self, self.compound_statement)
         return super().visit(node_visitor)
 
@@ -110,7 +125,8 @@ class DirectDeclaractor(AST):
         super().__init__()
         self.id = None
         self.declarator: Declarator = None
-        self.constant_expression = None
+        self.constant_expressions = None
+        self.parameter_list = None
 
     def update_id(self):
         for token in self._tokens:
@@ -123,10 +139,12 @@ class DirectDeclaractor(AST):
     def visit(self, node_visitor: NodeVisitor = None):
         if self.declarator:
             node_visitor.link(self, self.declarator)
-        if self.direct_delcartor_postfix:
-            node_visitor.link(self, self.direct_delcartor_postfix)
-        return super().visit(node_visitor)
+        for constant_expression in self.constant_expressions:
+            node_visitor.link(self, constant_expression)
 
+        for parameter in self.parameter_list:
+            node_visitor.link(self, parameter)
+        return super().visit(node_visitor)
 
 
 class CParser(Parser):
@@ -166,16 +184,16 @@ class CParser(Parser):
 
     def function_definition(self):
         """
-        <function-definition> ::= {<declaration-specifier>}* <declarator> (<compound-statement>)?
+        <function-definition> ::= {<declaration-specifier>}* <declarator_list> (<compound-statement>)?
         """
         declaration_specifiers = []
         compound_statement = None
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
-        declarator = self.declarator()
+        declarator_list = self.declarator_list()
         if self.current_token.type in self.cfirst_set.compound_statement:
             compound_statement = self.compound_statement()
-        return Function(declaration_specifiers, declarator, compound_statement)
+        return Function(declaration_specifiers, declarator_list, compound_statement)
 
     def declaration_sepcifier(self):
         """
@@ -190,7 +208,9 @@ class CParser(Parser):
         elif self.current_token.type in self.cfirst_set.type_qualifier:
             node = self.type_qualifier()
         else:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be StorageClass or Type or QualifyType")
+            self.error(
+                ErrorCode.UNEXPECTED_TOKEN, "should be StorageType or BaseType or QualifyType"
+            )
 
         return node
 
@@ -328,6 +348,16 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "struct declarator should match declarator or :")
         return node
 
+    def declarator_list(self) -> List[Declarator]:
+        """
+        <declarator_list> ::= <declarator> ("," <declarator>)*
+        """
+        declarator_list = [self.declarator()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            declarator_list.append(self.declarator())
+        return declarator_list
+
     def declarator(self):
         """
         <declarator> ::= {<pointer>}? <direct-declarator>
@@ -380,8 +410,7 @@ class CParser(Parser):
 
         <direct-declarator-postfix> ::= "[" {<constant-expression>}? "]" (<direct-declarator-postfix>)?
                                       | "(" (<parameter-list>)?      ")" (<direct-declarator-postfix>)?
-                                      | ("," <declarator>)?
-        
+
         最后的匹配使用("," <declarator>)?, 将逗号后的所有情况放到下一级的 declarator 中去嵌套解决
         """
         node = DirectDeclaractor()
@@ -397,10 +426,10 @@ class CParser(Parser):
             node.update_id()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be id or (")
-        
+
         # 先在这里统一保存, 后续根据 token [] () 来分析具体的 [3](int,int)[4]
         constant_expressions = []
-        parameter_lists = []
+        parameter_list = []
         while self.current_token.type in self.cfirst_set.direct_delcartor_postfix:
             if self.current_token.type == TokenType.LSQUAR_PAREN:
                 node.register_token(self.eat(TokenType.LSQUAR_PAREN))
@@ -410,72 +439,126 @@ class CParser(Parser):
             if self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.parameter_list:
-                    parameter_lists.append(self.parameter_list())
+                    parameter_list.append(self.parameter_list())
                 node.register_token(self.eat(TokenType.RPAREN))
-            if self.current_token.type == TokenType.COMMA:
-                ...
+
+        node.update(constant_expressions=constant_expressions)
+        node.update(parameter_list=parameter_list)
 
         return node
-            
 
     def constant_expression(self):
         """
         <constant-expression> ::= <conditional-expression>
         """
+        return self.conditional_expression()
 
     def conditional_expression(self):
         """
         <conditional-expression> ::= <logical-or-expression> ("?" <expression> ":" <conditional-expression>)?
         """
+        node = ConditionalExpression()
+        node.update(condition_expr=self.logical_or_expression())
+        if self.current_token.type == TokenType.QUSTION:
+            node.register_token(self.eat(TokenType.QUSTION))
+            node.update(value_true=self.expression())
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(value_false=self.conditional_expression())
+        return node
 
     def logical_or_expression(self):
         """
-        <logical-or-expression> ::= (<logical-or-expression> "||")? <logical-and-expression>
+        <logical-or-expression> ::= <logical-and-expression> ("||" <logical-and-expression>)*
         """
+        node = BinaryOp()
+        node.update(expr_left=self.logical_and_expression())
+        while self.current_token.type == TokenType.OR:
+            node.update(expr_right=self.logical_and_expression())
+        return node
 
     def logical_and_expression(self):
         """
-        <logical-and-expression> ::= (<logical-and-expression> "&&")? <inclusive-or-expression>
+        <logical-and-expression> ::= <inclusive-or-expression> ("&&" <inclusive-or-expression>)*
         """
+        node = BinaryOp()
+        node.update(expr_left=self.inclusive_or_expression())
+        while self.current_token.type == TokenType.AND:
+            node.register_token(self.eat(self.current_token.type))
+            node.update(expr_right=self.inclusive_or_expression())
+        return node
 
     def inclusive_or_expression(self):
         """
-        <inclusive-or-expression> ::= (<inclusive-or-expression> "|")? <exclusive-or-expression>
+        <inclusive-or-expression> ::= <exclusive-or-expression> ("|" <exclusive-or-expression>)*
         """
+        node = BinaryOp()
+        node.update(expr_left=self.exclusive_or_expression())
+        while self.current_token.type == TokenType.PIPE:
+            node.register_token(self.eat(self.current_token.type))
+            node.update(expr_right=self.exclusive_or_expression())
+        return node
 
     def exclusive_or_expression(self):
         """
-        <exclusive-or-expression> ::= (<exclusive-or-expression> "^")? <and-expression>
+        <exclusive-or-expression> ::= <and-expression> ("^" <and-expression>)*
         """
+        node = BinaryOp()
+        node.update(expr_left=self.and_expression())
+        while self.current_token.type == TokenType.CARET:
+            node.register_token(self.eat(self.current_token.type))
+            node.update(expr_right=self.and_expression())
+        return node
 
     def and_expression(self):
         """
-        <and-expression> ::= (<and-expression> "&")? <equality-expression>
+        <and-expression> ::= <equality-expression> ("&" <equality-expression>)*
         """
+        node = BinaryOp()
+        node.update(expr_left=self.equality_expression())
+        while self.current_token.type == TokenType.AMPERSAND:
+            node.register_token(self.eat(self.current_token.type))
+            node.update(expr_right=self.equality_expression())
+        return node
 
     def equality_expression(self):
         """
-        <equality-expression> ::= (<equality-expression> ("=="|"!="))? <relational-expression>
+        <equality-expression> ::= <relational-expression> (("=="|"!=") <relational-expression>)*
         """
+        node = BinaryOp()
+        node.update(expr_left=self.relational_expression())
+        while self.current_token.type in (TokenType.EQ, TokenType.NE):
+            node.register_token(self.eat(self.current_token.type))
+            node.update(expr_right=self.relational_expression())
+        return node
 
     def relational_expression(self):
         """
-        <relational-expression> ::= (<relational-expression> ("<"|">"|"<="|">="))? <shift-expression>
+        <relational-expression> ::= <shift-expression> (("<"|">"|"<="|">=") <shift-expression>)*
         """
+        node = BinaryOp()
+        node.update(expr_left=self.shift_expression())
+        while self.current_token.type in (TokenType.LANGLE_BRACE, TokenType.RANGLE_BRACE, TokenType.LE, TokenType.GE):
+            if self.current_token.type == TokenType.LANGLE_BRACE:
+                self.current_token.type = TokenType.LT
+            elif self.current_token.type == TokenType.RANGLE_BRACE:
+                self.current_token.type = TokenType.GT
+            node.register_token(self.eat(self.current_token.type))
+            node.update(expr_right=self.shift_expression())
+        return node
 
     def shift_expression(self):
         """
-        <shift-expression> ::= (<shift-expression> ("<<" | ">>"))? <additive-expression>
+        <shift-expression> ::= <additive-expression> (("<<" | ">>") <additive-expression>)*
         """
 
     def additive_expression(self):
         """
-        <additive-expression> ::= (<additive-expression> ("+"|"-"))? <multiplicative-expression>
+        <additive-expression> ::= <multiplicative-expression> (("+"|"-") <multiplicative-expression>)*
         """
 
     def multiplicative_expression(self):
         """
-        <multiplicative-expression> ::= (<multiplicative-expression> ("*"|"/"|"%"))? <cast-expression>
+        <multiplicative-expression> ::= <cast-expression> (("*"|"/"|"%") <cast-expression>)*
         """
 
     def case_expression(self):
