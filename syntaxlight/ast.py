@@ -257,6 +257,13 @@ class Expression(AST):
         return result + "\n"
 
 
+class AssignMent(AST):
+
+    def __init__(self, op) -> None:
+        super().__init__()
+        self.op = op
+
+
 class NodeVisitor:
     """
     遍历 AST 节点构建 graphviz 图结构

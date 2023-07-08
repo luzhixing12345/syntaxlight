@@ -3,7 +3,7 @@
 <external-declaration> ::= <function-definition>
                          | <declaration>
 
-<function-definition> ::= {<declaration-specifier>}* <declarator_list> (<compound-statement>)?
+<function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
 
 <declaration-specifier> ::= <storage-class-specifier>
                           | <type-specifier>
@@ -44,8 +44,6 @@
 <struct-declarator> ::= <declarator> (":" <constant-expression>)?
                       | ":" <constant-expression>
 
-<declarator_list> ::= <declarator> ("," <declarator>)*
-
 <declarator> ::= {<pointer>}? <direct-declarator>
 
 <pointer> ::= * {<type-qualifier>}* {<pointer>}?
@@ -53,11 +51,12 @@
 <type-qualifier> ::= "const"
                    | "volatile"
 
-<direct-declarator> ::=     <identifier>     (<direct-declarator-postfix>)?
-                      | "(" <declarator> ")" (<direct-declarator-postfix>)?
+<direct-declarator> ::= <identifier>
+                    | "(" <declarator> ")"
+                    | <direct-declarator> "[" <constant-expression>? "]"
+                    | <direct-declarator> "(" <parameter-list>?  ")"
+                    | <direct-declarator> "(" (<identifier> ("," <identifier>)*)? ")"
 
-<direct-declarator-postfix> ::= "[" {<constant-expression>}? "]" (<direct-declarator-postfix>)?
-                              | "(" (<parameter-type-list>)? ")" (<direct-declarator-postfix>)?
 
 <constant-expression> ::= <conditional-expression>
 
@@ -161,9 +160,9 @@
 
 <typedef-name> ::= <identifier>
 
-<declaration> ::=  {<declaration-specifier>}+ {<init-declarator>}* ";"
+<declaration> ::=  {<declaration-specifier>}+ <init-declarator> ("," <init-declarator>)* ";"
 
-<init-declarator> ::= <declarator_list> ("=" <initializer>)?
+<init-declarator> ::= <declarator> ("=" <initializer>)?
 
 <initializer> ::= <assignment-expression>
                 | "{" <initializer-list> "}"

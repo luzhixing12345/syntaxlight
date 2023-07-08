@@ -1,11 +1,4 @@
+#include <stdio.h>
 
-
-int f(int x) {
-    return 1;
-}
-
-f(10);
-
-int main() {
-    return 1;
-}
+int x = 10;
+int f(x);

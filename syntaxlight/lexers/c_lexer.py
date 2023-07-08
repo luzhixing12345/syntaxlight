@@ -181,6 +181,15 @@ class CTokenSet:
             TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.LPAREN
         )
         self.postfix_expression = TokenSet(self.primary_expression)
+        # postfix_expression 内部的
+        self.postfix_expression_inside = TokenSet(
+            TokenType.LSQUAR_PAREN,
+            TokenType.LPAREN,
+            TokenType.DOT,
+            TokenType.POINT,
+            TokenType.INC,
+            TokenType.DEC
+        )
         self.type_name = TokenSet(self.specifier_qualifier)
         self.unary_expression = TokenSet(
             self.unary_operator,
@@ -191,3 +200,7 @@ class CTokenSet:
         )
         self.conditinal_expression = TokenSet(self.unary_expression, TokenType.LPAREN)
         self.constant_expression = TokenSet(self.conditinal_expression)
+        self.assignment_expression = TokenSet(
+            self.unary_expression,
+            self.conditinal_expression
+        )
