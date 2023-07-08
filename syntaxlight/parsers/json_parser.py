@@ -146,7 +146,7 @@ class JsonParser(Parser):
                 number.register_token(self.eat(TokenType.NUMBER))
             else:
                 self.error(ErrorCode.UNEXPECTED_TOKEN, "- should match number")
-            node.update(value=number)
+            node.update(expr=number)
             return node
 
         if self.current_token.type == TokenType.LCURLY_BRACE:

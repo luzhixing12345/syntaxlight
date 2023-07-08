@@ -63,7 +63,7 @@ class CTokenType(Enum):
 class CLexer(Lexer):
     def __init__(self, text: str, TokenType: TokenType = CTokenType):
         super().__init__(text, TokenType)
-        disable_long_op = ["===","!==","::"]
+        disable_long_op = ["===", "!==", "::"]
         self.build_long_op_dict(disable_long_op)
 
     def get_next_token(self):
@@ -173,17 +173,21 @@ class CTokenSet:
             TokenType.TILDE,
             TokenType.BANG,
         )
-        self.constant_expression = TokenSet(
-            TokenType.LPAREN,
-            CTokenType.SIZEOF,
-            TokenType.PLUS_PLUS,
-            TokenType.MINUS_MINUS,
-            TokenType.STRING,
-            TokenType.ID,
-            TokenType.NUMBER,
-            self.assignment_operator,
-            self.unary_operator,
-        )
+
         self.identifier = TokenSet(TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.CHAR)
 
         self.parameter_list = TokenSet(self.declaration_specifier)
+        self.primary_expression = TokenSet(
+            TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.LPAREN
+        )
+        self.postfix_expression = TokenSet(self.primary_expression)
+        self.type_name = TokenSet(self.specifier_qualifier)
+        self.unary_expression = TokenSet(
+            self.unary_operator,
+            TokenType.INC,
+            TokenType.DEC,
+            CTokenType.SIZEOF,
+            self.postfix_expression,
+        )
+        self.conditinal_expression = TokenSet(self.unary_expression, TokenType.LPAREN)
+        self.constant_expression = TokenSet(self.conditinal_expression)

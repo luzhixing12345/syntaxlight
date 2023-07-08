@@ -1,6 +1,5 @@
 import textwrap
 
-from syntaxlight.ast import NodeVisitor
 from .lexers import Token
 from typing import List
 
@@ -164,6 +163,17 @@ class Keyword(AST):
         return self.name
 
 
+class Identifier(AST):
+    def __init__(self, id) -> None:
+        super().__init__()
+        self.id = id
+
+
+class Constant(AST):
+    def __init__(self, constant) -> None:
+        super().__init__()
+        self.constant = constant
+
 class String(AST):
     def __init__(self, string) -> None:
         super().__init__()
@@ -183,30 +193,31 @@ class Number(AST):
 
 
 class UnaryOp(AST):
-    def __init__(self, value: Number = None, op: str = None) -> None:
+    def __init__(self, expr: AST = None, op: str = None) -> None:
         super().__init__()
-        self.value = value
-        self.op = op  # +/-
+        self.expr = expr
+        self.op = op
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.value)
+        node_visitor.link(self, self.expr)
         return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
-        return self.op + self.value.formatter(depth + 1)
+        return self.op + self.expr.formatter(depth + 1)
 
 
 class BinaryOp(AST):
     def __init__(self) -> None:
         super().__init__()
         self.expr_left = None
-        self.expr_right = None
+        self.expr_rights:List[AST] = None
         self.op = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
+    def visit(self, node_visitor: "NodeVisitor" = None):
         node_visitor.link(self, self.expr_left)
-        if self.expr_right:
-            node_visitor.link(self, self.expr_right)
+        if self.expr_rights:
+            for expr_right in self.expr_rights:
+                node_visitor.link(self, expr_right)
         return super().visit(node_visitor)
 
 
@@ -217,7 +228,7 @@ class ConditionalExpression(AST):
         self.value_true = None
         self.value_false = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
+    def visit(self, node_visitor: "NodeVisitor" = None):
         node_visitor.link(self, self.condition_expr)
         if self.value_true:
             node_visitor.link(self, self.value_true)
@@ -226,19 +237,22 @@ class ConditionalExpression(AST):
         return super().visit(node_visitor)
 
 class Expression(AST):
-    def __init__(self, node: AST = None) -> None:
+    def __init__(self, exprs: List[AST] = None) -> None:
         super().__init__()
-        self.node = node
+        self.exprs = exprs
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        if self.node:
-            node_visitor.link(self, self.node)
+        if self.exprs:
+            for expr in self.exprs:
+                node_visitor.link(self, expr)
+
         return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         result = ""
-        if self.node:
-            result += self.node.formatter(depth + 1)
+        if self.exprs:
+            for expr in self.exprs:
+                result += expr.formatter(depth + 1)
 
         return result + "\n"
 

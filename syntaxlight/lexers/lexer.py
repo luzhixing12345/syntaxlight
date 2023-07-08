@@ -10,7 +10,7 @@ class TokenType(Enum):
     PLUS = "+"
     MINUS = "-"
     MUL = "*"
-    SLASH = "/"
+    DIV = "/"
     ASSIGN = "="
     BACK_SLASH = "\\"
     LPAREN = "("
@@ -28,7 +28,7 @@ class TokenType(Enum):
     COMMA = ","
     HASH = "#"
     DOLLAR = "$"
-    PERCENT = "%"
+    MOD = "%"
     CARET = "^"
     AMPERSAND = "&"
     PIPE = "|"
@@ -79,8 +79,8 @@ class TokenType(Enum):
     OR_ASSIGN = "|="
     VARARGS = "..."
     DB_COLON = "::"
-    PLUS_PLUS = "++"
-    MINUS_MINUS = "--"
+    INC = "++"
+    DEC = "--"
     OR = "||"
     AND = "&&"
     POINT = "->"
@@ -174,13 +174,13 @@ class Lexer:
             TokenType.BACKSPACE.value: TokenType.BACKSPACE,
         }
         self.long_ops = [
-            "<<=", # 要排在 << 前面
-            ">>=", # 要排在 >> 前面
+            "<<=",  # 要排在 << 前面
+            ">>=",  # 要排在 >> 前面
             "<<",
             ">>",
-            "===", # 要排在 == 前面
+            "===",  # 要排在 == 前面
             "==",
-            "!==", # 要排在 != 前面
+            "!==",  # 要排在 != 前面
             "!=",
             "<",
             ">",
@@ -200,21 +200,21 @@ class Lexer:
             "--",
             "||",
             "&&",
-            "->"
-        ]        
-        self.long_op_dict:Dict[str,List] = {
+            "->",
+        ]
+        self.long_op_dict: Dict[str, List] = {
             # "+": ["+","="],
             # "-": ["-","=",">"],
             # "<": ["<=","<","="],
             # ">": [">=",">","="]
         }
-        
+
     def build_long_op_dict(self, disable_long_op: List[str] = []):
-        '''
+        """
         选择去除不想要的长运算符匹配
 
         C:   ["===","!==","::"]
-        '''
+        """
         self.long_ops = [x for x in self.long_ops if x not in disable_long_op]
         for long_op in self.long_ops:
             if self.long_op_dict.get(long_op[0], None) is None:
@@ -539,7 +539,7 @@ class Lexer:
                     self.advance()
                     result += self.current_char
                 break
-        
+
         token = Token(token_type, result, self.line, self.column)
         self.advance()
         return token

@@ -177,15 +177,15 @@ class TomlParser(Parser):
         """
         <expression> ::= (<pair> | <table>)?
         """
-        node = None
+        exprs = []
         if self.current_token.type in (TokenType.ID, TokenType.STR):
-            node = self.pair()
+            exprs.append(self.pair())
             self.eat_lf()
             self.skip_crlf()
         elif self.current_token.type == TokenType.LSQUAR_PAREN:
-            node = self.table()
+            exprs.append(self.table())
 
-        return Expression(node)
+        return Expression(exprs)
 
     def pair(self) -> Pair:
         """
@@ -297,7 +297,7 @@ class TomlParser(Parser):
                 number.register_token(self.eat(TokenType.NUMBER))
             else:
                 self.error(ErrorCode.UNEXPECTED_TOKEN, f"should match number")
-            node.update(value=number)
+            node.update(expr=number)
 
         elif self.current_token.type == TomlTokenType.DATE:
             node = Date(self.current_token.value)

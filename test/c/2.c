@@ -2,6 +2,8 @@
 #include <stdio.h>
 
 int a, f(int x);
+
+int x[3];
 // 123
 int main() {
     auto int x = 10; // 123
