@@ -1,8 +1,10 @@
 
-.Token.Pair {
+.Token.Pair.Key {
     color: #88D6FE;
 }
 
 .Token.COMMA, .Token.COLON {
     color: white;
 }
+
+

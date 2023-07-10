@@ -7,7 +7,7 @@
         }
     },
     "$ref": "#/definitions/Schema1",
-    "23": -12310,
+    "23": -12310e10,
     "123": true,
     "123456": false,
     "1999": null

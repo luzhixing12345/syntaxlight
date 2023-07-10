@@ -5,53 +5,64 @@ from enum import Enum
 class CTokenType(Enum):
     # -----------------------------------------------
     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
-
-    # https://zhuanlan.zhihu.com/p/37908790
-    # basic
-    VOID = "void"
-    CHAR = "char"
-    INT = "int"
-    FLOAT = "float"
-    DOUBLE = "double"
-
-    # 修饰性关键字
-    SHORT = "short"
-    LONG = "long"
-    SIGNED = "signed"
-    UNSIGNED = "unsigned"
-
-    # 复杂类型关键字
-    STRUCT = "struct"
-    UNION = "union"
-    ENUM = "enum"
-    TYPEDEF = "typedef"
-    SIZEOF = "sizeof"
-
-    # 存储级别关键字
-    AUTO = "auto"
-    STATIC = "static"
-    REGISTER = "register"
-    EXTERN = "extern"
-    CONST = "const"
-    VOLATILE = "volatile"
-
-    # 流程跳转
-    RETURN = "return"
-    CONTINUE = "continue"
-    BREAK = "break"
-    GOTO = "goto"
-
-    # 分支结构
-    IF = "if"
-    ELSE = "else"
-    SWITCH = "switch"
-    CASE = "case"
-    DEFAULT = "default"
-
-    # 循环结构
-    FOR = "for"
-    DO = "do"
-    WHILE = "while"
+    ALIGNOF = "alignof"
+    AUTO = 'auto'
+    BOOL = 'bool'
+    BREAK = 'break'
+    CASE = 'case'
+    CHAR = 'char'
+    CONST = 'const'
+    CONSTEXPR = 'constexpr'
+    CONTINUE = 'continue'
+    DEFAULT = 'default'
+    DO = 'do'
+    DOUBLE = 'double'
+    ELSE = 'else'
+    ENUM = 'enum'
+    EXTERN = 'extern'
+    FALSE = 'false' # C23
+    FLOAT = 'float'
+    FOR = 'for'
+    GOTO = 'goto'
+    IF = 'if'
+    INLINE = 'inline'
+    INT = 'int'
+    LONG = 'long'
+    NULLPTR = 'nullptr' # C23
+    REGISTER = 'register'
+    RESTRICT = 'restrict'
+    RETURN = 'return'
+    SHORT = 'short'
+    SIGNED = 'signed'
+    SIZEOF = 'sizeof'
+    STATIC = 'static'
+    STATIC_ASSERT = 'static_assert'
+    STRUCT = 'struct'
+    SWITCH = 'switch'
+    THREAD_LOCAL = 'thread_local'
+    TRUE = 'true' # C23
+    TYPEDEF = 'typedef'
+    TYPEOF = 'typeof' # C23
+    TYPEOF_UNQUAL = 'typeof_unqual' # C23
+    UNION = 'union'
+    UNSIGNED = 'unsigned'
+    VOID = 'void'
+    VOLATITLE = 'volatile'
+    WHILE = 'while'
+    _ALIGNAS = '_Alignas' # C23 => ALIGNAS
+    ALIGNAS = 'alignas'
+    _ATOMIC = '_Atomic'
+    _BITINT = '_BitInt'
+    _BOOL = '_Bool' # C23 => BOOL
+    _COMPLEX = "_Complex"
+    _DECIMAL128 = '_Decimal128' # C23
+    _DECIMAL32 = '_Decimal32' # C23
+    _DECIMAL64 = '_Decimal64' # C23
+    _GENERIC = '_Generic'
+    _IMAGINARY = '_Imaginary'
+    _NORETURN = '_Noreturn'
+    _STATIC_ASSERT = '_Static_assert' # C23 => STATIC_ASSERT
+    _THREAD_LOCAL = '_Thread_local' # C23 => THREAD_LOCAL
 
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
     # start - end 之间为对应语言的保留关键字

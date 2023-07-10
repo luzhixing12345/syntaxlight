@@ -10,6 +10,10 @@ pre[class*="language-"] {
     color: #CE9178;
 }
 
+.Token.UnaryOp {
+    color: #A2CEA8;
+}
+
 .Token.NUMBER {
     color: #A2CEA8;
 }

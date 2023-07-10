@@ -98,14 +98,14 @@ class JsonParser(Parser):
         """
         <Pair> ::= String ':' <Value>
         """
+        node = Pair()
+
         key = String(self.current_token.value)
-        node = Pair(key, None)
-
-        node.register_token(self.eat(TokenType.STRING))
+        key.register_token(self.eat(TokenType.STRING), 'Key')
+        
+        node.update(key = key)
         node.register_token(self.eat(TokenType.COLON))
-
-        value = self.value()
-        node.update(value=value)
+        node.update(value=self.value())
         return node
 
     def value(self):

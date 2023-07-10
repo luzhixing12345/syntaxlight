@@ -7,7 +7,7 @@ lexer_test = False
 if len(sys.argv) == 3:
     lexer_test = True
 
-FILE_TYPES = ['c']
+FILE_TYPES = ['json']
 
 test_folder_path = './test'
 languages = os.listdir(test_folder_path)

@@ -664,21 +664,21 @@ class CParser(Parser):
         """
         <multiplicative-expression> ::= <cast-expression> (("*"|"/"|"%") <cast-expression>)*
         """
-        expr_left = self.case_expression()
+        expr_left = self.cast_expression()
         if self.current_token.type in (TokenType.MUL, TokenType.DIV, TokenType.MOD):
             node = BinaryOp()
             node.update(expr_left=expr_left)
             expr_rights = []
             while self.current_token.type in (TokenType.MUL, TokenType.DIV, TokenType.MOD):
                 node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.case_expression())
+                expr_rights.append(self.cast_expression())
 
             node.update(expr_rights=expr_rights)
             return node
         else:
             return expr_left
 
-    def case_expression(self):
+    def cast_expression(self):
         """
         <cast-expression> ::= ("(" <type-name> ")")* <unary-expression>
         """
@@ -732,7 +732,7 @@ class CParser(Parser):
         elif self.current_token.type in self.cfirst_set.unary_operator:
             node.update(op=self.current_token.value)
             node.register_token(self.eat(self.current_token.type))
-            node.update(expr=self.case_expression())
+            node.update(expr=self.cast_expression())
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,

@@ -21,12 +21,14 @@ class AST(object):
         self._tokens: List[Token] = []
         self.depth = 0  # 节点深度
 
-    def register_token(self, tokens: List[Token]):
+    def register_token(self, tokens: List[Token], extra_class_name:str = None):
         """
         将 token 注册到 AST 树中以更新 token 的属性
         """
         for token in tokens:
             token.class_list.append(self.class_name)
+            if extra_class_name:
+                token.class_list.append(extra_class_name)
             self._tokens.append(token)
             token.ast = self
 
@@ -137,7 +139,7 @@ class Array(AST):
 
 
 class Pair(AST):
-    def __init__(self, key: AST, value: AST = None) -> None:
+    def __init__(self, key: AST = None, value: AST = None) -> None:
         super().__init__()
         self.key: AST = key
         self.value: AST = value

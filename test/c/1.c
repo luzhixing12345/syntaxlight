@@ -1,10 +1,12 @@
-
 #include <stdio.h>
 
-int main() {
-    return 0;
-}
+void f(double a[restrict static 3][5]);
 
-struct x{
-    int a;
+int x(int a[static restrict 3]);
+
+double maximum(int n, int m, double a[*][*]);
+
+int main() {
+    printf("__STDC_VERSION__ = %ld\n", __STDC_VERSION__);
+    return 0;
 }

@@ -6,54 +6,73 @@
 <function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
 
 <declaration-specifier> ::= <storage-class-specifier>
-                          | <type-specifier>
-                          | <type-qualifier>
+                          | <type-specifier-qualifier>
+                          | <function-specifier>
 
-<storage-class-specifier> ::= 'auto'  
-                            | 'register'
-                            | 'static'
-                            | 'extern'
-                            | 'typedef'
+<storage-class-specifier> ::= auto
+                            | register
+                            | static
+                            | extern
+                            | typedef
+                            | _Thread_local
 
-<type-specifier> ::= 'void'
-                   | 'char'
-                   | 'short'
-                   | 'int'
-                   | 'long'
-                   | 'float'
-                   | 'double'
-                   | 'signed'
-                   | 'unsigned'
+<type-specifier-qualifier> ::= <type-specifier>
+                             | <type-qualifier>
+                             | <alignment-specifier>
+
+<type-specifier> ::= void
+                   | char
+                   | short
+                   | int
+                   | long
+                   | float
+                   | double
+                   | signed
+                   | unsigned
+                   | _Bool
+                   | _Complex
+                   | <atomic-type-specifier>
                    | <struct-or-union-specifier>
                    | <enum-specifier>
                    | <typedef-name>
 
+<atomic-type-specifier> ::= _Atomic "(" <type-name> ")"
+
+<function-specifier> ::= inline
+                       | _Noreturn
+
+<alignment-specifier> ::= _Alignas "(" <type-name> ")"
+                        | _Alignas "(" <constant-expression> ")"
+
 <struct-or-union-specifier> ::= <struct-or-union> <identifier> ("{" {<struct-declaration>}* "}")?
                               | <struct-or-union> "{" {<struct-declaration>}* "}"
 
-<struct-or-union> ::= "struct"
-                    | "union"
+<struct-or-union> ::= struct
+                    | union
 
-<struct-declaration> ::= {<specifier-qualifier>}* <struct-declarator-list>
+<struct-declaration> ::= {<specifier-qualifier>}+ (<struct-declarator> ("," <struct-declarator>)*)?
+                       | <static-assert-declaration>
 
 <specifier-qualifier> ::= <type-specifier>
                         | <type-qualifier>
-
-<struct-declarator-list> ::= <struct-declarator> ("," <struct-declarator>)*
 
 <struct-declarator> ::= <declarator> (":" <constant-expression>)?
                       | ":" <constant-expression>
 
 <declarator> ::= {<pointer>}? <direct-declarator>
 
-<pointer> ::= * {<type-qualifier>}* {<pointer>}?
+<pointer> ::= ("*" <type-qualifier>*)*
 
-<type-qualifier> ::= "const"
-                   | "volatile"
+<type-qualifier> ::= const
+                   | volatile
+                   | restrict
+                   | _Atomic
 
 <direct-declarator> ::= <identifier>
                     | "(" <declarator> ")"
-                    | <direct-declarator> "[" <constant-expression>? "]"
+                    | <direct-declarator> "[" <type-qualifier>* <assignment-expression> "]"
+                    | <direct-declarator> "[" static <type-qualifier>* <assignment-expression> "]"
+                    | <direct-declarator> "[" static <type-qualifier>* <assignment-expression> "]"
                     | <direct-declarator> "(" <parameter-list>?  ")"
                     | <direct-declarator> "(" (<identifier> ("," <identifier>)*)? ")"
 
@@ -89,26 +108,40 @@
                      | "++" <unary-expression>
                      | "--" <unary-expression>
                      | <unary-operator> <cast-expression>
-                     | "sizeof" <unary-expression>
-                     | "sizeof" <type-name>
+                     | sizeof <unary-expression>
+                     | sizeof "(" <type-name> ")"
+                     | alignof "(" <type-name> ")"
 
 <postfix-expression> ::= <primary-expression>
                        | <postfix-expression> "[" <expression> "]"
-                       | <postfix-expression> "(" {<assignment-expression>}* ")"
+                       | <postfix-expression> "(" <argument-expression-list>? ")"
                        | <postfix-expression> "." <identifier>
                        | <postfix-expression> "->" <identifier>
                        | <postfix-expression> "++"
                        | <postfix-expression> "--"
+                       | <compound-literal>
+                       | "(" <storage-class-specifier>* <type-name> ")" "{" <init-declarator-list> (",")? "}"
 
 <primary-expression> ::= <identifier>
                        | <constant>
                        | <string>
                        | "(" <expression> ")"
+                       | <generic-selection>
+
+<generic-selection> ::= _Generic "(" <assignment-expression> "," <generic-association> ("," <generic-association>)* ")"
+
+<generic-association> ::= <type-name> ":" <assignment-expression>
+                        | default ":" <assignment-expression>
+
+<argument-expression-list> ::= <assignment-expression> ("," <assignment-expression>)*
+
+<compound-literal>
 
 <constant> ::= <integer-constant>
              | <character-constant>
              | <floating-constant>
              | <enumeration-constant>
+             | <predefined-constant>
 
 <expression> ::= <assignment-expression> ("," <assignment-expression>)*
 
@@ -150,25 +183,27 @@
                                | {<direct-abstract-declarator>}? "[" {<constant-expression>}? "]"
                                | {<direct-abstract-declarator>}? "(" {<parameter-type-list>}? ")"
 
-<enum-specifier> ::= "enum" <identifier> "{" <enumerator-list> "}"
-                   | "enum" "{" <enumerator-list> "}"
+<enum-specifier> ::= "enum" (<identifier>)? "{" <enumerator> ("," <enumerator>)* (",")? "}"
                    | "enum" <identifier>
 
-<enumerator-list> ::= (<enumerator-list> ",")? <enumerator>
-
-<enumerator> ::= <identifier> ("=" <constant-expression>)?
+<enumerator> ::= <enumeration-constant> ("=" <constant-expression>)?
 
 <typedef-name> ::= <identifier>
 
-<declaration> ::=  {<declaration-specifier>}+ <init-declarator> ("," <init-declarator>)* ";"
+<declaration> ::= <declaration-specifiers> (<init-declarator-list>)? ";"
+                | <static-assert-declaration>
+                | <attribute-specifier-sequence> <declaration-specifiers> <init-declarator-list>
+                | <attribute-declaration>
+
+<declaration-specifiers> ::= <declaration-specifier>+ <attribute-specifier-sequence>?
 
 <init-declarator> ::= <declarator> ("=" <initializer>)?
 
 <initializer> ::= <assignment-expression>
-                | "{" <initializer-list> "}"
-                | "{" <initializer-list> "," "}"
+                | "{" <init-declarator-list> "}"
+                | "{" <init-declarator-list> "," "}"
 
-<initializer-list> ::= (<initializer-list> ",")? <initializer>
+<init-declarator-list> ::= <init-declarator> ("," <init-declarator>)*
 
 <compound-statement> ::= "{" {<declaration>}* {<statement>}* "}"
 
