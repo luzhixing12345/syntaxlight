@@ -520,9 +520,14 @@ class Lexer:
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
 
-        token = Token(TokenType.COMMENT, result, self.line, self.column)
-        self.advance()
-        return token
+        if result[-1] == '\n':
+            result = result[:-1]
+            token = Token(TokenType.COMMENT, result, self.line, self.column)
+            return token
+        else:    
+            token = Token(TokenType.COMMENT, result, self.line, self.column)
+            self.advance()
+            return token
 
     def get_long_op(self):
         """

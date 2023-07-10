@@ -3,20 +3,8 @@
     color: #569cd6;
 }
 
-.Token.TableArrayHeader, .Token.TableHeader {
+.Token.TableArrayHeader.Path, .Token.TableHeader.Path {
     color: #88D6FE;
-}
-
-.Token.brace-depth-0 {
-    color: #DBD700;
-}
-
-.Token.brace-depth-1 {
-    color: #DA70D6;
-}
-
-.Token.brace-depth-2 {
-    color: #1A9DFF;
 }
 
 .Token.Date {

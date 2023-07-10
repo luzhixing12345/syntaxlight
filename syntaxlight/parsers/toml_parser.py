@@ -121,16 +121,6 @@ class TableEntry(AST):
         return result[:-1]
 
 
-class Date(AST):
-    def __init__(self, value) -> None:
-        super().__init__()
-        self.value = value
-        self.graph_node_info = self.value
-
-    def formatter(self, depth: int = 0):
-        return self.value
-
-
 class TomlParser(Parser):
     """
     TOML do not skip invisible character `\\r\\n`
@@ -300,8 +290,8 @@ class TomlParser(Parser):
             node.update(expr=number)
 
         elif self.current_token.type == TomlTokenType.DATE:
-            node = Date(self.current_token.value)
-            node.register_token(self.eat(TomlTokenType.DATE))
+            node = Number(self.current_token.value)
+            node.register_token(self.eat(TomlTokenType.DATE),'Date')
 
         elif self.current_token.type in (TomlTokenType.TRUE, TomlTokenType.FALSE):
             node = Keyword(self.current_token.value)
