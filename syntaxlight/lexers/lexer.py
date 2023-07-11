@@ -4,6 +4,10 @@ from typing import Dict, List
 
 GLOBAL_TOKEN_ID = 0
 
+# class NewTokenType(Enum):
+#     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
+#     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
+
 
 class TokenType(Enum):
     # 所有基本 Token 类型
@@ -84,6 +88,7 @@ class TokenType(Enum):
     OR = "||"
     AND = "&&"
     POINT = "->"
+
 
 
 class TTYColor(Enum):
@@ -520,11 +525,11 @@ class Lexer:
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
 
-        if result[-1] == '\n':
+        if result[-1] == "\n":
             result = result[:-1]
-            token = Token(TokenType.COMMENT, result, self.line, self.column)
+            token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             return token
-        else:    
+        else:
             token = Token(TokenType.COMMENT, result, self.line, self.column)
             self.advance()
             return token

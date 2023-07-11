@@ -1,0 +1,12 @@
+<catalog>
+  <book>
+    <title>Harry Potter and the Philosopher's Stone</title>
+    <author>J.K. Rowling</author>
+    <year>1997</year>
+  </book>
+  <book>
+    <title>The Great Gatsby</title>
+    <author>F. Scott Fitzgerald</author>
+    <year>1925</year>
+  </book>
+</catalog>

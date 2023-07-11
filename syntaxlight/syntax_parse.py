@@ -6,7 +6,7 @@ from .ast import display_ast
 import sys
 
 
-def parse(text: str, language: str = "guess", file_path=None, show_error_context = True) -> str:
+def parse(text: str, language: str = "guess", file_path=None, show_error_context=True) -> str:
     assert type(text) == str
     assert type(language) == str
 
@@ -27,11 +27,11 @@ def parse(text: str, language: str = "guess", file_path=None, show_error_context
         if show_error_context:
             sys.stderr.write(e.context)
     else:
-        display_ast(parser.node)
+        # display_ast(parser.node)
         return parser.to_html()
 
 
-def parse_file(file_path: str, language: str = "guess", show_error_context = True) -> str:
+def parse_file(file_path: str, language: str = "guess", show_error_context=True) -> str:
     if not os.path.exists(file_path):
         print(f"{file_path} file not exsist")
 
@@ -44,14 +44,14 @@ def parse_file(file_path: str, language: str = "guess", show_error_context = Tru
             print(f"unknown syntax {file_path}")
             exit(1)
 
-    return parse(text, language, file_path=file_path, show_error_context = show_error_context)
+    return parse(text, language, file_path=file_path, show_error_context=show_error_context)
 
 
 def guess_language(file_path: str) -> str:
     file_name = file_path.split(os.sep)[-1]
 
     languages = {
-        "json": ['json'],
+        "json": ["json"],
         "c": ["c", "h"],
         "lua": ["lua"],
         "bnf": ["bnf"],
@@ -62,6 +62,7 @@ def guess_language(file_path: str) -> str:
         "typescript": ["ts", "tsx", "tsc"],
         "pascal": ["pas"],
         "toml": ["toml"],
+        "xml": ["xml"],
     }
 
     if "." in file_name:
@@ -79,7 +80,6 @@ def guess_language(file_path: str) -> str:
 
 
 def get_tokens(lexer: Lexer):
-    
     token = lexer.get_next_token()
     tokens = [token]
     while token.type.value != "EOF":
@@ -98,7 +98,7 @@ def get_tokens(lexer: Lexer):
 def get_lexer(code: str, language: str) -> Lexer:
     language = language.lower()
 
-    lexers = {"c": CLexer, "lua": LuaLexer, "json": JsonLexer, "ebnf": EBNFLexer, "toml": TomlLexer}
+    lexers = {"c": CLexer, "lua": LuaLexer, "json": JsonLexer, "ebnf": EBNFLexer, "toml": TomlLexer,"xml": XmlLexer}
 
     lexer_class = lexers.get(language, None)
     if lexer_class is None:
@@ -109,7 +109,7 @@ def get_lexer(code: str, language: str) -> Lexer:
 
 
 def get_parser(lexer: Lexer) -> Parser:
-    parsers = {"json": JsonParser, "toml": TomlParser, "c": CParser}
+    parsers = {"json": JsonParser, "toml": TomlParser, "c": CParser, "xml": XmlParser}
 
     syntax_type = lexer.__class__.__name__.replace("Lexer", "").lower()
     parser_class = parsers.get(syntax_type, None)

@@ -1,0 +1,9 @@
+
+.Token.Tag, .Token.Prolog{
+    color: #569cd6;
+}
+
+.Token.Attribute.NAME {
+    color: #88D6FE;;
+}
+

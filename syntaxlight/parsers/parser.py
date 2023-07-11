@@ -4,7 +4,7 @@ from enum import Enum
 from ..ast import AST
 from typing import List
 import sys
-
+import html
 
 class Parser:
     def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning = True):
@@ -66,10 +66,6 @@ class Parser:
         sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
     def eat(self, token_type: Enum) -> List[Token]:
-        # compare the current token type with the passed token
-        # type and if they match then "eat" the current token
-        # and assign the next token to the self.current_token,
-        # otherwise raise an exception.
         # print(self.current_token)
         tokens = [self.current_token]
         if self.current_token.type == token_type:
@@ -159,7 +155,7 @@ class Parser:
         """
         将一个解析完成的 AST node 输出其 token 流的 HTML 格式
         """
-        html = ""
+        html_str = ""
         # 对于 ([{<>}]) 计算括号深度
         brace_depth = 0
         brace_stack: List[TokenType] = []
@@ -182,8 +178,8 @@ class Parser:
                         token.class_list.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
                         brace_depth += 1
 
-            html += f'<span class="{token.get_css_class()}">{token.value}</span>'
-        return html
+            html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
+        return html_str
 
     def type_hint(self, array: List[Enum]):
         result = ""

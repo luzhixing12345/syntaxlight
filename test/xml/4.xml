@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<article>
+  <title>Introduction to XML Parsing</title>
+  <author>Jane Smith</author>
+  <content>
+    XML parsing is a fundamental skill for working with structured data. It involves extracting information from XML documents and processing it.
+  </content>
+  <comments>
+    <comment>
+      <author>John Doe</author>
+      <date>2023-07-05</date>
+      <text>Great article! I learned a lot.</text>
+    </comment>
+    <comment>
+      <author>Jane Smith</author>
+      <date>2023-07-07</date>
+      <!-- <text>Thank you, John! I'm glad you found it helpful.</text> -->
+    </comment>
+  </comments>
+</article>

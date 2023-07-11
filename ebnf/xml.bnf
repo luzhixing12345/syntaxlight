@@ -1,0 +1,21 @@
+<document> ::= (<prolog>)? (<element>)*
+
+<prolog> ::= "<?xml" (S <Attribute>)* S? "?>"
+
+<element> ::= <EmptyElemTag> | <STag> <content> <ETag>
+
+<STag> ::= "<" <Name> (S <Attribute>)* S? ">"
+
+<Attribute> ::= <Name> "=" <String>
+
+<ETag> ::= "</" <Name> S? ">"
+
+<content> ::= .* (<element>)* .*
+
+<EmptyElemTag> ::= "<" <Name> (S <Attribute>)* S? "/>"
+
+<Comment> ::= '<!--' .* '-->'
+
+<Name> ::= (Letter | '_' | ':') (<NameChar>)*
+
+<NameChar> ::= <Letter> | <Digit> | '.' | '-' | '_' | ':'

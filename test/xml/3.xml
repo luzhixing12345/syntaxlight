@@ -1,0 +1,22 @@
+<order id="12345" date="2023-07-10">
+  <customer>
+    <name>John Doe</name>
+    <address>
+      <street>Main Street</street>
+      <city>Cityville</city>
+      <country>Countryland</country>
+    </address>
+  </customer>
+  <items>
+    <item id="1">
+      <name>Product A</name>
+      <price>19.99</price>
+      <quantity>2</quantity>
+    </item>
+    <item id="2">
+      <name>Product B</name>
+      <price>9.99</price>
+      <quantity>3</quantity>
+    </item>
+  </items>
+</order>
