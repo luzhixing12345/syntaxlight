@@ -328,6 +328,6 @@ def display_ast(node: AST, image_name="ast.dot"):
     node.visit(node_visitor)
 
     node_visitor.save()
-    node.formatter()
+    # node.formatter()
 
     assert node_visitor.depth == -1

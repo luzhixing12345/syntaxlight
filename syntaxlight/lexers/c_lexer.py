@@ -144,7 +144,7 @@ class CTokenSet:
             self.enum_specifier,
             TokenType.ID,  # identifier
         )
-        self.type_qualifier = TokenSet(CTokenType.CONST, CTokenType.VOLATILE)
+        self.type_qualifier = TokenSet(CTokenType.CONST, CTokenType.VOLATITLE)
         self.declaration_specifier = TokenSet(
             self.storage_class_specifier, self.type_specifier, self.type_qualifier
         )

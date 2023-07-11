@@ -130,6 +130,13 @@ class Parser:
         while self.current_token.type in (TokenType.LF, TokenType.CR):
             self.eat(self.current_token.type)
 
+    def skip_end(self):
+        '''
+        跳过最后的空白和换行
+        '''
+        while self.current_token.type != TokenType.EOF:
+            self._skip()
+            
     def eat_lf(self):
         """
         跳过一个换行

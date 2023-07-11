@@ -1,0 +1,12 @@
+<items a23 = 123>
+    <item id="1">
+      <name>Product A</name>
+      <price>19.99</price>
+      <quantity>2</quantity>
+    </item>
+    <item id="2">
+      <name>Product B</name>
+      <price>9.99</price>
+      <quantity>3</quantity>
+    </item>
+  </items>

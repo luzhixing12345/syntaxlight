@@ -60,9 +60,9 @@ class Tag(AST):
         node_visitor.link(self, self.name)
         for attribute in self.attributes:
             node_visitor.link(self, attribute)
-
-        for element in self.elements:
-            node_visitor.link(self, element)
+        if self.elements:
+            for element in self.elements:
+                node_visitor.link(self, element)
         if self.end_name:
             node_visitor.link(self, self.end_name)
         return super().visit(node_visitor)
@@ -82,6 +82,8 @@ class XmlParser(Parser):
 
     def parse(self):
         self.node = self.XML()
+        if self.current_token.type == XmlTokenType.CONTENT:
+            self.eat(self.current_token.type)
         if self.current_token.type != TokenType.EOF:
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
         return self.node
@@ -93,9 +95,6 @@ class XmlParser(Parser):
         node = XML()
         if self.current_token.type == XmlTokenType.PROLOG_START:
             node.update(prolog=self.prolog())
-        if self.current_token.type != XmlTokenType.TAG_START_BEGIN:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "xml tag should start with <")
-
         if self.current_token.type == XmlTokenType.TAG_START_BEGIN:
             node.update(element=self.element())
         return node
@@ -166,14 +165,9 @@ class XmlParser(Parser):
         <NameChar> ::= <Letter> | <Digit> | '.' | '-' | '_' | ':'
         """
         node = Attribute()
-        if self.current_token.type == XmlTokenType.NAME:
-            name = Name(self.current_token.value)
-            name.register_token(self.eat(self.current_token.type))
-            node.update(name=name)
-        else:
-            self.error(
-                ErrorCode.UNEXPECTED_TOKEN, "attribute should start with name [0-9a-zA-Z.-_:]"
-            )
+        name = Name(self.current_token.value)
+        name.register_token(self.eat(self.current_token.type))
+        node.update(name=name)
 
         node.register_token(self.eat(TokenType.ASSIGN))
         if self.current_token.type in (TokenType.STR, TokenType.STRING):

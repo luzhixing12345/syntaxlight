@@ -27,7 +27,7 @@ def parse(text: str, language: str = "guess", file_path=None, show_error_context
         if show_error_context:
             sys.stderr.write(e.context)
     else:
-        # display_ast(parser.node)
+        display_ast(parser.node)
         return parser.to_html()
 
 

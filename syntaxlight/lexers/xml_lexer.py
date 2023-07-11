@@ -10,7 +10,7 @@ class XmlTokenType(Enum):
     PROLOG_END = "?>"
     TAG_START_BEGIN = "<"
     TAG_END = ">"
-    TAG_COMPLETE_BEGIN = "</"
+    TAG_COMPLETE_BEGIN = '</'
     TAG_SELF_END = "/>"
     NAME = "NAME"
     CONTENT = "CONTENT"
@@ -75,6 +75,9 @@ class XmlLexer(Lexer):
                 token = Token(XmlTokenType.PROLOG_END, "?>", self.line, self.column)
                 self.advance()
                 return token
+            
+            if self.current_char.isdigit():
+                return self.get_number()
 
             if self.current_char.isalpha() or self.current_char in ("_", ":"):
                 result = ""
