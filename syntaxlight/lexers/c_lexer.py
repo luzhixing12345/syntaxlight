@@ -215,10 +215,12 @@ class CTokenSet:
             TokenType.DEC,
             CTokenType.SIZEOF,
             self.postfix_expression,
-            CTokenType._ALIGNOF
+            CTokenType._ALIGNOF,
+            TokenType.LPAREN
         )
         self.conditinal_expression = TokenSet(self.unary_expression, TokenType.LPAREN)
         self.constant_expression = TokenSet(self.conditinal_expression)
         self.assignment_expression = TokenSet(self.unary_expression, self.conditinal_expression)
+        self.expression = TokenSet(self.assignment_expression)
         self.direct_abstract_declarator = TokenSet(TokenType.LPAREN, TokenType.LSQUAR_PAREN)
         self.abstract_declarator = TokenSet(TokenType.MUL, self.direct_abstract_declarator)

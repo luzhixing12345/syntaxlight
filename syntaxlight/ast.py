@@ -199,10 +199,8 @@ class UnaryOp(AST):
         super().__init__()
         self.expr = expr
         self.op = op
-        self.keyword = None
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.keyword)
         node_visitor.link(self, self.expr)
         return super().visit(node_visitor)
 
@@ -223,6 +221,20 @@ class BinaryOp(AST):
             for expr_right in self.expr_rights:
                 node_visitor.link(self, expr_right)
         return super().visit(node_visitor)
+
+
+class AssignOp(AST):
+    def __init__(self, expr: AST = None, op: str = None) -> None:
+        super().__init__()
+        self.expr = expr
+        self.op = op
+
+    def visit(self, node_visitor: "NodeVisitor" = None):
+        node_visitor.link(self, self.expr)
+        return super().visit(node_visitor)
+
+    def formatter(self, depth: int = 0):
+        return self.op + self.expr.formatter(depth + 1)
 
 
 class ConditionalExpression(AST):
@@ -246,10 +258,8 @@ class Expression(AST):
         self.exprs = exprs
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        if self.exprs:
-            for expr in self.exprs:
-                node_visitor.link(self, expr)
-
+        
+        node_visitor.link(self, self.exprs)
         return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
@@ -259,14 +269,6 @@ class Expression(AST):
                 result += expr.formatter(depth + 1)
 
         return result + "\n"
-
-
-class AssignMent(AST):
-
-    def __init__(self, op) -> None:
-        super().__init__()
-        self.op = op
-
 
 class NodeVisitor:
     """

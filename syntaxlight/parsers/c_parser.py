@@ -16,7 +16,7 @@ from ..ast import (
     Identifier,
     Constant,
     Expression,
-    AssignMent,
+    AssignOp,
 )
 from typing import List
 
@@ -106,7 +106,7 @@ class Declarator(AST):
     def __init__(self) -> None:
         super().__init__()
         self.pointer = None
-        self.direct_declarator: DirectDeclaractor = None
+        self.direct_declarator = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.pointer)
@@ -174,6 +174,14 @@ class CaseExpression(AST):
         if self.expr:
             node_visitor.link(self, self.expr)
         return super().visit(node_visitor)
+
+
+class UnaryExpression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.expr = None
+        self.keyword = None
+        self.initializer_list = None
 
 
 class PostfixExpression(AST):
@@ -292,24 +300,40 @@ class TypeName(AST):
         node_visitor.link(self, self.abstract_declarator)
         return super().visit(node_visitor)
 
+
 class ParameterDeclaration(AST):
     def __init__(self) -> None:
         super().__init__()
         self.declarator = None
         self.abstract_declarator = None
+
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.declarator)
         node_visitor.link(self, self.abstract_declarator)
         return super().visit(node_visitor)
+
 
 class AbstractDeclarator(AST):
     def __init__(self) -> None:
         super().__init__()
         self.pointer = None
         self.direct_abstract_declarator = None
+
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.pointer)
         node_visitor.link(self, self.direct_abstract_declarator)
+        return super().visit(node_visitor)
+
+class AssignmentExpression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.unary_expr = None
+        self.assign_op = None
+        self.assignment_expr= None
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.unary_expr)
+        node_visitor.link(self, self.assign_op)
+        node_visitor.link(self, self.assignment_expr)
         return super().visit(node_visitor)
 
 class CParser(Parser):
@@ -963,7 +987,7 @@ class CParser(Parser):
                              | "--" <unary-expression>
                              | <unary-operator> <cast-expression>
                              | sizeof <unary-expression>
-                             | sizeof   "(" <type-name> ")"
+                             | sizeof   "(" <type-name> ")"  ("{" <initializer-list> (",")? "}")?
                              | _Alignof "(" <type-name> ")"
 
         <unary-operator> ::= "&"
@@ -973,25 +997,56 @@ class CParser(Parser):
                            | "~"
                            | "!"
         """
-        node = UnaryOp()
+        node = UnaryExpression()
         if self.current_token.type in self.cfirst_set.postfix_expression:
             node.update(expr=self.postfix_expression())
         elif self.current_token.type in (TokenType.INC, TokenType.DEC):
-            node.update(op=self.current_token.value)
-            node.register_token(self.eat(self.current_token.type))
-            node.update(expr=self.unary_expression())
+            unary_expr = UnaryOp(op=self.current_token.value)
+            unary_expr.register_token(self.eat(self.current_token.type))
+            unary_expr.update(expr=self.unary_expression())
+            node.update(expr=unary_expr)
         elif self.current_token.type in self.cfirst_set.unary_operator:
-            node.update(op=self.current_token.value)
-            node.register_token(self.eat(self.current_token.type))
-            node.update(expr=self.cast_expression())
+            unary_expr = UnaryOp(op=self.current_token.value)
+            unary_expr.register_token(self.eat(self.current_token.type))
+            unary_expr.update(expr=self.cast_expression())
+            node.update(expr=unary_expr)
         elif self.current_token.type == CTokenType.SIZEOF:
             keyword = Keyword(self.current_token.value)
             keyword.register_token(self.eat(CTokenType.SIZEOF))
             node.update(keyword=keyword)
-            if self.current_token.type in self.cfirst_set.unary_expression:
+
+            # 这里的判断有点复杂, 因为 可以
+            # A: sizeof "(" <type-name> ")"
+            #
+            # B: sizeof <unary-expression> => sizeof <postfix-expression> => sizeof <primary-expression>
+            # => sizeof "(" <expression> ")"
+            #
+            # <expression>            ::= <assignment-expression> ...
+            # <assignment-expression> ::= (<unary-expression> <assignment-operator>)* <conditional-expression>
+            if (
+                self.current_token.type in self.cfirst_set.unary_expression
+                and self.current_token.type != TokenType.LPAREN
+            ):
                 node.update(expr=self.unary_expression())
-            elif self.current_token.type in self.cfirst_set.type_name:
-                node.update(expr=self.type_name())
+            elif self.current_token.type == TokenType.LPAREN:
+                node.register_token(self.eat(TokenType.LPAREN))
+                if self.current_token.type in self.cfirst_set.type_name:
+                    node.update(expr=self.type_name())
+                    node.register_token(self.eat(TokenType.RPAREN))
+                    # C23 移除了此写法
+                    if self.current_token.type == TokenType.LCURLY_BRACE:
+                        node.register_token(self.eat(TokenType.LCURLY_BRACE))
+                        node.update(initializer_list=self.initializer_list())
+                        if self.current_token.type == TokenType.COMMA:
+                            node.register_token(self.eat(TokenType.COMMA))
+                        node.register_token(self.eat(TokenType.RCURLY_BRACE))
+
+                elif self.current_token.type in self.cfirst_set.expression:
+                    node.update(expr=self.expression())
+                    node.register_token(self.eat(TokenType.RPAREN))
+                else:
+                    self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type name or expression")
+
             else:
                 self.error(
                     ErrorCode.UNEXPECTED_TOKEN, "sizeof should follow with unary expr or typename"
@@ -1000,6 +1055,9 @@ class CParser(Parser):
             keyword = Keyword(self.current_token.value)
             keyword.register_token(self.eat(CTokenType._ALIGNOF))
             node.update(keyword=keyword)
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(expr=self.type_name())
+            node.register_token(self.eat(TokenType.RPAREN))
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
@@ -1017,7 +1075,6 @@ class CParser(Parser):
                                | <postfix-expression> "->" <identifier>
                                | <postfix-expression> "++"
                                | <postfix-expression> "--"
-                               | "(" <type-name> ")" "{" <initializer-list> (",")? "}"
         """
         node = PostfixExpression()
         if self.current_token.type not in self.cfirst_set.postfix_expression:
@@ -1137,19 +1194,24 @@ class CParser(Parser):
 
     def assignment_expression(self):
         """
-        <assignment-expression> ::= (<unary-expression> <assignment-operator>)* <conditional-expression>
-
-        <conditional-expression> ::= --- ::= <unary-operator> <cast-expression>
+        <assignment-expression> ::= <unary-expression> <assignment-operator> <assignment-expression>
+                                  | <conditional-expression>
         """
-        unary_expr = None
-        assignment_op = None
-        if self.current_token.type in self.cfirst_set.unary_expression:
+        # <conditional-expression> => <cast-expression> => ("(" <type-name> ")")* <unary-expression>
+        # 无法 LL1 判断, 需要额外处理
+        if self.current_token.type not in self.cfirst_set.assignment_expression:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or conditional expression")
+        
+        node = AssignmentExpression()
+        if self.current_token.type != TokenType.LPAREN:
             unary_expr = self.unary_expression()
             if self.current_token.type in self.cfirst_set.assignment_operator:
-                assignment_op = AssignMent(self.current_token.value)
-                assignment_op.register_token(self.eat(self.current_token.type))
-
-        conditional_expr = self.conditional_expression()
+                node.update(unary_expr = unary_expr)
+                node.update(assign_op = self.assignment_operator())
+                node.update(assignment_expr = self.assignment_expression()) # 递归
+            else:
+                ...
+        self.conditional_expression()
 
     def assignment_operator(self):
         """
@@ -1165,6 +1227,9 @@ class CParser(Parser):
                                 | "^="
                                 | "|="
         """
+        node = AssignOp(self.current_token.value)
+        node.register_token(self.current_token.type)
+        return node
 
     def type_name(self):
         """
@@ -1189,9 +1254,9 @@ class CParser(Parser):
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_sepcifiers.append(self.declaration_sepcifier())
         if self.current_token.type in self.cfirst_set.declarator:
-            node.update(declarator = self.declarator())
+            node.update(declarator=self.declarator())
         elif self.current_token.type in self.cfirst_set.abstract_declarator:
-            node.update(abstract_declarator = self.abstract_declarator())
+            node.update(abstract_declarator=self.abstract_declarator())
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be declarator or abstract declarator")
         return node
@@ -1205,14 +1270,14 @@ class CParser(Parser):
         node = AbstractDeclarator()
         if self.current_token.type == TokenType.MUL:
             pointer = self.pointer()
-            node.update(pointer = pointer)
+            node.update(pointer=pointer)
         if self.current_token.type in self.cfirst_set.direct_abstract_declarator:
-            node.update(direct_abstract_declarator = self.direct_abstract_declarator())
+            node.update(direct_abstract_declarator=self.direct_abstract_declarator())
         return node
 
     def direct_abstract_declarator(self):
         """
-        <direct-abstract-declarator> ::=  
+        <direct-abstract-declarator> ::=
                 | "(" <abstract-declarator> ")"
                 | <direct-abstract-declarator>? "(" <parameter-list>? ")"
                 | <direct-abstract-declarator>? "[" <type-qualifier-list>? <assignment-expression>? "]"
@@ -1220,6 +1285,7 @@ class CParser(Parser):
                 | <direct-abstract-declarator>? "[" <type-qualifier-list> static <assignment-expression> ]
                 | <direct-abstract-declarator>? "[" "*" "]"
         """
+        self.parameter_list()
 
     def enum_specifier(self):
         """
@@ -1293,11 +1359,17 @@ class CParser(Parser):
                         | "{" <initializer-list> "}"
                         | "{" <initializer-list> "," "}"
         """
+        self.assignment_expression()
 
-    def initializer_list(self):
+    def initializer_list(self) -> List[AST]:
         """
-        <initializer-list> ::= (<initializer-list> ",")? <initializer>
+        <initializer-list> ::= <initializer> ("," <initializer>)*
         """
+        result = [self.initializer()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            result.append(self.initializer())
+        return result
 
     def compound_statement(self):
         """
