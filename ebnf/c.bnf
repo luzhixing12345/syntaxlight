@@ -1,3 +1,4 @@
+# A2.4
 <translation-unit> ::= {<external-declaration>}*
 
 <external-declaration> ::= <function-definition>
@@ -5,9 +6,12 @@
 
 <function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
 
+
 <declaration-specifier> ::= <storage-class-specifier>
-                          | <type-specifier-qualifier>
+                          | <type-specifier>
+                          | <type-qualifier>
                           | <function-specifier>
+                          | <alignment-specifier>
 
 <storage-class-specifier> ::= auto
                             | register
@@ -15,10 +19,6 @@
                             | extern
                             | typedef
                             | _Thread_local
-
-<type-specifier-qualifier> ::= <type-specifier>
-                             | <type-qualifier>
-                             | <alignment-specifier>
 
 <type-specifier> ::= void
                    | char
@@ -36,13 +36,13 @@
                    | <enum-specifier>
                    | <typedef-name>
 
-<atomic-type-specifier> ::= _Atomic "(" <type-name> ")"
-
 <function-specifier> ::= inline
                        | _Noreturn
 
 <alignment-specifier> ::= _Alignas "(" <type-name> ")"
                         | _Alignas "(" <constant-expression> ")"
+
+<atomic-type-specifier> ::= _Atomic "(" <type-name> ")"
 
 <struct-or-union-specifier> ::= <struct-or-union> <identifier> ("{" {<struct-declaration>}* "}")?
                               | <struct-or-union> "{" {<struct-declaration>}* "}"
@@ -50,8 +50,8 @@
 <struct-or-union> ::= struct
                     | union
 
-<struct-declaration> ::= {<specifier-qualifier>}+ (<struct-declarator> ("," <struct-declarator>)*)?
-                       | <static-assert-declaration>
+<struct-declaration> ::= {<specifier-qualifier>}+ (<struct-declarator> ("," <struct-declarator>)*)? ";"
+                       | <static_assert-declaration>
 
 <specifier-qualifier> ::= <type-specifier>
                         | <type-qualifier>
@@ -70,12 +70,18 @@
 
 <direct-declarator> ::= <identifier>
                     | "(" <declarator> ")"
-                    | <direct-declarator> "[" <type-qualifier>* <assignment-expression> "]"
-                    | <direct-declarator> "[" static <type-qualifier>* <assignment-expression> "]"
-                    | <direct-declarator> "[" static <type-qualifier>* <assignment-expression> "]"
-                    | <direct-declarator> "(" <parameter-list>?  ")"
-                    | <direct-declarator> "(" (<identifier> ("," <identifier>)*)? ")"
+                    | <direct-declarator> "[" <type-qualifier-list>? <assignment-expression> "]"
+                    | <direct-declarator> "[" static <type-qualifier-list>? <assignment-expression> "]"
+                    | <direct-declarator> "[" <type-qualifier-list> static <assignment-expression> "]"
+                    | <direct-declarator> "[" <type-qualifier-list> "*" "]"
+                    | <direct-declarator> "(" <parameter-list> ")"
+                    | <direct-declarator> "(" (<identifier-list>)? ")"
 
+<type-qualifier-list> ::= <type-qualifier>+
+
+<parameter-list> ::= <parameter-declaration> ("," <parameter-declaration>)* ("," "...")?
+
+<identifier-list> ::= <identifier> ("," <identifier>)*
 
 <constant-expression> ::= <conditional-expression>
 
@@ -109,8 +115,8 @@
                      | "--" <unary-expression>
                      | <unary-operator> <cast-expression>
                      | sizeof <unary-expression>
-                     | sizeof "(" <type-name> ")"
-                     | alignof "(" <type-name> ")"
+                     | sizeof   "(" <type-name> ")"
+                     | _Alignof "(" <type-name> ")"
 
 <postfix-expression> ::= <primary-expression>
                        | <postfix-expression> "[" <expression> "]"
@@ -119,8 +125,16 @@
                        | <postfix-expression> "->" <identifier>
                        | <postfix-expression> "++"
                        | <postfix-expression> "--"
-                       | <compound-literal>
-                       | "(" <storage-class-specifier>* <type-name> ")" "{" <init-declarator-list> (",")? "}"
+                       | "(" <type-name> ")" "{" <initializer-list> (",")? "}"
+
+<initializer-list> ::= <designation>? <initializer> ("," <designation>? <initializer>)*
+
+<designation> ::= <designator>+ "="
+
+<designator> ::= "[" <constant-expression> "]"
+               | "." <identifier>
+
+<static_assert-declaration> ::= _Static_assert "(" <constant-expression> "," <string> ")"
 
 <primary-expression> ::= <identifier>
                        | <constant>
@@ -128,14 +142,12 @@
                        | "(" <expression> ")"
                        | <generic-selection>
 
-<generic-selection> ::= _Generic "(" <assignment-expression> "," <generic-association> ("," <generic-association>)* ")"
+<generic-selection> ::= _Generic "(" <assignment-expression> "," <generic-assoc-list> ")"
+
+<generic-assoc-list> ::= <generic-association> ("," <generic-association>)*
 
 <generic-association> ::= <type-name> ":" <assignment-expression>
                         | default ":" <assignment-expression>
-
-<argument-expression-list> ::= <assignment-expression> ("," <assignment-expression>)*
-
-<compound-literal>
 
 <constant> ::= <integer-constant>
              | <character-constant>
@@ -144,6 +156,8 @@
              | <predefined-constant>
 
 <expression> ::= <assignment-expression> ("," <assignment-expression>)*
+
+<argument-expression-list> ::= <assignment-expression> ("," <assignment-expression>)*
 
 <assignment-expression> ::= <conditional-expression>
                           | <unary-expression> <assignment-operator> <assignment-expression>
@@ -169,22 +183,23 @@
 
 <type-name> ::= {<specifier-qualifier>}+ {<abstract-declarator>}?
 
-<parameter-list> ::= <parameter-declaration> ("," <parameter-declaration>)* ("," "...")?
-
 <parameter-declaration> ::= {<declaration-specifier>}+ <declarator>
-                          | {<declaration-specifier>}+ <abstract-declarator>
-                          | {<declaration-specifier>}+
+                          | {<declaration-specifier>}+ (<abstract-declarator>)?
 
 <abstract-declarator> ::= <pointer>
                         | <pointer> <direct-abstract-declarator>
                         | <direct-abstract-declarator>
 
-<direct-abstract-declarator> ::=  "(" <abstract-declarator> ")"
-                               | {<direct-abstract-declarator>}? "[" {<constant-expression>}? "]"
-                               | {<direct-abstract-declarator>}? "(" {<parameter-type-list>}? ")"
+<direct-abstract-declarator> ::=  
+        | "(" <abstract-declarator> ")"
+        | <direct-abstract-declarator>? "(" <parameter-type-list>? ")"
+        | <direct-abstract-declarator>? "[" <type-qualifier-list>? <assignment-expression>? "]"
+        | <direct-abstract-declarator>? "[" static <type-qualifier-list>? <assignment-expression> "]"
+        | <direct-abstract-declarator>? "[" <type-qualifier-list> static <assignment-expression> ]
+        | <direct-abstract-declarator>? "[" "*" "]"
 
-<enum-specifier> ::= "enum" (<identifier>)? "{" <enumerator> ("," <enumerator>)* (",")? "}"
-                   | "enum" <identifier>
+<enum-specifier> ::= enum (<identifier>)? "{" <enumerator> ("," <enumerator>)* ","? "}"
+                   | enum <identifier>
 
 <enumerator> ::= <enumeration-constant> ("=" <constant-expression>)?
 

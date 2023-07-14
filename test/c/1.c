@@ -8,5 +8,6 @@ double maximum(int n, int m, double a[*][*]);
 
 int main() {
     printf("__STDC_VERSION__ = %ld\n", __STDC_VERSION__);
+    sizeof(int x);
     return 0;
 }

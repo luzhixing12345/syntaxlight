@@ -16,7 +16,7 @@ from ..ast import (
     Identifier,
     Constant,
     Expression,
-    AssignMent
+    AssignMent,
 )
 from typing import List
 
@@ -74,8 +74,13 @@ class StructDeclaration(AST):
         super().__init__()
         self.specifier_qualifiers = None
         self.declarators = None
+        self.static_assert = None
 
     def visit(self, node_visitor: NodeVisitor = None):
+        if self.static_assert:
+            node_visitor.link(self, self.static_assert)
+            return super().visit(node_visitor)
+
         for specifier_qualifier in self.specifier_qualifiers:
             node_visitor.link(self, specifier_qualifier)
         for declarator in self.declarators:
@@ -129,17 +134,30 @@ class DirectDeclaractor(AST):
     def __init__(self) -> None:
         super().__init__()
         self.id = None
-        self.constant_expressions = None
-        self.parameter_list = None
+        self.sub_nodes = []
 
     def visit(self, node_visitor: NodeVisitor = None):
-        if self.id:
-            node_visitor.link(self, self.id)
-        for constant_expression in self.constant_expressions:
-            node_visitor.link(self, constant_expression)
+        node_visitor.link(self, self.id)
+        node_visitor.link(self, self.sub_nodes)
+        return super().visit(node_visitor)
 
-        for parameter in self.parameter_list:
-            node_visitor.link(self, parameter)
+
+class DirectDeclaractorPostfix(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.static_head = None
+        self.static_foot = None
+        self.type_qualifiers = []
+        self.assignment_expr = None
+        self.parameter_list = []
+        self.identifier_list = []
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.static_head)
+        node_visitor.link(self, self.type_qualifiers)
+        node_visitor.link(self, self.static_foot)
+        node_visitor.link(self, self.parameter_list)
+        node_visitor.link(self.identifier_list)
         return super().visit(node_visitor)
 
 
@@ -169,6 +187,7 @@ class PostfixExpression(AST):
             node_visitor.link(self, sub_node)
         return super().visit(node_visitor)
 
+
 class PrimaryExpression(AST):
     def __init__(self) -> None:
         super().__init__()
@@ -178,6 +197,120 @@ class PrimaryExpression(AST):
         node_visitor.link(self, self.sub_node)
         return super().visit(node_visitor)
 
+
+class TypeSpecifier(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.sub_node = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        if self.keyword:
+            node_visitor.link(self, self.keyword)
+        if self.sub_node:
+            node_visitor.link(self, self.sub_node)
+        return super().visit(node_visitor)
+
+
+class EnumSpecifier(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.id = None
+        self.enumerators = []
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.keyword)
+        if self.id:
+            node_visitor.link(self, self.id)
+        for enumerator in self.enumerators:
+            node_visitor.link(self, enumerator)
+        return super().visit(node_visitor)
+
+
+class Enumerator(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.id = None
+        self.constant_expr = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.id)
+        if self.constant_expr:
+            node_visitor.link(self, self.constant_expr)
+        return super().visit(node_visitor)
+
+
+class GenericSelection(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.assignment_expr = None
+        self.generic_assoc_list = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.assignment_expr)
+        node_visitor.link(self, self.generic_assoc_list)
+        return super().visit(node_visitor)
+
+
+class GenericAssociation(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.type_name = None
+        self.assignment_expr = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.keyword)
+        node_visitor.link(self, self.type_name)
+        node_visitor.link(self, self.assignment_expr)
+        return super().visit(node_visitor)
+
+
+class StaticAssertDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.constant_expr = None
+        self.string = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.keyword)
+        node_visitor.link(self, self.constant_expr)
+        node_visitor.link(self, self.string)
+        return super().visit(node_visitor)
+
+
+class TypeName(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.specifier_qualifiers = None
+        self.abstract_declarator = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.specifier_qualifiers)
+        node_visitor.link(self, self.abstract_declarator)
+        return super().visit(node_visitor)
+
+class ParameterDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.declarator = None
+        self.abstract_declarator = None
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.declarator)
+        node_visitor.link(self, self.abstract_declarator)
+        return super().visit(node_visitor)
+
+class AbstractDeclarator(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.pointer = None
+        self.direct_abstract_declarator = None
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.pointer)
+        node_visitor.link(self, self.direct_abstract_declarator)
+        return super().visit(node_visitor)
 
 class CParser(Parser):
     def __init__(self, lexer, skip_invisible_characters=True, skip_space=True):
@@ -234,6 +367,8 @@ class CParser(Parser):
         <declaration-specifier> ::= <storage-class-specifier>
                                   | <type-specifier>
                                   | <type-qualifier>
+                                  | <function-specifier>
+                                  | <alignment-specifier>
         """
         if self.current_token.type in self.cfirst_set.storage_class_specifier:
             node = self.storage_class_specifier()
@@ -241,6 +376,10 @@ class CParser(Parser):
             node = self.type_specifier()
         elif self.current_token.type in self.cfirst_set.type_qualifier:
             node = self.type_qualifier()
+        elif self.current_token.type in self.cfirst_set.function_speficier:
+            node = self.function_specifier()
+        elif self.current_token.type in self.cfirst_set.alignment_specifier:
+            node = self.alignment_specifier()
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN, "should be StorageType or BaseType or QualifyType"
@@ -257,26 +396,31 @@ class CParser(Parser):
                                     | 'typedef'
         """
         node = Keyword(self.current_token.value)
-        node.register_token(self.eat(self.current_token.type))
         node.class_name = "StorageType"
+        node.register_token(self.eat(self.current_token.type))
         return node
 
     def type_specifier(self):
         """
-        <type-specifier> ::= 'void'
-                           | 'char'
-                           | 'short'
-                           | 'int'
-                           | 'long'
-                           | 'float'
-                           | 'double'
-                           | 'signed'
-                           | 'unsigned'
+        <type-specifier> ::= void
+                           | char
+                           | short
+                           | int
+                           | long
+                           | float
+                           | double
+                           | signed
+                           | unsigned
+                           | _Bool
+                           | _Complex
+                           | <atomic-type-specifier>
                            | <struct-or-union-specifier>
                            | <enum-specifier>
                            | <typedef-name>
         """
-        if self.current_token.type in self.cfirst_set.struct_or_union_specifier:
+        if self.current_token.type in self.cfirst_set.atomic_type_specifier:
+            node = self.atomic_type_specifier()
+        elif self.current_token.type in self.cfirst_set.struct_or_union_specifier:
             node = self.struct_or_union_specifier()
         elif self.current_token.type in self.cfirst_set.enum_specifier:
             node = self.enum_specifier()
@@ -284,10 +428,59 @@ class CParser(Parser):
             node = self.typedef_name()
         elif self.current_token.type in self.cfirst_set.type_specifier:
             node = Keyword(self.current_token.value)
-            node.register_token(self.eat(self.current_token.type))
             node.class_name = "BaseType"
+            node.register_token(self.eat(self.current_token.type))
+
         else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type specifier")
+
+        return node
+
+    def function_specifier(self):
+        """
+        <function-specifier> ::= inline
+                               | _Noreturn
+        """
+        node = Keyword(self.current_token.value)
+        node.class_name = "FunctionType"
+        node.register_token(self.eat(self.current_token.type))
+
+        return node
+
+    def alignment_specifier(self):
+        """
+        <alignment-specifier> ::= _Alignas "(" <type-name> ")"
+                                | _Alignas "(" <constant-expression> ")"
+        """
+        node = TypeSpecifier()
+        node.class_name = "alignment-specifier"
+        keyword = Keyword(self.current_token.value)
+        keyword.register_token(self.eat(CTokenType._ALIGNAS))
+        node.update(keyword=keyword)
+        node.register_token(self.eat(TokenType.LPAREN))
+        if self.current_token.type in self.cfirst_set.type_name:
+            node.update(sub_node=self.type_name())
+            node.register_token(self.eat(TokenType.RPAREN))
+        elif self.current_token.type in self.cfirst_set.constant_expression:
+            node.update(sub_node=self.constant_expression())
+            node.register_token(self.eat(TokenType.RPAREN))
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type-name or constant-expression")
+        return node
+
+    def atomic_type_specifier(self):
+        """
+        <atomic-type-specifier> ::= _Atomic "(" <type-name> ")"
+        """
+        node = TypeSpecifier()
+        node.class_name = "atomic-type-specifier"
+        keyword = Keyword(self.current_token.value)
+        keyword.register_token(self.eat(CTokenType._ATOMIC))
+        node.update(keyword=keyword)
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(sub_node=self.type_name())
+        node.register_token(self.eat(TokenType.RPAREN))
+        return node
 
     def struct_or_union_specifier(self):
         """
@@ -329,15 +522,21 @@ class CParser(Parser):
                             | "union"
         """
         node = Keyword(self.current_token.value)
-        node.register_token(self.eat(self.current_token.type))
         node.class_name = "StructureType"
+        node.register_token(self.eat(self.current_token.type))
+
         return node
 
     def struct_declaration(self):
         """
-        <struct-declaration> ::= {<specifier-qualifier>}* <struct-declarator> ("," <struct-declarator>)*
+        <struct-declaration> ::= {<specifier-qualifier>}* <struct-declarator> ("," <struct-declarator>)* ";"
+                               | <static_assert-declaration>
         """
         node = StructDeclaration()
+        if self.current_token.type in self.cfirst_set.static_assert_declaration:
+            node.update(static_assert=self.static_assert_declaration())
+            return node
+
         specifier_qualifiers = []
         while self.current_token.type in self.cfirst_set.specifier_qualifier:
             specifier_qualifiers.append(self.specifier_qualifier())
@@ -348,6 +547,7 @@ class CParser(Parser):
             node.register_token(self.eat(TokenType.COMMA))
             struct_declarators.append(self.struct_declarator())
         node.update(declarators=struct_declarators)
+        node.register_token(self.eat(TokenType.SEMI))
         return node
 
     def specifier_qualifier(self):
@@ -422,17 +622,21 @@ class CParser(Parser):
                            | "volatile"
         """
         node = Keyword(self.current_token.value)
-        node.register_token(self.eat(self.current_token.type))
         node.class_name = "QualifyType"
+        node.register_token(self.eat(self.current_token.type))
+
         return node
 
     def direct_declaractor(self):
         """
         <direct-declarator> ::= <identifier>
                               | "(" <declarator> ")"
-                              | <direct-declarator> "[" <constant-expression>? "]"
-                              | <direct-declarator> "(" <parameter-list>?  ")"
-                              | <direct-declarator> "(" (<identifier> ("," <identifier>)*)? ")"
+                              | <direct-declarator> "[" <type-qualifier-list>? <assignment-expression> "]"
+                              | <direct-declarator> "[" static <type-qualifier-list>? <assignment-expression> "]"
+                              | <direct-declarator> "[" <type-qualifier-list> static <assignment-expression> "]"
+                              | <direct-declarator> "[" <type-qualifier-list> "*" "]"
+                              | <direct-declarator> "(" <parameter-list> ")"
+                              | <direct-declarator> "(" (<identifier-list>)? ")"
         """
         node = DirectDeclaractor()
         if self.current_token.type == TokenType.ID:
@@ -446,24 +650,81 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be id or (")
 
         # 先在这里统一保存, 后续根据 token [] () 来分析具体的 [3](int,int)[4]
-        constant_expressions = []
-        parameter_list = []
-        while self.current_token.type in self.cfirst_set.direct_delcartor_postfix:
+        sub_nodes = []
+        while self.current_token.type in (TokenType.LPAREN, TokenType.LSQUAR_PAREN):
+            sub_node = DirectDeclaractorPostfix()
             if self.current_token.type == TokenType.LSQUAR_PAREN:
-                node.register_token(self.eat(TokenType.LSQUAR_PAREN))
-                if self.current_token.type in self.cfirst_set.constant_expression:
-                    constant_expressions.append(self.constant_expression())
-                node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+                sub_node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+
+                if self.current_token.type == CTokenType.STATIC:
+                    keyword = Keyword(self.current_token.value)
+                    keyword.class_name = "StorageType"
+                    keyword.register_token(self.eat(CTokenType.STATIC))
+                    sub_node.update(static_head=keyword)
+
+                if self.current_token.type in self.cfirst_set.type_qualifier:
+                    sub_node.update(type_qualifiers=self.type_qualifier_list())
+
+                if self.current_token.type == CTokenType.STATIC:
+                    if sub_node.static_head is not None:
+                        self.error(ErrorCode.UNEXPECTED_TOKEN, "multi static")
+                    keyword = Keyword(self.current_token.value)
+                    keyword.class_name = "StorageType"
+                    keyword.register_token(self.eat(CTokenType.STATIC))
+                    sub_node.update(static_foot=keyword)
+
+                if self.current_token.type in self.cfirst_set.assignment_expression:
+                    sub_node.update(assignment_expr=self.assignment_expression())
+                elif self.current_token.type == TokenType.MUL:
+                    self.current_token.type = CTokenType.STAR
+                    sub_node.register_token(self.eat(CTokenType.STAR))
+                sub_node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+
             if self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.parameter_list:
-                    parameter_list.append(self.parameter_list())
+                    sub_node.update(parameter_list=self.parameter_list())
+                elif self.current_token.type in self.cfirst_set.identifier:
+                    sub_node.update(identifier_list=self.identifier_list())
                 node.register_token(self.eat(TokenType.RPAREN))
 
-        node.update(constant_expressions=constant_expressions)
-        node.update(parameter_list=parameter_list)
+            sub_nodes.append(sub_node)
 
+        node.update(sub_nodes=sub_nodes)
         return node
+
+    def type_qualifier_list(self) -> List[AST]:
+        """
+        <type-qualifier-list> ::= <type-qualifier>+
+        """
+        result = []
+        while self.current_token.type in self.cfirst_set.type_qualifier:
+            result.append(self.type_qualifier())
+        return result
+
+    def parameter_list(self) -> List[AST]:
+        """
+        <parameter-list> ::= <parameter-declaration> ("," <parameter-declaration>)* ("," "...")?
+        """
+        result = [self.parameter_declaration()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            if self.current_token.type in self.cfirst_set.parameter_declaration:
+                result.append(self.parameter_declaration())
+            elif self.current_token.type == TokenType.VARARGS:
+                self.eat(TokenType.VARARGS)
+                break
+        return result
+
+    def identifier_list(self) -> List[AST]:
+        """
+        <identifier-list> ::= <identifier> ("," <identifier>)*
+        """
+        result = []
+        while self.current_token.type == TokenType.ID:
+            result.append(self.identifier())
+            self.eat(TokenType.COMMA)
+        return result
 
     def constant_expression(self):
         """
@@ -701,8 +962,9 @@ class CParser(Parser):
                              | "++" <unary-expression>
                              | "--" <unary-expression>
                              | <unary-operator> <cast-expression>
-                             | "sizeof" <unary-expression>
-                             | "sizeof" <type-name>
+                             | sizeof <unary-expression>
+                             | sizeof   "(" <type-name> ")"
+                             | _Alignof "(" <type-name> ")"
 
         <unary-operator> ::= "&"
                            | "*"
@@ -718,9 +980,14 @@ class CParser(Parser):
             node.update(op=self.current_token.value)
             node.register_token(self.eat(self.current_token.type))
             node.update(expr=self.unary_expression())
-        elif self.current_token.type == CTokenType.SIZEOF:
+        elif self.current_token.type in self.cfirst_set.unary_operator:
             node.update(op=self.current_token.value)
-            node.register_token(self.eat(CTokenType.SIZEOF))
+            node.register_token(self.eat(self.current_token.type))
+            node.update(expr=self.cast_expression())
+        elif self.current_token.type == CTokenType.SIZEOF:
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(CTokenType.SIZEOF))
+            node.update(keyword=keyword)
             if self.current_token.type in self.cfirst_set.unary_expression:
                 node.update(expr=self.unary_expression())
             elif self.current_token.type in self.cfirst_set.type_name:
@@ -729,10 +996,10 @@ class CParser(Parser):
                 self.error(
                     ErrorCode.UNEXPECTED_TOKEN, "sizeof should follow with unary expr or typename"
                 )
-        elif self.current_token.type in self.cfirst_set.unary_operator:
-            node.update(op=self.current_token.value)
-            node.register_token(self.eat(self.current_token.type))
-            node.update(expr=self.cast_expression())
+        elif self.current_token.type == CTokenType._ALIGNOF:
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(CTokenType._ALIGNOF))
+            node.update(keyword=keyword)
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
@@ -750,6 +1017,7 @@ class CParser(Parser):
                                | <postfix-expression> "->" <identifier>
                                | <postfix-expression> "++"
                                | <postfix-expression> "--"
+                               | "(" <type-name> ")" "{" <initializer-list> (",")? "}"
         """
         node = PostfixExpression()
         if self.current_token.type not in self.cfirst_set.postfix_expression:
@@ -780,7 +1048,7 @@ class CParser(Parser):
                 # ++ --
                 node.register_token(self.eat(self.current_token.type))
 
-        node.update(sub_nodes = sub_nodes)
+        node.update(sub_nodes=sub_nodes)
         return node
 
     def primary_expression(self):
@@ -789,6 +1057,7 @@ class CParser(Parser):
                                | <constant>
                                | <string>
                                | "(" <expression> ")"
+                               | <generic-selection>
         """
         node = PrimaryExpression()
 
@@ -804,10 +1073,54 @@ class CParser(Parser):
             node.register_token(self.eat(TokenType.LPAREN))
             sub_node = self.expression()
             node.register_token(self.eat(TokenType.RPAREN))
+        elif self.current_token.type in self.cfirst_set.generic_selection:
+            sub_node = self.generic_selection()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be ID or constant or string or (")
 
         node.update(sub_node=sub_node)
+        return node
+
+    def generic_selection(self):
+        """
+        <generic-selection> ::= _Generic "(" <assignment-expression> "," <generic-assoc-list> ")"
+        """
+        keyword = Keyword(self.current_token.value)
+        keyword.register_token(self.eat(CTokenType._GENERIC))
+        node = GenericSelection()
+        node.update(keyword=keyword)
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(assignment_expr=self.assignment_expression())
+        node.register_token(self.eat(TokenType.COMMA))
+        node.update(generic_assoc_list=self.generic_assoc_list())
+        return node
+
+    def generic_assoc_list(self) -> List[AST]:
+        """
+        <generic-assoc-list> ::= <generic-association> ("," <generic-association>)*
+        """
+        result = [self.generic_association()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            result.append(self.generic_association())
+        return result
+
+    def generic_association(self):
+        """
+        <generic-association> ::= <type-name> ":" <assignment-expression>
+                                | default ":" <assignment-expression>
+        """
+        node = GenericAssociation()
+        if self.current_token.type == CTokenType.DEFAULT:
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(CTokenType.DEFAULT))
+            node.update(keyword=keyword)
+        elif self.current_token.type in self.cfirst_set.type_name:
+            node.update(type_name=self.type_name())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be default or type-name")
+        node.register_token(self.eat(TokenType.COLON))
+        node.update(assignment_expr=self.assignment_expression())
         return node
 
     def expression(self):
@@ -835,7 +1148,6 @@ class CParser(Parser):
             if self.current_token.type in self.cfirst_set.assignment_operator:
                 assignment_op = AssignMent(self.current_token.value)
                 assignment_op.register_token(self.eat(self.current_token.type))
-            
 
         conditional_expr = self.conditional_expression()
 
@@ -858,19 +1170,31 @@ class CParser(Parser):
         """
         <type-name> ::= {<specifier-qualifier>}+ {<abstract-declarator>}?
         """
-
-    def parameter_list(self):
-        """
-        <parameter-list> ::= <parameter-declaration> ("," <parameter-declaration>)* ("," "...")?
-        """
+        node = TypeName()
+        specifier_qualifiers = []
+        while self.current_token.type in self.cfirst_set.specifier_qualifier:
+            specifier_qualifiers.append(self.specifier_qualifier())
+        node.update(specifier_qualifiers=specifier_qualifiers)
+        if self.current_token.type in self.cfirst_set.abstract_declarator:
+            node.update(abstract_declarator=self.abstract_declarator())
+        return node
 
     def parameter_declaration(self):
         """
         <parameter-declaration> ::= {<declaration-specifier>}+ <declarator>
-                                  | {<declaration-specifier>}+ <abstract-declarator>
-                                  | {<declaration-specifier>}+
+                                  | {<declaration-specifier>}+ (<abstract-declarator>)?
         """
-        self.declaration_sepcifier()
+        node = ParameterDeclaration()
+        declaration_sepcifiers = [self.declaration_sepcifier()]
+        while self.current_token.type in self.cfirst_set.declaration_specifier:
+            declaration_sepcifiers.append(self.declaration_sepcifier())
+        if self.current_token.type in self.cfirst_set.declarator:
+            node.update(declarator = self.declarator())
+        elif self.current_token.type in self.cfirst_set.abstract_declarator:
+            node.update(abstract_declarator = self.abstract_declarator())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be declarator or abstract declarator")
+        return node
 
     def abstract_declarator(self):
         """
@@ -878,35 +1202,65 @@ class CParser(Parser):
                                 | <pointer> <direct-abstract-declarator>
                                 | <direct-abstract-declarator>
         """
+        node = AbstractDeclarator()
+        if self.current_token.type == TokenType.MUL:
+            pointer = self.pointer()
+            node.update(pointer = pointer)
+        if self.current_token.type in self.cfirst_set.direct_abstract_declarator:
+            node.update(direct_abstract_declarator = self.direct_abstract_declarator())
+        return node
 
     def direct_abstract_declarator(self):
         """
-        <direct-abstract-declarator> ::=  "(" <abstract-declarator> ")"
-                                       | {<direct-abstract-declarator>}? "[" {<constant-expression>}? "]"
-                                       | {<direct-abstract-declarator>}? "(" {<parameter-list>}? ")"
+        <direct-abstract-declarator> ::=  
+                | "(" <abstract-declarator> ")"
+                | <direct-abstract-declarator>? "(" <parameter-list>? ")"
+                | <direct-abstract-declarator>? "[" <type-qualifier-list>? <assignment-expression>? "]"
+                | <direct-abstract-declarator>? "[" static <type-qualifier-list>? <assignment-expression> "]"
+                | <direct-abstract-declarator>? "[" <type-qualifier-list> static <assignment-expression> ]
+                | <direct-abstract-declarator>? "[" "*" "]"
         """
 
     def enum_specifier(self):
         """
-        <enum-specifier> ::= "enum" <identifier> "{" <enumerator-list> "}"
-                           | "enum" "{" <enumerator-list> "}"
-                           | "enum" <identifier>
+        <enum-specifier> ::= enum (<identifier>)? "{" <enumerator> ("," <enumerator>)* ","? "}"
+                           | enum <identifier>
         """
+        node = EnumSpecifier()
+        keyword = Keyword(self.current_token.value)
+        keyword.register_token(self.eat(CTokenType.ENUM))
+        node.update(keyword=keyword)
+        if self.current_token.type in self.cfirst_set.identifier:
+            node.update(id=self.identifier())
+        if self.current_token.type == TokenType.LCURLY_BRACE:
+            node.register_token(self.eat(TokenType.LCURLY_BRACE))
+            enumerators = [self.enumerator()]
+            while self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                if self.current_token.type == TokenType.RCURLY_BRACE:
+                    break
+                enumerators.append(self.enumerator())
+            node.update(enumerators=enumerators)
+            node.register_token(self.eat(TokenType.RCURLY_BRACE))
 
-    def enumerator_list(self):
-        """
-        <enumerator-list> ::= (<enumerator-list> ",")? <enumerator>
-        """
+        return node
 
     def enumerator(self):
         """
         <enumerator> ::= <identifier> ("=" <constant-expression>)?
         """
+        node = Enumerator()
+        node.update(id=self.identifier())
+        if self.current_token.type == TokenType.ASSIGN:
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(constant_expr=self.constant_expression())
+        return node
 
     def typedef_name(self):
         """
         <typedef-name> ::= <identifier>
         """
+        return self.identifier()
 
     def declaration(self):
         """
@@ -995,9 +1349,25 @@ class CParser(Parser):
         """
 
     def identifier(self):
-        '''
+        """
         id
-        '''
+        """
         node = Identifier(self.current_token.value)
         node.register_token(self.eat(TokenType.ID))
+        return node
+
+    def static_assert_declaration(self):
+        """
+        <static_assert-declaration> ::= _Static_assert "(" <constant-expression> "," <string> ")"
+        """
+        node = StaticAssertDeclaration()
+        keyword = Keyword(self.current_token.value)
+        keyword.register_token(self.eat(CTokenType._STATIC_ASSERT))
+        node.update(keyword=keyword)
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(constant_expr=self.constant_expression())
+        node.register_token(self.eat(TokenType.COMMA))
+        string = String(self.current_token.value)
+        string.register_token(self.eat(TokenType.STRING))
+        node.update(string=string)
         return node

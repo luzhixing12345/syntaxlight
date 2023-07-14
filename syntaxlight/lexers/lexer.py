@@ -461,7 +461,7 @@ class Lexer:
         token = Token(TokenType.STR, result, self.line, self.column)
         return token
 
-    def get_id(self, ignore_case=False):
+    def get_id(self, ignore_case=False, extend_chars = ['_']):
         """
         获取标识符, 留给后续的语法分析处理
         @ignore_case : 是否忽略大小写
@@ -474,7 +474,7 @@ class Lexer:
         """
         result = ""
         while self.current_char is not None and (
-            self.current_char.isalnum() or self.current_char == "_"
+            self.current_char.isalnum() or self.current_char in extend_chars
         ):
             result += self.current_char
             self.advance()

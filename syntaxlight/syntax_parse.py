@@ -63,6 +63,7 @@ def guess_language(file_path: str) -> str:
         "pascal": ["pas"],
         "toml": ["toml"],
         "xml": ["xml"],
+        "shell": ["sh"],
     }
 
     if "." in file_name:
@@ -98,7 +99,15 @@ def get_tokens(lexer: Lexer):
 def get_lexer(code: str, language: str) -> Lexer:
     language = language.lower()
 
-    lexers = {"c": CLexer, "lua": LuaLexer, "json": JsonLexer, "ebnf": EBNFLexer, "toml": TomlLexer,"xml": XmlLexer}
+    lexers = {
+        "c": CLexer,
+        "lua": LuaLexer,
+        "json": JsonLexer,
+        "ebnf": EBNFLexer,
+        "toml": TomlLexer,
+        "xml": XmlLexer,
+        "shell": ShellLexer
+    }
 
     lexer_class = lexers.get(language, None)
     if lexer_class is None:
@@ -109,7 +118,7 @@ def get_lexer(code: str, language: str) -> Lexer:
 
 
 def get_parser(lexer: Lexer) -> Parser:
-    parsers = {"json": JsonParser, "toml": TomlParser, "c": CParser, "xml": XmlParser}
+    parsers = {"json": JsonParser, "toml": TomlParser, "c": CParser, "xml": XmlParser, "shell": ShellParser}
 
     syntax_type = lexer.__class__.__name__.replace("Lexer", "").lower()
     parser_class = parsers.get(syntax_type, None)

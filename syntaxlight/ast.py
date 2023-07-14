@@ -199,8 +199,10 @@ class UnaryOp(AST):
         super().__init__()
         self.expr = expr
         self.op = op
+        self.keyword = None
 
     def visit(self, node_visitor: "NodeVisitor" = None):
+        node_visitor.link(self, self.keyword)
         node_visitor.link(self, self.expr)
         return super().visit(node_visitor)
 
@@ -299,9 +301,22 @@ class NodeVisitor:
         self.dot_body.append(node.get_node_info())
 
     def link(self, root: AST, node: AST):
+        '''
+        usage inside AST : node_visitor.link(self, self.xxx)
+
+        内部做了各种判断, 只需考虑访问顺序
+        '''
         if root not in self.visit_node_list:
             self.register(root, self.depth)
-
+        
+        # 判空
+        if node is None:
+            return
+        # 列表
+        if type(node) == list:
+            for n in node:
+                self.link(root, n)
+            return
         if node not in self.visit_node_list:
             self.register(node, self.depth + 1)
 
