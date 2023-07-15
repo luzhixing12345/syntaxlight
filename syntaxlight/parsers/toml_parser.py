@@ -268,7 +268,7 @@ class TomlParser(Parser):
         if self.current_token.type not in self.value_first_set:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
-                f"should be {self.type_hint(self.value_first_set)}",
+                f"should be a value",
             )
 
         if self.current_token.type == TokenType.STR:
@@ -307,7 +307,7 @@ class TomlParser(Parser):
             # should never reach here
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
-                f"should be {self.type_hint(self.value_first_set)}",
+                f"should be a value",
             )
         return node
 

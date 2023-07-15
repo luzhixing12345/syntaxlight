@@ -4,11 +4,7 @@ from ..lexers import TokenType, CTokenType, CTokenSet
 from ..error import ErrorCode
 from ..ast import (
     AST,
-    Object,
-    Array,
-    Pair,
     String,
-    Number,
     Keyword,
     UnaryOp,
     BinaryOp,
@@ -19,6 +15,7 @@ from ..ast import (
     AssignOp,
 )
 from typing import List
+from enum import Enum
 
 
 class TranslationUnit(AST):
@@ -117,6 +114,15 @@ class Declarator(AST):
 class Declaration(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.declaration_specifiers = None
+        self.init_declarator_list = None
+        self.static_assert = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.declaration_specifiers)
+        node_visitor.link(self, self.init_declarator_list)
+        node_visitor.link(self, self.static_assert)
+        return super().visit(node_visitor)
 
 
 class Pointer(AST):
@@ -157,11 +163,37 @@ class DirectDeclaractorPostfix(AST):
         node_visitor.link(self, self.type_qualifiers)
         node_visitor.link(self, self.static_foot)
         node_visitor.link(self, self.parameter_list)
-        node_visitor.link(self.identifier_list)
+        node_visitor.link(self, self.identifier_list)
         return super().visit(node_visitor)
 
 
-class CaseExpression(AST):
+class DirectAbstractDeclaractor(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sub_nodes = []
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.sub_nodes)
+        return super().visit(node_visitor)
+
+
+class DirectAbstractDeclaractorPostfix(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.static_head = None
+        self.static_foot = None
+        self.type_qualifiers = []
+        self.assignment_expr = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.static_head)
+        node_visitor.link(self, self.type_qualifiers)
+        node_visitor.link(self, self.static_foot)
+        node_visitor.link(self, self.assignment_expr)
+        return super().visit(node_visitor)
+
+
+class CastExpression(AST):
     def __init__(self) -> None:
         super().__init__()
         self.type_names = None
@@ -324,17 +356,157 @@ class AbstractDeclarator(AST):
         node_visitor.link(self, self.direct_abstract_declarator)
         return super().visit(node_visitor)
 
+
 class AssignmentExpression(AST):
     def __init__(self) -> None:
         super().__init__()
         self.unary_expr = None
         self.assign_op = None
-        self.assignment_expr= None
+        self.assignment_expr = None
+
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.unary_expr)
         node_visitor.link(self, self.assign_op)
         node_visitor.link(self, self.assignment_expr)
         return super().visit(node_visitor)
+
+
+class InitDeclarator(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.declarator = None
+        self.initializer = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.declarator)
+        node_visitor.link(self, self.initializer)
+        return super().visit(node_visitor)
+
+
+class Initializer(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.assignment_expr = None
+        self.initializer_list = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.assignment_expr)
+        node_visitor.link(self, self.initializer_list)
+        return super().visit(node_visitor)
+
+
+class DesignationInitializer(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.designation = None
+        self.initializer = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.designation)
+        node_visitor.link(self, self.initializer)
+        return super().visit(node_visitor)
+
+
+class Designation(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.designator = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.designator)
+        return super().visit(node_visitor)
+
+
+class Designator(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.constant_expr = None
+        self.id = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.constant_expr)
+        node_visitor.link(self, self.id)
+        return super().visit(node_visitor)
+
+
+class CompoundStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sub_nodes = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.sub_nodes)
+        return super().visit(node_visitor)
+
+
+class LabeledStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.id = None
+        self.keyword = None
+        self.statement = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.id)
+        node_visitor.link(self, self.keyword)
+        node_visitor.link(self, self.statement)
+        return super().visit(node_visitor)
+
+
+class ExpressionStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.expr = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.expr)
+        return super().visit(node_visitor)
+
+
+class SelectionStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.if_keyword = None
+        self.if_stmt = None
+        self.else_stmt = None
+        self.else_keyword = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.if_keyword)
+        node_visitor.link(self, self.if_stmt)
+        node_visitor.link(self, self.else_keyword)
+        node_visitor.link(self, self.else_stmt)
+        return super().visit(node_visitor)
+
+
+class IterationStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.while_keyword = None
+        self.expr = None
+        self.stmt = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.keyword)
+        # while for do ...
+        node_visitor.link(self, self.while_keyword)
+        node_visitor.link(self, self.expr)
+        node_visitor.link(self, self.stmt)
+        return super().visit(node_visitor)
+
+
+class JumpStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.expr = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.keyword)
+        node_visitor.link(self, self.expr)
+        return super().visit(node_visitor)
+
 
 class CParser(Parser):
     def __init__(self, lexer, skip_invisible_characters=True, skip_space=True):
@@ -665,7 +837,6 @@ class CParser(Parser):
         node = DirectDeclaractor()
         if self.current_token.type == TokenType.ID:
             node.update(id=self.identifier())
-
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(id=self.declarator())
@@ -756,7 +927,7 @@ class CParser(Parser):
         """
         return self.conditional_expression()
 
-    def conditional_expression(self):
+    def conditional_expression(self) -> ConditionalExpression:
         """
         <conditional-expression> ::= <logical-or-expression> ("?" <expression> ":" <conditional-expression>)?
         """
@@ -769,205 +940,102 @@ class CParser(Parser):
             node.update(value_false=self.conditional_expression())
         return node
 
+    def _binary_expression(self, token_types: List[Enum], func):
+        """
+        方便后面优先级运算符调用
+
+        为了避免大量的AST嵌套, 简化过程, 如果没有 expr_rights 则直接返回 expr_left
+        """
+        expr_left = func()
+        if self.current_token.type not in token_types:
+            return expr_left
+
+        node = BinaryOp()
+        node.update(expr_left=expr_left)
+        expr_rights = []
+        while self.current_token.type in token_types:
+            if self.current_token.type == TokenType.LANGLE_BRACE:
+                self.current_token.type = TokenType.LT
+            elif self.current_token.type == TokenType.RANGLE_BRACE:
+                self.current_token.type = TokenType.GT
+            node.register_token(self.eat(self.current_token.type))
+            expr_rights.append(func())
+        node.update(expr_rights=expr_rights)
+        return node
+
     def logical_or_expression(self):
         """
         <logical-or-expression> ::= <logical-and-expression> ("||" <logical-and-expression>)*
-
-        运算符优先级, 为了避免大量的AST嵌套, 简化过程, 如果没有 expr_rights 则直接返回 expr_left
         """
-        expr_left = self.logical_and_expression()
-        if self.current_token.type == TokenType.OR:
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type == TokenType.OR:
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.logical_and_expression())
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression([TokenType.OR], self.logical_and_expression)
 
     def logical_and_expression(self):
         """
         <logical-and-expression> ::= <inclusive-or-expression> ("&&" <inclusive-or-expression>)*
         """
-        expr_left = self.inclusive_or_expression()
-        if self.current_token.type == TokenType.AND:
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type == TokenType.AND:
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.inclusive_or_expression())
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression([TokenType.AND], self.inclusive_or_expression)
 
     def inclusive_or_expression(self):
         """
         <inclusive-or-expression> ::= <exclusive-or-expression> ("|" <exclusive-or-expression>)*
         """
-        expr_left = self.exclusive_or_expression()
-        if self.current_token.type == TokenType.PIPE:
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type == TokenType.PIPE:
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.exclusive_or_expression())
-
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression([TokenType.PIPE], self.exclusive_or_expression)
 
     def exclusive_or_expression(self):
         """
         <exclusive-or-expression> ::= <and-expression> ("^" <and-expression>)*
         """
-        expr_left = self.and_expression()
-        if self.current_token.type == TokenType.CARET:
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type == TokenType.CARET:
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.and_expression())
-
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression([TokenType.CARET], self.and_expression)
 
     def and_expression(self):
         """
         <and-expression> ::= <equality-expression> ("&" <equality-expression>)*
         """
-        expr_left = self.equality_expression()
-        if self.current_token.type == TokenType.AMPERSAND:
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type == TokenType.AMPERSAND:
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.equality_expression())
-
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression([TokenType.AMPERSAND], self.equality_expression)
 
     def equality_expression(self):
         """
         <equality-expression> ::= <relational-expression> (("=="|"!=") <relational-expression>)*
         """
-        expr_left = self.relational_expression()
-        if self.current_token.type in (TokenType.EQ, TokenType.NE):
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type in (TokenType.EQ, TokenType.NE):
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.relational_expression())
-
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression([TokenType.EQ, TokenType.NE], self.relational_expression)
 
     def relational_expression(self):
         """
         <relational-expression> ::= <shift-expression> (("<"|">"|"<="|">=") <shift-expression>)*
         """
-        expr_left = self.shift_expression()
-        if self.current_token.type in (
-            TokenType.LANGLE_BRACE,
-            TokenType.RANGLE_BRACE,
-            TokenType.LE,
-            TokenType.GE,
-        ):
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type in (
-                TokenType.LANGLE_BRACE,
-                TokenType.RANGLE_BRACE,
-                TokenType.LE,
-                TokenType.GE,
-            ):
-                if self.current_token.type == TokenType.LANGLE_BRACE:
-                    self.current_token.type = TokenType.LT
-                elif self.current_token.type == TokenType.RANGLE_BRACE:
-                    self.current_token.type = TokenType.GT
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.shift_expression())
 
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression(
+            [TokenType.LANGLE_BRACE, TokenType.RANGLE_BRACE, TokenType.LE, TokenType.GE],
+            self.shift_expression,
+        )
 
     def shift_expression(self):
         """
         <shift-expression> ::= <additive-expression> (("<<" | ">>") <additive-expression>)*
         """
-        expr_left = self.additive_expression()
-        if self.current_token.type in (TokenType.SHL, TokenType.SHR):
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type in (TokenType.SHL, TokenType.SHR):
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.additive_expression())
-
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression([TokenType.SHL, TokenType.SHR], self.additive_expression)
 
     def additive_expression(self):
         """
         <additive-expression> ::= <multiplicative-expression> (("+"|"-") <multiplicative-expression>)*
         """
-        expr_left = self.multiplicative_expression()
-        if self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
-            node = BinaryOp()
-            node.update(expr_left=self.multiplicative_expression())
-            expr_rights = []
-            while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.multiplicative_expression())
-
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression(
+            [TokenType.PLUS, TokenType.MINUS], self.multiplicative_expression
+        )
 
     def multiplicative_expression(self):
         """
         <multiplicative-expression> ::= <cast-expression> (("*"|"/"|"%") <cast-expression>)*
         """
-        expr_left = self.cast_expression()
-        if self.current_token.type in (TokenType.MUL, TokenType.DIV, TokenType.MOD):
-            node = BinaryOp()
-            node.update(expr_left=expr_left)
-            expr_rights = []
-            while self.current_token.type in (TokenType.MUL, TokenType.DIV, TokenType.MOD):
-                node.register_token(self.eat(self.current_token.type))
-                expr_rights.append(self.cast_expression())
-
-            node.update(expr_rights=expr_rights)
-            return node
-        else:
-            return expr_left
+        return self._binary_expression(
+            [TokenType.MUL, TokenType.DIV, TokenType.MOD], self.cast_expression
+        )
 
     def cast_expression(self):
         """
         <cast-expression> ::= ("(" <type-name> ")")* <unary-expression>
         """
-        node = CaseExpression()
+        node = CastExpression()
         type_names = []
         while self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
@@ -987,7 +1055,7 @@ class CParser(Parser):
                              | "--" <unary-expression>
                              | <unary-operator> <cast-expression>
                              | sizeof <unary-expression>
-                             | sizeof   "(" <type-name> ")"  ("{" <initializer-list> (",")? "}")?
+                             | sizeof   "(" <type-name> ")"  ("{" <init-declarator-list> (",")? "}")?
                              | _Alignof "(" <type-name> ")"
 
         <unary-operator> ::= "&"
@@ -1036,7 +1104,7 @@ class CParser(Parser):
                     # C23 移除了此写法
                     if self.current_token.type == TokenType.LCURLY_BRACE:
                         node.register_token(self.eat(TokenType.LCURLY_BRACE))
-                        node.update(initializer_list=self.initializer_list())
+                        node.update(initializer_list=self.init_declarator_list())
                         if self.current_token.type == TokenType.COMMA:
                             node.register_token(self.eat(TokenType.COMMA))
                         node.register_token(self.eat(TokenType.RCURLY_BRACE))
@@ -1200,18 +1268,29 @@ class CParser(Parser):
         # <conditional-expression> => <cast-expression> => ("(" <type-name> ")")* <unary-expression>
         # 无法 LL1 判断, 需要额外处理
         if self.current_token.type not in self.cfirst_set.assignment_expression:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or conditional expression")
-        
+            self.error(
+                ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or conditional expression"
+            )
+
         node = AssignmentExpression()
-        if self.current_token.type != TokenType.LPAREN:
-            unary_expr = self.unary_expression()
-            if self.current_token.type in self.cfirst_set.assignment_operator:
-                node.update(unary_expr = unary_expr)
-                node.update(assign_op = self.assignment_operator())
-                node.update(assignment_expr = self.assignment_expression()) # 递归
+        expr = self.conditional_expression()
+        if isinstance(expr.condition_expr, BinaryOp):
+            # 含双目运算符, 必为 conditional expression
+            node.update(expr=expr)
+        elif isinstance(expr.condition_expr, CastExpression):
+            # CastExpression 含 type_names 必为 conditional expression
+            if expr.condition_expr.type_names is not None:
+                node.update(expr=expr)
             else:
-                ...
-        self.conditional_expression()
+                # 纯 unary expression
+                if self.current_token.type in self.cfirst_set.assignment_operator:
+                    # 有赋值运算符, 是产生式A
+                    node.update(assign_op=self.assignment_operator())
+                    node.update(assignment_expr=self.assignment_expression())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be conditional expr or unary expr")
+
+        return node
 
     def assignment_operator(self):
         """
@@ -1285,7 +1364,55 @@ class CParser(Parser):
                 | <direct-abstract-declarator>? "[" <type-qualifier-list> static <assignment-expression> ]
                 | <direct-abstract-declarator>? "[" "*" "]"
         """
-        self.parameter_list()
+        node = DirectAbstractDeclaractor()
+        sub_nodes = []
+        while self.current_token.type in (TokenType.LPAREN, TokenType.LSQUAR_PAREN):
+            sub_node = DirectAbstractDeclaractorPostfix()
+            if self.current_token.type == TokenType.LPAREN:
+                sub_node.register_token(self.eat(TokenType.LPAREN))
+                if self.current_token.type in self.cfirst_set.abstract_declarator:
+                    sub_node.update(expr=self.abstract_declarator())
+                elif self.current_token.type in self.cfirst_set.parameter_list:
+                    sub_node.update(expr=self.parameter_list())
+                else:
+                    self.error(
+                        ErrorCode.UNEXPECTED_TOKEN,
+                        "should be abstract declarator or parameter list",
+                    )
+                sub_node.register_token(self.eat(TokenType.RPAREN))
+            else:
+                sub_node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+                if self.current_token.type == TokenType.MUL:
+                    self.current_token.type = CTokenType.STAR
+                    sub_node.register_token(self.eat(CTokenType.STAR))
+                    sub_node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+                    sub_nodes.append(sub_node)
+                    continue
+
+                if self.current_token.type == CTokenType.STATIC:
+                    keyword = Keyword(self.current_token.value)
+                    keyword.class_name = "StorageType"
+                    keyword.register_token(self.eat(CTokenType.STATIC))
+                    sub_node.update(static_head=keyword)
+                if self.current_token.type in self.cfirst_set.type_qualifier:
+                    sub_node.update(type_qualifiers=self.type_qualifier_list())
+
+                if self.current_token.type == CTokenType.STATIC:
+                    if sub_node.static_head is not None:
+                        self.error(ErrorCode.UNEXPECTED_TOKEN, "multi static")
+                    keyword = Keyword(self.current_token.value)
+                    keyword.class_name = "StorageType"
+                    keyword.register_token(self.eat(CTokenType.STATIC))
+                    sub_node.update(static_foot=keyword)
+
+                if self.current_token.type in self.cfirst_set.assignment_expression:
+                    sub_node.update(assignment_expr=self.assignment_expression())
+
+                sub_node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+                sub_nodes.append(sub_node)
+
+        node.update(sub_nodes=sub_nodes)
+        return node
 
     def enum_specifier(self):
         """
@@ -1326,44 +1453,35 @@ class CParser(Parser):
         """
         <typedef-name> ::= <identifier>
         """
-        return self.identifier()
+        node = Identifier(self.current_token.value)
+        node.register_token(self.eat(CTokenType.TYPEDEF_ID))
+        return node
 
     def declaration(self):
         """
-        <declaration> ::=  {<declaration-specifier>}+ <init-declarator> ("," <init-declarator>)* ";"
+        <declaration> ::= <declaration-specifier>+ (<init-declarator-list>)? ";"
+                        | <static-assert-declaration>
         """
         node = Declaration()
+        if self.current_token.type in self.cfirst_set.static_assert_declaration:
+            node.update(static_assert=self.static_assert_declaration())
+            return node
+
         declaration_specifiers = []
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
 
-        init_declarators = [self.init_declarator()]
-        while self.current_token.type == TokenType.COMMA:
-            node.register_token(self.eat(TokenType.COMMA))
-            init_declarators.append(self.init_declarator())
-        node.update(init_declarators=init_declarators)
+        node.update(declaration_specifiers=declaration_specifiers)
+        node.update(init_declarator_list=self.init_declarator_list())
         if self.current_token.type == TokenType.SEMI:
             node.register_token(self.eat(TokenType.SEMI))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "miss ;")
         return node
 
-    def init_declarator(self):
+    def init_declarator_list(self) -> List[AST]:
         """
-        <init-declarator> ::= <declarator> ("=" <initializer>)?
-        """
-
-    def initializer(self):
-        """
-        <initializer> ::= <assignment-expression>
-                        | "{" <initializer-list> "}"
-                        | "{" <initializer-list> "," "}"
-        """
-        self.assignment_expression()
-
-    def initializer_list(self) -> List[AST]:
-        """
-        <initializer-list> ::= <initializer> ("," <initializer>)*
+        <init-declarator-list> ::= <init-declarator> ("," <init-declarator>)*
         """
         result = [self.initializer()]
         while self.current_token.type == TokenType.COMMA:
@@ -1371,10 +1489,102 @@ class CParser(Parser):
             result.append(self.initializer())
         return result
 
+    def init_declarator(self):
+        """
+        <init-declarator> ::= <declarator> ("=" <initializer>)?
+        """
+        node = InitDeclarator()
+        node.update(declarator=self.declarator())
+        if self.current_token.type == TokenType.ASSIGN:
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(initializer=self.initializer())
+        return node
+
+    def initializer(self):
+        """
+        <initializer> ::= <assignment-expression>
+                        | "{" <initializer-list> "}"
+                        | "{" <initializer-list> "," "}"
+        """
+        node = Initializer()
+        if self.current_token.type in self.cfirst_set.assignment_expression:
+            node.update(assignment_expr=self.assignment_expression())
+        elif self.current_token.type == TokenType.LCURLY_BRACE:
+            node.register_token(self.eat(TokenType.LCURLY_BRACE))
+            node.update(initializer_list=self.initializer_list())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+            node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        else:
+            self.error(
+                ErrorCode.UNEXPECTED_TOKEN, "should be initializer list or assignment expression"
+            )
+        return node
+
+    def initializer_list(self) -> List[AST]:
+        """
+        <initializer-list> ::= <designation>? <initializer> ("," <designation>? <initializer>)*
+        """
+        node = DesignationInitializer()
+        if self.current_token.type in self.cfirst_set.designation:
+            node.update(designation=self.designation())
+        node.update(initializer=self.initializer())
+
+        result = [node]
+
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            node = DesignationInitializer()
+            if self.current_token.type in self.cfirst_set.designation:
+                node.update(designation=self.designation())
+            node.update(initializer=self.initializer())
+            result.append(node)
+        return result
+
+    def designation(self):
+        """
+        <designation> ::= <designator>+ "="
+        """
+        node = Designation()
+        node.update(designator=self.designator())
+        node.register_token(self.eat(TokenType.ASSIGN))
+        return node
+
+    def designator(self):
+        """
+        <designator> ::= "[" <constant-expression> "]"
+                       | "." <identifier>
+        """
+        node = Designator()
+        if self.current_token.type == TokenType.LSQUAR_PAREN:
+            node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+            node.update(constant_expr=self.constant_expression())
+            node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+        elif self.current_token.type == TokenType.DOT:
+            node.register_token(self.eat(TokenType.DOT))
+            node.update(id=self.identifier())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be constant expression or id")
+        return node
+
     def compound_statement(self):
         """
-        <compound-statement> ::= "{" {<declaration>}* {<statement>}* "}"
+        <compound-statement> ::= "{" (<block-item>)* "}"
+
+        <block-item> ::= <declartion>
+                       | <statement>
         """
+        node = CompoundStatement()
+        node.register_token(self.eat(TokenType.LCURLY_BRACE))
+        sub_nodes = []
+        while self.current_token.type in self.cfirst_set.block_item:
+            if self.current_token.type in self.cfirst_set.declaration:
+                sub_nodes.append(self.declaration())
+            else:
+                sub_nodes.append(self.statement())
+        node.update(sub_nodes=sub_nodes)
+        node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        return node
 
     def statement(self):
         """
@@ -1385,40 +1595,164 @@ class CParser(Parser):
                       | <iteration-statement>
                       | <jump-statement>
         """
+        if self.current_token.type in self.cfirst_set.labeled_statement:
+            return self.labeled_statement()
+        elif self.current_token.type in self.cfirst_set.expression_statement:
+            return self.expression_statement()
+        elif self.current_token.type in self.cfirst_set.compound_statement:
+            return self.compound_statement()
+        elif self.current_token.type in self.cfirst_set.selection_statement:
+            return self.selection_statement()
+        elif self.current_token.type in self.cfirst_set.iteration_statement:
+            return self.iteration_statement()
+        elif self.current_token.type in self.cfirst_set.jump_statement:
+            return self.jump_statement()
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be a statement")
 
     def labeled_statement(self):
         """
         <labeled-statement> ::= <identifier> ":" <statement>
-                              | "case" <constant-expression> ":" <statement>
-                              | "default" ":" <statement>
+                              | case <constant-expression> ":" <statement>
+                              | default ":" <statement>
         """
+        node = LabeledStatement()
+        if self.current_token.type in self.cfirst_set.identifier:
+            node.update(id=self.identifier())
+        elif self.current_token.type in (CTokenType.CASE, CTokenType.DEFAULT):
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(self.current_token.type))
+            node.update(keyword=keyword)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be id or case or default")
+        node.register_token(self.eat(TokenType.COLON))
+        node.update(statement=self.statement())
+        return node
 
     def expression_statement(self):
         """
         <expression-statement> ::= {<expression>}? ";"
         """
+        node = ExpressionStatement()
+        if self.current_token.type in self.cfirst_set.expression:
+            node.update(expr=self.expression())
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
 
     def selection_statement(self):
         """
-        <selection-statement> ::= "if" "(" <expression> ")" <statement>
-                                | "if" "(" <expression> ")" <statement> "else" <statement>
-                                | "switch" "(" <expression> ")" <statement>
+        <selection-statement> ::= if "(" <expression> ")" <statement>
+                                | if "(" <expression> ")" <statement> else <statement>
+                                | switch "(" <expression> ")" <statement>
         """
+        node = SelectionStatement()
+        if self.current_token.type in (CTokenType.IF, CTokenType.SWITCH):
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(self.current_token.type))
+            node.update(if_keyword=keyword)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be if or switch")
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(expr=self.expression())
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.update(if_stmt=self.statement())
+        if self.current_token.type == CTokenType.ELSE:
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(self.current_token.type))
+            node.update(else_keyword=keyword)
+            node.update(else_stmt=self.statement())
+        return node
 
     def iteration_statement(self):
         """
-        <iteration-statement> ::= "while" "(" <expression> ")" <statement>
-                                | "do" <statement> "while" "(" <expression> ")" ";"
-                                | "for" "(" {<expression>}? ";" {<expression>}? ";" {<expression>}? ")" <statement>
+        <iteration-statement> ::= while "(" <expression> ")" <statement>
+                                | do <statement> while "(" <expression> ")" ";"
+                                | for "(" {<expression>}? ";" {<expression>}? ";" {<expression>}? ")" <statement>
+                                | for "(" <declaration> <expression>? ";" <expression>? ")" <statement>
         """
+        node = IterationStatement()
+        if self.current_token.type == CTokenType.WHILE:
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(self.current_token.type))
+            node.update(keyword=keyword)
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(expr=self.expression())
+            node.register_token(self.eat(TokenType.RPAREN))
+            node.update(stmt=self.statement())
+        elif self.current_token.type == CTokenType.DO:
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(self.current_token.type))
+            node.update(keyword=keyword)
+            node.update(stmt=self.statement())
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(self.current_token.type))
+            node.update(while_keyword=keyword)
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(expr=self.expression())
+            node.register_token(self.eat(TokenType.RPAREN))
+            node.register_token(self.eat(TokenType.SEMI))
+        elif self.current_token.type == CTokenType.FOR:
+            keyword = Keyword(self.current_token.value)
+            keyword.register_token(self.eat(self.current_token.type))
+            node.update(keyword=keyword)
+
+            exprs = []
+            node.register_token(self.eat(TokenType.LPAREN))
+            # for "(" <declaration> <expression>? ";" <expression>? ")" <statement>
+            if self.current_token.type in self.cfirst_set.declaration:
+                node.update(declaration=self.declaration())
+                if self.current_token.type in self.cfirst_set.expression:
+                    exprs.append(self.expression())
+                node.register_token(self.eat(TokenType.SEMI))
+                if self.current_token.type in self.cfirst_set.expression:
+                    exprs.append(self.expression())
+                node.register_token(self.eat(TokenType.RPAREN))
+                node.update(expr=exprs)
+                node.update(stmt=self.statement())
+            else:
+                # for "(" {<expression>}? ";" {<expression>}? ";" {<expression>}? ")" <statement>
+                if self.current_token.type in self.cfirst_set.expression:
+                    exprs.append(self.expression())
+                node.register_token(self.eat(TokenType.SEMI))
+                if self.current_token.type in self.cfirst_set.expression:
+                    exprs.append(self.expression())
+                node.register_token(self.eat(TokenType.SEMI))
+                if self.current_token.type in self.cfirst_set.expression:
+                    exprs.append(self.expression())
+                node.register_token(self.eat(TokenType.RPAREN))
+                node.update(stmt=self.statement())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be while or do or for")
+        return node
 
     def jump_statement(self):
         """
-        <jump-statement> ::= "goto" <identifier> ";"
-                           | "continue" ";"
-                           | "break" ";"
-                           | "return" {<expression>}? ";"
+        <jump-statement> ::= goto <identifier> ";"
+                           | continue ";"
+                           | break ";"
+                           | return {<expression>}? ";"
         """
+        node = JumpStatement()
+        if self.current_token.type in self.cfirst_set.jump_statement:
+            if self.current_token.type == CTokenType.GOTO:
+                keyword = Keyword(self.current_token.value)
+                keyword.register_token(self.eat(self.current_token.type))
+                node.update(keyword=keyword)
+                node.update(expr=self.identifier())
+            elif self.current_token.type == CTokenType.RETURN:
+                keyword = Keyword(self.current_token.value)
+                keyword.register_token(self.eat(self.current_token.type))
+                node.update(keyword=keyword)
+                if self.current_token.type in self.cfirst_set.expression:
+                    node.update(expr=self.expression())
+            else:
+                keyword = Keyword(self.current_token.value)
+                keyword.register_token(self.eat(self.current_token.type))
+                node.update(keyword=keyword)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be goto continue break return")
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
 
     def identifier(self):
         """

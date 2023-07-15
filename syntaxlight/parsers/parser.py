@@ -5,17 +5,20 @@ from ..ast import AST
 from typing import List
 import sys
 import html
+import traceback
+
 
 class Parser:
-    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning = True):
+    def __init__(
+        self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True
+    ):
         self.lexer: Lexer = lexer
         # set current token to the first token taken from the input
         self.skip_invisible_characters = skip_invisible_characters
         self.skip_space = skip_space
         self.display_warning = display_warning
-        self.token_list: List[Token] = []
+        self._token_list: List[Token] = []  # lexer 解析后经过 parser 确定类型后的 tokens
         self.brace_list: List[TokenType] = [
-            TokenType.LPAREN,
             TokenType.LPAREN,
             TokenType.RPAREN,
             TokenType.LSQUAR_PAREN,
@@ -36,6 +39,7 @@ class Parser:
         message: str = "",
         token: Token = None,
     ):
+        traceback.print_stack()
         if token is None:
             token = self.current_token
 
@@ -52,17 +56,17 @@ class Parser:
             file_path=self.lexer.file_path,
             message=message,
         )
-    
-    def warning(self, message = None, ast:AST = None):
-        '''
+
+    def warning(self, message=None, ast: AST = None):
+        """
         语法解析过程中的警告信息
-        '''
+        """
         if not self.display_warning:
             return
 
         warning_color = TTYColor.MAGENTA
-        
-        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color) + message + '\n')
+
+        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color) + message + "\n")
         sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
     def eat(self, token_type: Enum) -> List[Token]:
@@ -131,12 +135,12 @@ class Parser:
             self.eat(self.current_token.type)
 
     def skip_end(self):
-        '''
+        """
         跳过最后的空白和换行
-        '''
+        """
         while self.current_token.type != TokenType.EOF:
             self._skip()
-            
+
     def eat_lf(self):
         """
         跳过一个换行
@@ -156,7 +160,7 @@ class Parser:
         """
         token = self.current_token
         # print(token)
-        self.token_list.append(token)
+        self._token_list.append(token)
 
     def to_html(self):
         """
@@ -166,7 +170,8 @@ class Parser:
         # 对于 ([{<>}]) 计算括号深度
         brace_depth = 0
         brace_stack: List[TokenType] = []
-        for token in self.token_list:
+        for token in self._token_list:
+            # print(self.brace_list)
             if token.type in self.brace_list:
                 if len(brace_stack) == 0:
                     brace_stack.append(token.type)
@@ -187,13 +192,6 @@ class Parser:
 
             html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
         return html_str
-
-    def type_hint(self, array: List[Enum]):
-        result = ""
-        for i in array:
-            result += i.value + " | "
-        result = result[:-3]
-        return result
 
     def parse(self):
         raise NotImplementedError(self.__class__.__name__ + " must override the parse function")

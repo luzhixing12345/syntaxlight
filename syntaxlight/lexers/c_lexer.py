@@ -69,7 +69,8 @@ class CTokenType(Enum):
     # -----------------------------------------------
 
     POINTER = "*"
-    STAR = '*'
+    STAR = "*"
+    TYPEDEF_ID = 'typedef-id'
 
 
 class CLexer(Lexer):
@@ -132,7 +133,7 @@ class CTokenSet:
         self.atomic_type_specifier = TokenSet(CTokenType._ATOMIC)
         self.struct_or_union_specifier = TokenSet(self.struct_or_union)
         self.enum_specifier = TokenSet(CTokenType.ENUM)
-        self.typedef_name = TokenSet(TokenType.ID)
+        self.typedef_name = TokenSet(CTokenType.TYPEDEF_ID)
         self.type_specifier = TokenSet(
             CTokenType.VOID,
             CTokenType.CHAR,
@@ -154,7 +155,8 @@ class CTokenSet:
         self.function_speficier = TokenSet(CTokenType.INLINE, CTokenType._NORETURN)
         self.alignment_specifier = TokenSet(CTokenType._ALIGNAS)
         self.declaration_specifier = TokenSet(
-            self.storage_class_specifier, self.type_specifier, self.type_qualifier
+            self.storage_class_specifier, self.type_specifier, self.type_qualifier,
+            self.function_speficier, self.alignment_specifier
         )
         self.declarator = TokenSet(
             TokenType.MUL, TokenType.ID, TokenType.LPAREN  # => CTokenType.POINTER
@@ -167,7 +169,7 @@ class CTokenSet:
         self.struct_declarator = TokenSet(self.declarator, TokenType.COLON)
         self.struct_declaration = TokenSet(self.specifier_qualifier, self.struct_declarator)
         self.direct_declaractor = TokenSet(TokenType.ID, TokenType.LPAREN)
-        self.compound_statement = TokenSet(TokenType.LCURLY_BRACE)
+
         self.generic_selection = TokenSet(CTokenType._GENERIC)
         self.assignment_operator = TokenSet(
             TokenType.ASSIGN,
@@ -191,7 +193,7 @@ class CTokenSet:
             TokenType.BANG,
         )
 
-        self.identifier = TokenSet(TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.CHAR)
+        self.identifier = TokenSet(TokenType.ID)
         self.parameter_declaration = TokenSet(self.declaration_specifier)
         self.parameter_list = TokenSet(self.parameter_declaration)
         self.primary_expression = TokenSet(
@@ -208,7 +210,7 @@ class CTokenSet:
             TokenType.DEC,
         )
         self.type_name = TokenSet(self.specifier_qualifier)
-        
+
         self.unary_expression = TokenSet(
             self.unary_operator,
             TokenType.INC,
@@ -216,7 +218,7 @@ class CTokenSet:
             CTokenType.SIZEOF,
             self.postfix_expression,
             CTokenType._ALIGNOF,
-            TokenType.LPAREN
+            TokenType.LPAREN,
         )
         self.conditinal_expression = TokenSet(self.unary_expression, TokenType.LPAREN)
         self.constant_expression = TokenSet(self.conditinal_expression)
@@ -224,3 +226,24 @@ class CTokenSet:
         self.expression = TokenSet(self.assignment_expression)
         self.direct_abstract_declarator = TokenSet(TokenType.LPAREN, TokenType.LSQUAR_PAREN)
         self.abstract_declarator = TokenSet(TokenType.MUL, self.direct_abstract_declarator)
+        self.initializer = TokenSet(self.assignment_expression, TokenType.LCURLY_BRACE)
+        self.designator = TokenSet(TokenType.LSQUAR_PAREN, TokenType.DOT)
+        self.designation = TokenSet(self.designator)
+
+        self.labeled_statement = TokenSet(self.identifier, CTokenType.CASE, CTokenType.DEFAULT)
+        self.expression_statement = TokenSet(self.expression, TokenType.SEMI)
+        self.compound_statement = TokenSet(TokenType.LCURLY_BRACE)
+        self.selection_statement = TokenSet(CTokenType.IF, CTokenType.SWITCH)
+        self.iteration_statement = TokenSet(CTokenType.WHILE, CTokenType.DO, CTokenType.FOR)
+        self.jump_statement = TokenSet(
+            CTokenType.GOTO, CTokenType.CONTINUE, CTokenType.BREAK, CTokenType.RETURN
+        )
+        self.statement = TokenSet(
+            self.labeled_statement,
+            self.expression_statement,
+            self.compound_statement,
+            self.selection_statement,
+            self.iteration_statement,
+            self.jump_statement,
+        )
+        self.block_item = TokenSet(self.declaration, self.statement)

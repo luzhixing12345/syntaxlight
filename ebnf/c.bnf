@@ -128,13 +128,6 @@
                        | <postfix-expression> "++"
                        | <postfix-expression> "--"
 
-<initializer-list> ::= <designation>? <initializer> ("," <designation>? <initializer>)*
-
-<designation> ::= <designator>+ "="
-
-<designator> ::= "[" <constant-expression> "]"
-               | "." <identifier>
-
 <static_assert-declaration> ::= _Static_assert "(" <constant-expression> "," <string> ")"
 
 <primary-expression> ::= <identifier>
@@ -206,22 +199,28 @@
 
 <typedef-name> ::= <identifier>
 
-<declaration> ::= <declaration-specifiers> (<init-declarator-list>)? ";"
+<declaration> ::= <declaration-specifier>+ (<init-declarator-list>)? ";"
                 | <static-assert-declaration>
-                | <attribute-specifier-sequence> <declaration-specifiers> <init-declarator-list>
-                | <attribute-declaration>
 
-<declaration-specifiers> ::= <declaration-specifier>+ <attribute-specifier-sequence>?
+<init-declarator-list> ::= <init-declarator> ("," <init-declarator>)*
 
 <init-declarator> ::= <declarator> ("=" <initializer>)?
 
 <initializer> ::= <assignment-expression>
-                | "{" <init-declarator-list> "}"
-                | "{" <init-declarator-list> "," "}"
+                | "{" <initializer-list> "}"
+                | "{" <initializer-list> "," "}"
 
-<init-declarator-list> ::= <init-declarator> ("," <init-declarator>)*
+<initializer-list> ::= <designation>? <initializer> ("," <designation>? <initializer>)*
 
-<compound-statement> ::= "{" {<declaration>}* {<statement>}* "}"
+<designation> ::= <designator>+ "="
+
+<designator> ::= "[" <constant-expression> "]"
+               | "." <identifier>
+
+<compound-statement> ::= "{" (<block-item>)* "}"
+
+<block-item> ::= <declartion>
+                | <statement>
 
 <statement> ::= <labeled-statement>
               | <expression-statement>
@@ -231,20 +230,21 @@
               | <jump-statement>
 
 <labeled-statement> ::= <identifier> ":" <statement>
-                      | "case" <constant-expression> ":" <statement>
-                      | "default" ":" <statement>
+                      | case <constant-expression> ":" <statement>
+                      | default ":" <statement>
 
 <expression-statement> ::= {<expression>}? ";"
 
-<selection-statement> ::= "if" "(" <expression> ")" <statement>
-                        | "if" "(" <expression> ")" <statement> "else" <statement>
-                        | "switch" "(" <expression> ")" <statement>
+<selection-statement> ::= if "(" <expression> ")" <statement>
+                        | if "(" <expression> ")" <statement> else <statement>
+                        | switch "(" <expression> ")" <statement>
 
-<iteration-statement> ::= "while" "(" <expression> ")" <statement>
-                        | "do" <statement> "while" "(" <expression> ")" ";"
-                        | "for" "(" {<expression>}? ";" {<expression>}? ";" {<expression>}? ")" <statement>
+<iteration-statement> ::= while "(" <expression> ")" <statement>
+                        | do <statement> while "(" <expression> ")" ";"
+                        | for "(" {<expression>}? ";" {<expression>}? ";" {<expression>}? ")" <statement>
+                        | for "(" <declaration> <expression>? ";" <expression>? ")" <statement>
 
-<jump-statement> ::= "goto" <identifier> ";"
-                   | "continue" ";"
-                   | "break" ";"
-                   | "return" {<expression>}? ";"
+<jump-statement> ::= goto <identifier> ";"
+                   | continue ";"
+                   | break ";"
+                   | return {<expression>}? ";"
