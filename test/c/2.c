@@ -1,6 +1,3 @@
-
-#include <stdio.h>
-
 int a, f(int x);
 
 int x[3];

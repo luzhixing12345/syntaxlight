@@ -70,7 +70,7 @@ class CTokenType(Enum):
 
     POINTER = "*"
     STAR = "*"
-    TYPEDEF_ID = 'typedef-id'
+    TYPEDEF_ID = "typedef-id"
 
 
 class CLexer(Lexer):
@@ -151,12 +151,17 @@ class CTokenSet:
             self.enum_specifier,
             self.typedef_name,
         )
-        self.type_qualifier = TokenSet(CTokenType.CONST, CTokenType.VOLATITLE)
+        self.type_qualifier = TokenSet(
+            CTokenType.CONST, CTokenType.VOLATITLE, CTokenType.RESTRICT, CTokenType._ATOMIC
+        )
         self.function_speficier = TokenSet(CTokenType.INLINE, CTokenType._NORETURN)
         self.alignment_specifier = TokenSet(CTokenType._ALIGNAS)
         self.declaration_specifier = TokenSet(
-            self.storage_class_specifier, self.type_specifier, self.type_qualifier,
-            self.function_speficier, self.alignment_specifier
+            self.storage_class_specifier,
+            self.type_specifier,
+            self.type_qualifier,
+            self.function_speficier,
+            self.alignment_specifier,
         )
         self.declarator = TokenSet(
             TokenType.MUL, TokenType.ID, TokenType.LPAREN  # => CTokenType.POINTER
@@ -165,9 +170,10 @@ class CTokenSet:
         self.declaration = TokenSet(self.declaration_specifier)
         self.external_declaration = TokenSet(self.function_definition, self.declaration)
         self.static_assert_declaration = TokenSet(CTokenType._STATIC_ASSERT)
-        self.specifier_qualifier = TokenSet(self.type_qualifier, self.type_specifier)
+        self.specifier_qualifier_list = TokenSet(self.type_qualifier, self.type_specifier)
         self.struct_declarator = TokenSet(self.declarator, TokenType.COLON)
-        self.struct_declaration = TokenSet(self.specifier_qualifier, self.struct_declarator)
+        self.struct_declarator_list = TokenSet(self.struct_declarator)
+        self.struct_declaration = TokenSet(self.specifier_qualifier_list, self.struct_declarator)
         self.direct_declaractor = TokenSet(TokenType.ID, TokenType.LPAREN)
 
         self.generic_selection = TokenSet(CTokenType._GENERIC)
@@ -209,7 +215,7 @@ class CTokenSet:
             TokenType.INC,
             TokenType.DEC,
         )
-        self.type_name = TokenSet(self.specifier_qualifier)
+        self.type_name = TokenSet(self.specifier_qualifier_list)
 
         self.unary_expression = TokenSet(
             self.unary_operator,
@@ -247,3 +253,4 @@ class CTokenSet:
             self.jump_statement,
         )
         self.block_item = TokenSet(self.declaration, self.statement)
+        self.init_declarator_list = TokenSet(self.declarator)

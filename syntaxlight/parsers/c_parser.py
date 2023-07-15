@@ -30,21 +30,17 @@ class TranslationUnit(AST):
 
 
 class Function(AST):
-    def __init__(
-        self, declaration_specifiers, declarator, declarations, compound_statement
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.declaration_specifiers = declaration_specifiers
-        self.declarator = declarator
-        self.declarations = declarations
-        self.compound_statement = compound_statement
+        self.declaration_specifiers = None
+        self.declarator = None
+        self.declarations = None
+        self.compound_statement = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        for declaration_specifier in self.declaration_specifiers:
-            node_visitor.link(self, declaration_specifier)
+        node_visitor.link(self, self.declaration_specifiers)
         node_visitor.link(self, self.declarator)
-        for declaration in self.declarations:
-            node_visitor.link(self, declaration)
+        node_visitor.link(self, self.declarations)
         node_visitor.link(self, self.compound_statement)
         return super().visit(node_visitor)
 
@@ -74,14 +70,9 @@ class StructDeclaration(AST):
         self.static_assert = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        if self.static_assert:
-            node_visitor.link(self, self.static_assert)
-            return super().visit(node_visitor)
-
-        for specifier_qualifier in self.specifier_qualifiers:
-            node_visitor.link(self, specifier_qualifier)
-        for declarator in self.declarators:
-            node_visitor.link(self, declarator)
+        node_visitor.link(self, self.specifier_qualifiers)
+        node_visitor.link(self, self.declarators)
+        node_visitor.link(self, self.static_assert)
         return super().visit(node_visitor)
 
 
@@ -153,10 +144,10 @@ class DirectDeclaractorPostfix(AST):
         super().__init__()
         self.static_head = None
         self.static_foot = None
-        self.type_qualifiers = []
+        self.type_qualifiers = None
         self.assignment_expr = None
-        self.parameter_list = []
-        self.identifier_list = []
+        self.parameter_list = None
+        self.identifier_list = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.static_head)
@@ -515,6 +506,7 @@ class CParser(Parser):
 
     def parse(self):
         self.node = self.translation_unit()
+        self.skip_crlf()
         if self.current_token.type != TokenType.EOF:
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
         return self.node
@@ -532,8 +524,11 @@ class CParser(Parser):
         """
         <external-declaration> ::= <function-definition>
                                  | <declaration>
+
+        在这里没有办法区分, 需要查看 <declarator> 后面是否有<declaration>* 和 <compound-statement> 才可以确定是 <function-definition>
         """
-        if self.current_token.type in self.cfirst_set.function_definition:
+        # 没有类型, 即 main() 可以确定是 function_definition
+        if self.current_token.type in self.cfirst_set.declarator:
             return self.function_definition()
         elif self.current_token.type in self.cfirst_set.declaration:
             return self.declaration()
@@ -545,18 +540,20 @@ class CParser(Parser):
 
     def function_definition(self):
         """
-        <function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
+        <function-definition> ::= <declaration-specifier>* <declarator> <declaration>* <compound-statement>
         """
+        node = Function()
         declaration_specifiers = []
-        compound_statement = None
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
-        declarator = self.declarator()
+        node.update(declaration_specifiers=declaration_specifiers)
+        node.update(declarator=self.declarator())
         declarations = []
         while self.current_token.type in self.cfirst_set.declaration:
             declarations.append(self.declaration())
-        compound_statement = self.compound_statement()
-        return Function(declaration_specifiers, declarator, declarations, compound_statement)
+        node.update(declarations=declarations)
+        node.update(compound_statement=self.compound_statement())
+        return node
 
     def declaration_sepcifier(self):
         """
@@ -698,13 +695,13 @@ class CParser(Parser):
                     "Declaration of anonymous struct must be a definition",
                 )
         # struct or union 有定义 {}
-        if self.current_token.type == TokenType.LPAREN:
-            node.register_token(self.eat(TokenType.LPAREN))
+        if self.current_token.type == TokenType.LCURLY_BRACE:
+            node.register_token(self.eat(TokenType.LCURLY_BRACE))
             struct_declarations = []
             while self.current_token.type in self.cfirst_set.struct_declaration:
                 struct_declarations.append(self.struct_declaration())
             node.update(declarations=struct_declarations)
-            node.register_token(self.eat(TokenType.RPAREN))
+            node.register_token(self.eat(TokenType.RCURLY_BRACE))
 
             # 匿名 struct 且未定义成员
             if len(struct_declarations) == 0 and node.id is None:
@@ -725,7 +722,7 @@ class CParser(Parser):
 
     def struct_declaration(self):
         """
-        <struct-declaration> ::= {<specifier-qualifier>}* <struct-declarator> ("," <struct-declarator>)* ";"
+        <struct-declaration> ::= <specifier-qualifier-list> <struct-declarator-list>? ";"
                                | <static_assert-declaration>
         """
         node = StructDeclaration()
@@ -733,30 +730,34 @@ class CParser(Parser):
             node.update(static_assert=self.static_assert_declaration())
             return node
 
-        specifier_qualifiers = []
-        while self.current_token.type in self.cfirst_set.specifier_qualifier:
-            specifier_qualifiers.append(self.specifier_qualifier())
-        node.update(specifier_qualifiers=specifier_qualifiers)
-
-        struct_declarators = [self.struct_declarator()]
-        while self.current_token.type == TokenType.COMMA:
-            node.register_token(self.eat(TokenType.COMMA))
-            struct_declarators.append(self.struct_declarator())
-        node.update(declarators=struct_declarators)
+        node.update(specifier_qualifiers=self.specifier_qualifier_list())
+        if self.current_token.type in self.cfirst_set.struct_declarator_list:
+            node.update(declarators=self.struct_declarator_list())
         node.register_token(self.eat(TokenType.SEMI))
         return node
 
-    def specifier_qualifier(self):
+    def specifier_qualifier_list(self) -> List[AST]:
         """
-        <specifier-qualifier> ::= <type-specifier>
-                                | <type-qualifier>
+        <specifier-qualifier> ::= <type-specifier> <specifier-qualifier>?
+                                | <type-qualifier> <specifier-qualifier>?
         """
-        if self.current_token.type in self.cfirst_set.type_specifier:
-            return self.type_specifier()
-        elif self.current_token.type in self.cfirst_set.type_qualifier:
-            return self.type_qualifier()
-        else:  # pragma: no cover
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type specifier or type qualifier")
+        result = []
+        while self.current_token.type in self.cfirst_set.specifier_qualifier_list:
+            if self.current_token.type in self.cfirst_set.type_specifier:
+                result.append(self.type_specifier())
+            else:
+                result.append(self.type_qualifier())
+        return result
+
+    def struct_declarator_list(self) -> List[AST]:
+        """
+        <struct-declarator-list> ::= <struct-declarator> ("," <struct-declarator>)*
+        """
+        result = [self.struct_declarator()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            result.append(self.struct_declarator())
+        return result
 
     def struct_declarator(self):
         """
@@ -814,8 +815,10 @@ class CParser(Parser):
 
     def type_qualifier(self):
         """
-        <type-qualifier> ::= "const"
-                           | "volatile"
+        <type-qualifier> ::= const
+                           | volatile
+                           | restrict
+                           | _Atomic
         """
         node = Keyword(self.current_token.value)
         node.class_name = "QualifyType"
@@ -827,10 +830,10 @@ class CParser(Parser):
         """
         <direct-declarator> ::= <identifier>
                               | "(" <declarator> ")"
-                              | <direct-declarator> "[" <type-qualifier-list>? <assignment-expression> "]"
+                              | <direct-declarator> "[" <type-qualifier-list>? <assignment-expression>? "]"
                               | <direct-declarator> "[" static <type-qualifier-list>? <assignment-expression> "]"
                               | <direct-declarator> "[" <type-qualifier-list> static <assignment-expression> "]"
-                              | <direct-declarator> "[" <type-qualifier-list> "*" "]"
+                              | <direct-declarator> "[" <type-qualifier-list>? "*" "]"
                               | <direct-declarator> "(" <parameter-list> ")"
                               | <direct-declarator> "(" (<identifier-list>)? ")"
         """
@@ -868,11 +871,12 @@ class CParser(Parser):
                     keyword.register_token(self.eat(CTokenType.STATIC))
                     sub_node.update(static_foot=keyword)
 
-                if self.current_token.type in self.cfirst_set.assignment_expression:
-                    sub_node.update(assignment_expr=self.assignment_expression())
-                elif self.current_token.type == TokenType.MUL:
+                if self.current_token.type == TokenType.MUL:
                     self.current_token.type = CTokenType.STAR
                     sub_node.register_token(self.eat(CTokenType.STAR))
+                elif self.current_token.type in self.cfirst_set.assignment_expression:
+                    sub_node.update(assignment_expr=self.assignment_expression())
+
                 sub_node.register_token(self.eat(TokenType.RSQUAR_PAREN))
 
             if self.current_token.type == TokenType.LPAREN:
@@ -915,10 +919,10 @@ class CParser(Parser):
         """
         <identifier-list> ::= <identifier> ("," <identifier>)*
         """
-        result = []
-        while self.current_token.type == TokenType.ID:
-            result.append(self.identifier())
+        result = [self.identifier()]
+        while self.current_token.type == TokenType.COMMA:
             self.eat(TokenType.COMMA)
+            result.append(self.identifier())
         return result
 
     def constant_expression(self):
@@ -1055,7 +1059,7 @@ class CParser(Parser):
                              | "--" <unary-expression>
                              | <unary-operator> <cast-expression>
                              | sizeof <unary-expression>
-                             | sizeof   "(" <type-name> ")"  ("{" <init-declarator-list> (",")? "}")?
+                             | sizeof   "(" <type-name> ")" ( "{" <initializer-list> (",")? "}")?
                              | _Alignof "(" <type-name> ")"
 
         <unary-operator> ::= "&"
@@ -1104,7 +1108,7 @@ class CParser(Parser):
                     # C23 移除了此写法
                     if self.current_token.type == TokenType.LCURLY_BRACE:
                         node.register_token(self.eat(TokenType.LCURLY_BRACE))
-                        node.update(initializer_list=self.init_declarator_list())
+                        node.update(initializer_list=self.initializer_list())
                         if self.current_token.type == TokenType.COMMA:
                             node.register_token(self.eat(TokenType.COMMA))
                         node.register_token(self.eat(TokenType.RCURLY_BRACE))
@@ -1147,7 +1151,6 @@ class CParser(Parser):
         node = PostfixExpression()
         if self.current_token.type not in self.cfirst_set.postfix_expression:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be ID or constant or string or (")
-
         node.update(primary_expr=self.primary_expression())
         sub_nodes = []
         while self.current_token.type in self.cfirst_set.postfix_expression_inside:
@@ -1157,7 +1160,7 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.RSQUAR_PAREN))
             elif self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
-                if self.current_token.type in self.cfirst_set.assignment_operator:
+                if self.current_token.type in self.cfirst_set.assignment_expression:
                     sub_nodes.append(self.assignment_expression())
                     while self.current_token.type == TokenType.COMMA:
                         node.register_token(self.eat(TokenType.COMMA))
@@ -1185,7 +1188,6 @@ class CParser(Parser):
                                | <generic-selection>
         """
         node = PrimaryExpression()
-
         if self.current_token.type == TokenType.ID:
             sub_node = self.identifier()
         elif self.current_token.type == TokenType.NUMBER:
@@ -1316,8 +1318,8 @@ class CParser(Parser):
         """
         node = TypeName()
         specifier_qualifiers = []
-        while self.current_token.type in self.cfirst_set.specifier_qualifier:
-            specifier_qualifiers.append(self.specifier_qualifier())
+        while self.current_token.type in self.cfirst_set.specifier_qualifier_list:
+            specifier_qualifiers.append(self.specifier_qualifier_list())
         node.update(specifier_qualifiers=specifier_qualifiers)
         if self.current_token.type in self.cfirst_set.abstract_declarator:
             node.update(abstract_declarator=self.abstract_declarator())
@@ -1461,6 +1463,10 @@ class CParser(Parser):
         """
         <declaration> ::= <declaration-specifier>+ (<init-declarator-list>)? ";"
                         | <static-assert-declaration>
+
+        也有可能是 <function-definition>, 如果 <init-declarator-list> 的只有一个元素且没有 <initializer> 且后面跟着的是 <declaration>* <compound-statement>
+
+        <function-definition> ::= <declaration-specifier>* <declarator> <declaration>* <compound-statement>
         """
         node = Declaration()
         if self.current_token.type in self.cfirst_set.static_assert_declaration:
@@ -1471,22 +1477,64 @@ class CParser(Parser):
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
 
-        node.update(declaration_specifiers=declaration_specifiers)
-        node.update(init_declarator_list=self.init_declarator_list())
+        if self.current_token.type in self.cfirst_set.init_declarator_list:
+            init_declarator_list = self.init_declarator_list()
+            if self.current_token.type == TokenType.SEMI:
+                node.update(init_declarator_list=init_declarator_list)
+                node.register_token(self.eat(TokenType.SEMI))
+                return node
+            elif self._is_C_function(init_declarator_list):
+                return self._build_C_function_definition(
+                    declaration_specifiers, init_declarator_list[0]
+                )
+            else:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, "miss not declaration or function definition")
         if self.current_token.type == TokenType.SEMI:
             node.register_token(self.eat(TokenType.SEMI))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "miss ;")
         return node
 
+    def _is_C_function(self, init_declarator_list: List[InitDeclarator]):
+        """
+        在 <declaration> 判断是否是 <function-definition>
+        """
+        if len(init_declarator_list) != 1:
+            return False
+        if init_declarator_list[0].initializer is not None:
+            return False
+        if (
+            self.current_token.type in self.cfirst_set.compound_statement
+            or self.current_token.type in self.cfirst_set.declaration
+        ):
+            return True
+        return False
+
+    def _build_C_function_definition(self, declaration_specifiers, declarator):
+        """
+        <function-definition> ::= <declaration-specifier>* <declarator> <declaration>* <compound-statement>
+
+        <declaration> 中判断为 <function-definition>
+        """
+        node = Function()
+        node.update(declaration_specifiers=declaration_specifiers)
+        node.update(declarator=declarator)
+        # TODO: 参数和 declaration 匹配
+        declarations = []
+        while self.current_token.type in self.cfirst_set.declaration:
+            declarations.append(self.declaration())
+        node.update(declarations=declarations)
+        node.update(compound_statement=self.compound_statement())
+        return node
+
     def init_declarator_list(self) -> List[AST]:
         """
         <init-declarator-list> ::= <init-declarator> ("," <init-declarator>)*
         """
-        result = [self.initializer()]
+        result = [self.init_declarator()]
         while self.current_token.type == TokenType.COMMA:
             self.eat(TokenType.COMMA)
-            result.append(self.initializer())
+            result.append(self.init_declarator())
         return result
 
     def init_declarator(self):
@@ -1571,7 +1619,7 @@ class CParser(Parser):
         """
         <compound-statement> ::= "{" (<block-item>)* "}"
 
-        <block-item> ::= <declartion>
+        <block-item> ::= <declaration>
                        | <statement>
         """
         node = CompoundStatement()
@@ -1595,7 +1643,16 @@ class CParser(Parser):
                       | <iteration-statement>
                       | <jump-statement>
         """
-        if self.current_token.type in self.cfirst_set.labeled_statement:
+        # goto id
+        if (
+            self.current_token.type == TokenType.ID
+            and self.peek_next_token().type == TokenType.COLON
+        ):
+            return self.labeled_statement()
+        elif (
+            self.current_token.type != TokenType.ID
+            and self.current_token.type in self.cfirst_set.labeled_statement
+        ):
             return self.labeled_statement()
         elif self.current_token.type in self.cfirst_set.expression_statement:
             return self.expression_statement()

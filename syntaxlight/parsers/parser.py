@@ -7,17 +7,17 @@ import sys
 import html
 import traceback
 
+DEBUG = False
+DEBUG = True
 
 class Parser:
-    def __init__(
-        self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True
-    ):
+    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning = True):
         self.lexer: Lexer = lexer
         # set current token to the first token taken from the input
         self.skip_invisible_characters = skip_invisible_characters
         self.skip_space = skip_space
         self.display_warning = display_warning
-        self._token_list: List[Token] = []  # lexer 解析后经过 parser 确定类型后的 tokens
+        self._token_list: List[Token] = [] # lexer 解析后经过 parser 确定类型后的 tokens
         self.brace_list: List[TokenType] = [
             TokenType.LPAREN,
             TokenType.RPAREN,
@@ -39,7 +39,7 @@ class Parser:
         message: str = "",
         token: Token = None,
     ):
-        traceback.print_stack()
+        self._log_trace()
         if token is None:
             token = self.current_token
 
@@ -56,21 +56,34 @@ class Parser:
             file_path=self.lexer.file_path,
             message=message,
         )
-
-    def warning(self, message=None, ast: AST = None):
-        """
+    
+    def warning(self, message = None, ast:AST = None):
+        '''
         语法解析过程中的警告信息
-        """
+        '''
         if not self.display_warning:
             return
 
         warning_color = TTYColor.MAGENTA
-
-        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color) + message + "\n")
+        
+        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color) + message + '\n')
         sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
+
+    def _log_trace(self):
+        '''
+        查看 python 函数调用栈
+        '''
+        if DEBUG:
+            traceback.print_stack()
 
     def eat(self, token_type: Enum) -> List[Token]:
         # print(self.current_token)
+        # self._log_trace()
+        # if DEBUG:
+        #     import inspect
+        #     frame = inspect.currentframe().f_back
+        #     lineno = frame.f_lineno
+        #     print(f"The 'eat' method was called from line {lineno}.")
         tokens = [self.current_token]
         if self.current_token.type == token_type:
             self._register_token()
@@ -94,12 +107,7 @@ class Parser:
 
     def _skip(self) -> List[Token]:
         tokens = []
-
-        if self.current_token.type == TokenType.COMMENT:
-            self._register_token()
-            tokens.append(self.current_token)
-            self.current_token = self.lexer.get_next_token()
-
+        # 跳过不可见字符和空格
         if self.skip_invisible_characters and self.skip_space:
             while (
                 self.current_token.value in self.lexer.invisible_characters
@@ -119,12 +127,15 @@ class Parser:
                 self._register_token()
                 tokens.append(self.current_token)
                 self.current_token = self.lexer.get_next_token()
-
+        
         if self.current_token.type == TokenType.COMMENT:
             self._register_token()
             tokens.append(self.current_token)
             self.current_token = self.lexer.get_next_token()
-        return tokens
+            tokens.extend(self._skip())
+            return tokens
+        else:
+            return tokens
 
     def skip_crlf(self):
         """
@@ -135,12 +146,12 @@ class Parser:
             self.eat(self.current_token.type)
 
     def skip_end(self):
-        """
+        '''
         跳过最后的空白和换行
-        """
+        '''
         while self.current_token.type != TokenType.EOF:
             self._skip()
-
+            
     def eat_lf(self):
         """
         跳过一个换行
@@ -151,6 +162,22 @@ class Parser:
             return
         else:
             self.eat(TokenType.LF)
+
+    def peek_next_token(self) -> Token:
+        '''
+        查看下一个 token 的类型
+        '''
+        self.lexer._record()
+        token_list_length = len(self._token_list)
+        current_token = self.current_token
+
+        self.eat(self.current_token.type)
+        next_token = self.current_token
+
+        self._token_list = self._token_list[:token_list_length]
+        self.current_token = current_token
+        self.lexer._reset()
+        return next_token
 
     def _register_token(self):
         """
@@ -182,6 +209,7 @@ class Parser:
                     if self.brace_list.index(brace_stack[-1]) + 1 == self.brace_list.index(
                         token.type
                     ):
+                        
                         brace_stack.pop()
                         brace_depth -= 1
                         token.class_list.append(f"brace-depth-{brace_depth%self.brace_max_depth}")

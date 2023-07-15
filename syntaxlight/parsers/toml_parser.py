@@ -241,7 +241,6 @@ class TomlParser(Parser):
 
             node.header = table_header
 
-        self.eat_lf()
         self.skip_crlf()
         entries = self.table_entry()
         node.update(entries=entries)

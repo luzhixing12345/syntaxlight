@@ -234,6 +234,30 @@ class Lexer:
         UNDERLINE = 4
         return f"{ESC}[{color.value}m{ESC}[{UNDERLINE}m{text}{ESC}[0m"
 
+    def _record(self):
+        '''
+        用于 parser 中 peek_next_token
+        
+        记录当前 lexer 解析状态, 被 _reset 调用时恢复
+        '''
+        self._clone_status = {
+            'pos': self.pos,
+            'line': self.line,
+            'column': self.column
+        }
+    
+    def _reset(self):
+        '''
+        用于 parser 中 peek_next_token
+
+        恢复为 lexer 之前的状态
+        '''
+        self.pos = self._clone_status['pos']
+        self.line = self._clone_status['line']
+        self.column = self._clone_status['column']
+        self.current_char = self.text[self.pos]
+
+
     def error(self, error_code: ErrorCode = None, token: Token = None, message: str = ""):
         raise LexerError(
             error_code=error_code,
@@ -525,14 +549,9 @@ class Lexer:
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
 
-        if result[-1] == "\n":
-            result = result[:-1]
-            token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
-            return token
-        else:
-            token = Token(TokenType.COMMENT, result, self.line, self.column)
-            self.advance()
-            return token
+        token = Token(TokenType.COMMENT, result, self.line, self.column)
+        self.advance()
+        return token
 
     def get_long_op(self):
         """

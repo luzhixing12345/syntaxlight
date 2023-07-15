@@ -83,7 +83,13 @@ class XmlParser(Parser):
     def parse(self):
         self.node = self.XML()
         if self.current_token.type == XmlTokenType.CONTENT:
-            self.eat(self.current_token.type)
+            eat_flag = True
+            for char in self.current_token.value:
+                if char not in self.lexer.invisible_characters or char != ' ':
+                    eat_flag = False
+                    break
+            if eat_flag:
+                self.eat(self.current_token.type)
         if self.current_token.type != TokenType.EOF:
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
         return self.node

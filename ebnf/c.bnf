@@ -50,11 +50,13 @@
 <struct-or-union> ::= struct
                     | union
 
-<struct-declaration> ::= {<specifier-qualifier>}+ (<struct-declarator> ("," <struct-declarator>)*)? ";"
+<struct-declaration> ::= <specifier-qualifier-list>* <struct-declarator-list>? ";"
                        | <static_assert-declaration>
 
-<specifier-qualifier> ::= <type-specifier>
-                        | <type-qualifier>
+<specifier-qualifier> ::= <type-specifier> <specifier-qualifier>?
+                        | <type-qualifier> <specifier-qualifier>?
+
+<struct-declarator-list> ::= <struct-declarator> ("," <struct-declarator>)*
 
 <struct-declarator> ::= <declarator> (":" <constant-expression>)?
                       | ":" <constant-expression>
@@ -69,13 +71,13 @@
                    | _Atomic
 
 <direct-declarator> ::= <identifier>
-                    | "(" <declarator> ")"
-                    | <direct-declarator> "[" <type-qualifier-list>? <assignment-expression> "]"
-                    | <direct-declarator> "[" static <type-qualifier-list>? <assignment-expression> "]"
-                    | <direct-declarator> "[" <type-qualifier-list> static <assignment-expression> "]"
-                    | <direct-declarator> "[" <type-qualifier-list> "*" "]"
-                    | <direct-declarator> "(" <parameter-list> ")"
-                    | <direct-declarator> "(" (<identifier-list>)? ")"
+                      | "(" <declarator> ")"
+                      | <direct-declarator> "[" <type-qualifier-list>? <assignment-expression>? "]"
+                      | <direct-declarator> "[" static <type-qualifier-list>? <assignment-expression> "]"
+                      | <direct-declarator> "[" <type-qualifier-list> static <assignment-expression> "]"
+                      | <direct-declarator> "[" <type-qualifier-list>? "*" "]"
+                      | <direct-declarator> "(" <parameter-list> ")"
+                      | <direct-declarator> "(" (<identifier-list>)? ")"
 
 <type-qualifier-list> ::= <type-qualifier>+
 
@@ -219,8 +221,8 @@
 
 <compound-statement> ::= "{" (<block-item>)* "}"
 
-<block-item> ::= <declartion>
-                | <statement>
+<block-item> ::= <declaration>
+               | <statement>
 
 <statement> ::= <labeled-statement>
               | <expression-statement>
