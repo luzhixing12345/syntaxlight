@@ -76,7 +76,12 @@ class Parser:
         if DEBUG:
             traceback.print_stack()
 
-    def eat(self, token_type: Enum) -> List[Token]:
+    def eat(self, token_type: Enum = None) -> List[Token]:
+        '''
+        匹配一个 token_type 类型的 token, 并获取下一个 token 更新 current_token
+
+        token_type 默认值为 None, 表示匹配当前 current_token.type
+        '''
         # print(self.current_token)
         # self._log_trace()
         # if DEBUG:
@@ -85,7 +90,7 @@ class Parser:
         #     lineno = frame.f_lineno
         #     print(f"The 'eat' method was called from line {lineno}.")
         tokens = [self.current_token]
-        if self.current_token.type == token_type:
+        if token_type is None or self.current_token.type == token_type:
             self._register_token()
             self.current_token = self.lexer.get_next_token()
             tokens.extend(self._skip())
@@ -104,6 +109,8 @@ class Parser:
                 message=f"should match {expected_value} but got {current_value}",
             )
         return tokens
+    
+
 
     def _skip(self) -> List[Token]:
         tokens = []
@@ -160,8 +167,8 @@ class Parser:
             self.eat(self.current_token.type)
         if self.current_token.type == TokenType.EOF:
             return
-        else:
-            self.eat(TokenType.LF)
+        self.eat(TokenType.LF)
+        self.skip_crlf()
 
     def peek_next_token(self) -> Token:
         '''
@@ -179,13 +186,14 @@ class Parser:
         self.lexer._reset()
         return next_token
 
-    def _register_token(self):
+    def _register_token(self, token = None):
         """
         将一个 token 注册到 token_list 当中
 
         每一个 token 都需要间接的执行此过程, 以便最终恢复高亮文本信息
         """
-        token = self.current_token
+        if token is None:
+            token = self.current_token
         # print(token)
         self._token_list.append(token)
 

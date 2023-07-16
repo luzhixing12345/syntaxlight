@@ -5,6 +5,9 @@ from typing import List
 
 AST_CREATED_INDEX = 0
 
+class GlobalDescriptorTable:
+    def __init__(self) -> None:
+        pass
 
 class AST(object):
     def __init__(self) -> None:

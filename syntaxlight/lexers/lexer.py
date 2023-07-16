@@ -90,7 +90,6 @@ class TokenType(Enum):
     POINT = "->"
 
 
-
 class TTYColor(Enum):
     BLACK = 30
     RED = 31
@@ -170,14 +169,14 @@ class Lexer:
         }
         # 不可见字符, 一般情况下直接忽略即可, 这里考虑到为了不破坏原本的代码格式所以进行保留
         # \n \t \v \r \f \b
-        self.invisible_characters = {
-            TokenType.LF.value: TokenType.LF,
-            TokenType.TAB.value: TokenType.TAB,
-            TokenType.VERTICAL_TAB.value: TokenType.VERTICAL_TAB,
-            TokenType.CR.value: TokenType.CR,
-            TokenType.FORM_FEED.value: TokenType.FORM_FEED,
-            TokenType.BACKSPACE.value: TokenType.BACKSPACE,
-        }
+        self.invisible_characters = [
+            TokenType.LF.value,
+            TokenType.TAB.value,
+            TokenType.VERTICAL_TAB.value,
+            TokenType.CR.value,
+            TokenType.FORM_FEED.value,
+            TokenType.BACKSPACE.value,
+        ]
         self.long_ops = [
             "<<=",  # 要排在 << 前面
             ">>=",  # 要排在 >> 前面
@@ -206,6 +205,7 @@ class Lexer:
             "||",
             "&&",
             "->",
+            "##"
         ]
         self.long_op_dict: Dict[str, List] = {
             # "+": ["+","="],
@@ -235,28 +235,23 @@ class Lexer:
         return f"{ESC}[{color.value}m{ESC}[{UNDERLINE}m{text}{ESC}[0m"
 
     def _record(self):
-        '''
+        """
         用于 parser 中 peek_next_token
-        
+
         记录当前 lexer 解析状态, 被 _reset 调用时恢复
-        '''
-        self._clone_status = {
-            'pos': self.pos,
-            'line': self.line,
-            'column': self.column
-        }
-    
+        """
+        self._clone_status = {"pos": self.pos, "line": self.line, "column": self.column}
+
     def _reset(self):
-        '''
+        """
         用于 parser 中 peek_next_token
 
         恢复为 lexer 之前的状态
-        '''
-        self.pos = self._clone_status['pos']
-        self.line = self._clone_status['line']
-        self.column = self._clone_status['column']
+        """
+        self.pos = self._clone_status["pos"]
+        self.line = self._clone_status["line"]
+        self.column = self._clone_status["column"]
         self.current_char = self.text[self.pos]
-
 
     def error(self, error_code: ErrorCode = None, token: Token = None, message: str = ""):
         raise LexerError(
@@ -355,7 +350,7 @@ class Lexer:
 
     def skip_invisiable_character(self):
         token = Token(
-            self.invisible_characters[self.current_char],
+            TokenType(self.current_char),
             self.current_char,
             self.line,
             self.column,
@@ -485,7 +480,7 @@ class Lexer:
         token = Token(TokenType.STR, result, self.line, self.column)
         return token
 
-    def get_id(self, ignore_case=False, extend_chars = ['_']):
+    def get_id(self, ignore_case=False, extend_chars=["_"]):
         """
         获取标识符, 留给后续的语法分析处理
         @ignore_case : 是否忽略大小写
@@ -518,7 +513,7 @@ class Lexer:
 
     def get_comment(self, comment_symbol=("#", "\n")):
         """
-        跳过注释部分
+        跳过注释部分, 单行注释不包括最后的换行
 
         python 风格: ("#", "\n")
              C 风格: ("//", "\n"), ("/*", "*/")
@@ -549,9 +544,15 @@ class Lexer:
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
 
-        token = Token(TokenType.COMMENT, result, self.line, self.column)
-        self.advance()
-        return token
+        # 单行注释不包括最后的换行
+        if result[-1] == "\n":
+            result = result[:-1]
+            token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
+            return token
+        else:
+            token = Token(TokenType.COMMENT, result, self.line, self.column)
+            self.advance()
+            return token
 
     def get_long_op(self):
         """

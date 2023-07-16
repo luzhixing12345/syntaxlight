@@ -1,8 +1,11 @@
-# A2.4
+# C BNF for ISO/IEC C17
+# 相比于 C17 增加了 preprocessing 和一些处理用于日常语法高亮
 <translation-unit> ::= {<external-declaration>}*
 
+# 加入 <group>, 预处理部分
 <external-declaration> ::= <function-definition>
                          | <declaration>
+                         | <group>
 
 <function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
 
@@ -191,7 +194,7 @@
         | <direct-abstract-declarator>? "(" <parameter-type-list>? ")"
         | <direct-abstract-declarator>? "[" <type-qualifier-list>? <assignment-expression>? "]"
         | <direct-abstract-declarator>? "[" static <type-qualifier-list>? <assignment-expression> "]"
-        | <direct-abstract-declarator>? "[" <type-qualifier-list> static <assignment-expression> ]
+        | <direct-abstract-declarator>? "[" <type-qualifier-list> static <assignment-expression> "]"
         | <direct-abstract-declarator>? "[" "*" "]"
 
 <enum-specifier> ::= enum (<identifier>)? "{" <enumerator> ("," <enumerator>)* ","? "}"
@@ -221,8 +224,10 @@
 
 <compound-statement> ::= "{" (<block-item>)* "}"
 
+# group
 <block-item> ::= <declaration>
                | <statement>
+               | <group>
 
 <statement> ::= <labeled-statement>
               | <expression-statement>
@@ -250,3 +255,45 @@
                    | continue ";"
                    | break ";"
                    | return {<expression>}? ";"
+
+<group> ::= <group-part>*
+
+<group-part> ::= <if-section>
+               | <control-line>
+            #    | <text-line>
+            #    | "#" <non-directive>
+
+<if-section> ::= <if-group> <elif-group>* <else-group>? <endif-line>
+
+<if-group> ::= "#" if <constant-expression> <CRLF> <group>?
+             | "#" ifdef <identifier> <CRLF> <group>?
+             | "#" ifndef <identifier> <CRLF> <group>?
+
+<elif-group> ::= "#" elif <constant-expression> <CRLF> <group>?
+
+<else-group> ::= "#" else <CRLF> <group>?
+
+<endif-line> ::= "#" endif <CRLF>
+
+# 括号( 要求前面没有空格
+<control-line> ::= "#" include <pp-token>+ <CRLF>
+                 | "#" define <identfier> <pp-token>* <CRLF>
+                 | "#" define <identifier> "(" <identifier-list>? ")" <pp-token>* <CRLF>
+                 | "#" define <identifier> "(" "..." ")" <pp-token>* <CRLF>
+                 | "#" define <identifier> "(" <identifier-list> "," "..." ")" <pp-token>* <CRLF>
+                 | "#" undef <identifier> <CRLF>
+                 | "#" line <pp-token>+ <CRLF>
+                 | "#" error <pp-token>* <CRLF>
+                 | "#" pragma <pp-token>* <CRLF>
+                 | "#" <CRLF>
+
+# <text-line> ::= <pp-token>* <CRLF>
+
+# <non-directive> ::= <pp-token>+ <CRLF>
+
+<pp-token> ::= <header-name>
+             | <identifier>
+             | <pp-number>
+             | <character-constant>
+             | <string>
+             | <punctuator>

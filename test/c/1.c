@@ -1,4 +1,4 @@
-// #include <stdio.h>
+#include <stdio.h>
 
 void f(double a[restrict static 3][5]);
 
