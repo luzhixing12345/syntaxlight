@@ -10,16 +10,16 @@ class GlobalDescriptorTable:
     def __init__(self) -> None:
         self.descriptors = {}
 
-    def register_id(self, node: "AST"):
-        raise NotImplementedError("finish your register_id function in language GDT")
+    def register_id(self, name, class_name):
+        
+        if self.descriptors.get(name) is None:
+            self.descriptors[name] = class_name
+
+    def __getitem__(self, index):
+        return self.descriptors[index]
 
     def __contains__(self, item):
         return item in self.descriptors
-
-    def error(self):
-        '''
-        
-        '''
 
 class AST(object):
     def __init__(self) -> None:
@@ -69,11 +69,11 @@ class AST(object):
     def formatter(self, depth: int = 0):
         raise NotImplementedError(self.class_name + " should override format function to display")
 
-    def __str__(self) -> str:
-        return self.formatter()
+    # def __str__(self) -> str:
+    #     return self.formatter()
 
-    def __repr__(self) -> str:
-        return self.__str__()
+    # def __repr__(self) -> str:
+    #     return self.__str__()
 
     def get_node_info(self):
         # f'depth={self.depth}\\n'
@@ -219,6 +219,14 @@ class Number(AST):
     def formatter(self, depth: int = 0):
         return self.value
 
+class Punctuator(AST):
+    def __init__(self, op) -> None:
+        super().__init__()
+        self.op = op
+        self.is_bottom_ast = True
+
+    def formatter(self, depth: int = 0):
+        return self.op
 
 class UnaryOp(AST):
     def __init__(self, expr: AST = None, op: str = None) -> None:
@@ -243,24 +251,17 @@ class BinaryOp(AST):
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         node_visitor.link(self, self.expr_left)
-        if self.expr_rights:
-            for expr_right in self.expr_rights:
-                node_visitor.link(self, expr_right)
+        node_visitor.link(self, self.expr_rights)
         return super().visit(node_visitor)
 
 
 class AssignOp(AST):
-    def __init__(self, expr: AST = None, op: str = None) -> None:
+    def __init__(self, op: str = None) -> None:
         super().__init__()
-        self.expr = expr
         self.op = op
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.expr)
         return super().visit(node_visitor)
-
-    def formatter(self, depth: int = 0):
-        return self.op + self.expr.formatter(depth + 1)
 
 
 class ConditionalExpression(AST):

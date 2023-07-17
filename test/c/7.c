@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "stdio.h"
 
 // 结构体定义
 struct Person {

@@ -9,7 +9,7 @@
 
 import re
 
-from syntaxlight.ast import AST
+from syntaxlight.ast import AST, NodeVisitor
 from .parser import Parser
 from ..lexers import TokenType, CTokenType, CTokenSet, Token
 from ..error import ErrorCode
@@ -31,26 +31,9 @@ from ..ast import (
 )
 from typing import List
 from enum import Enum
-
-
-class C_GDT(GlobalDescriptorTable):
-    def __init__(self) -> None:
-        super().__init__()
-    def register_id(self, node: "Declaration"):
-        if node.static_assert is not None:
-            return
-
-        for nod in node.init_declarator_list:
-            id_name = nod.declarator.direct_declarator.id.id
-            if self.descriptors.get(id_name) is None:
-                self.descriptors[id_name] = node.declaration_specifiers
-            else:
-                # 重复定义
-                ...
-
     
 
-GDT = C_GDT()
+GDT = GlobalDescriptorTable()
 
 class TranslationUnit(AST):
     def __init__(self, declarations) -> None:
@@ -88,11 +71,8 @@ class Structure(AST):
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.structure_type)
-        if self.id:
-            node_visitor.link(self.id)
-        if self.declarations:
-            for declaration in self.declarations:
-                node_visitor.link(self, declaration)
+        node_visitor.link(self, self.id)
+        node_visitor.link(self, self.declarations)
         return super().visit(node_visitor)
 
 
@@ -281,7 +261,7 @@ class EnumSpecifier(AST):
     def __init__(self) -> None:
         super().__init__()
         self.keyword = None
-        self.id = None
+        self.id:Identifier = None
         self.enumerators = []
 
     def visit(self, node_visitor: NodeVisitor = None):
@@ -296,7 +276,7 @@ class EnumSpecifier(AST):
 class Enumerator(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.id = None
+        self.id:Identifier = None
         self.const_expr = None
 
     def visit(self, node_visitor: NodeVisitor = None):
@@ -612,6 +592,10 @@ class ControlLine(AST):
 class HeaderName(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.file_path = None
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.file_path)
+        return super().visit(node_visitor)
 
 
 class CParser(Parser):
@@ -795,7 +779,7 @@ class CParser(Parser):
             node.update(id=self.identifier())
         else:
             # 匿名 struct
-            if self.current_token.type != TokenType.LPAREN:
+            if self.current_token.type != TokenType.LCURLY_BRACE:
                 self.error(
                     ErrorCode.UNEXPECTED_TOKEN,
                     "Declaration of anonymous struct must be a definition",
@@ -831,8 +815,9 @@ class CParser(Parser):
         if self.current_token.type in self.cfirst_set.static_assert_declaration:
             node.update(static_assert=self.static_assert_declaration())
             return node
-
+        print(self.current_token,'1')
         node.update(specifier_qualifiers=self.specifier_qualifier_list())
+        print(self.current_token,'')
         if self.current_token.type in self.cfirst_set.struct_declarator_list:
             node.update(declarators=self.struct_declarator_list())
         node.register_token(self.eat(TokenType.SEMI))
@@ -973,8 +958,18 @@ class CParser(Parser):
 
             if self.current_token.type == TokenType.LPAREN:
                 # 可以确定是一个函数名
-                node.is_function = True
-                add_ast_type(node, "FunctionName")
+                if node.id is not None:
+                    node.is_function = True
+                    add_ast_type(node, "FunctionName")
+                    GDT.register_id(node.id.id, "FunctionName")
+                else:
+                    # 函数指针 "(" <declarator> ")"
+                    add_ast_type(node, "FunctionP")
+                    _node = node
+                    while _node.declarator is not None:
+                        _node = _node.declarator.direct_declarator
+                    GDT.register_id(_node.id.id, "FunctionP")
+
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.parameter_list:
                     sub_node.update(parameter_list=self.parameter_list())
@@ -1509,6 +1504,7 @@ class CParser(Parser):
         node.update(keyword=self.keyword(CTokenType.ENUM))
         if self.current_token.type in self.cfirst_set.identifier:
             node.update(id=self.identifier())
+            add_ast_type(node.id, "EnumID")
         if self.current_token.type == TokenType.LCURLY_BRACE:
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             enumerators = [self.enumerator()]
@@ -1528,6 +1524,7 @@ class CParser(Parser):
         """
         node = Enumerator()
         node.update(id=self.identifier())
+        GDT.register_id(node.id.id, "Enumerator")
         if self.current_token.type == TokenType.ASSIGN:
             node.register_token(self.eat(TokenType.ASSIGN))
             node.update(const_expr=self.constant_expression())
@@ -1564,7 +1561,6 @@ class CParser(Parser):
             if self.current_token.type == TokenType.SEMI:
                 node.update(declaration_specifiers=declaration_specifiers)
                 node.update(init_declarator_list=init_declarator_list)
-                GDT.register_id(node) # 将声明的变量注册到 GDT 中
                 node.register_token(self.eat(TokenType.SEMI))
                 if self._is_C_function(init_declarator_list):
                     add_ast_type(declaration_specifiers, "ReturnValue")
@@ -1904,8 +1900,7 @@ class CParser(Parser):
 
         # 判断一下 ID 的 class_name
         if token_value in GDT:
-            # add_ast_type(node, GDT[token_value])
-            ...
+            add_ast_type(node, GDT[token_value])
         elif bool(re.match(r"^[A-Z0-9_]+$", token_value)):
             # ID 全部为 大写/数字/下划线, 很可能为宏
             add_ast_type(node, "DefineName")
@@ -1940,7 +1935,7 @@ class CParser(Parser):
         '''
         pattern = r"(%[0-9diufFeEgGxXoscpaAn]+|(?:\\n|\\t|\\v|\\f))"
         sub_strings = re.split(pattern, token.value)
-        new_tokens = []
+        new_asts = []
         line = token.line
         column = token.column - len(token.value)
         for sub_string in sub_strings:
@@ -1952,11 +1947,14 @@ class CParser(Parser):
                 token.class_list.append("Format")
             elif sub_string in ["\\n","\\t","\\f","\\v","\\a","\\b"]:
                 token.class_list.append("Control")
-            new_tokens.append(token)
+            
             self._register_token(token)
+            node = String(token)
+            node.register_token([token])
+            new_asts.append(node)
 
         self.current_token = self.lexer.get_next_token()
-        return new_tokens
+        return new_asts
 
 
     def static_assert_declaration(self):
@@ -2131,6 +2129,7 @@ class CParser(Parser):
         node = HeaderName()
         if self.current_token.type == TokenType.STRING:
             node.update(file_path=self.string())
+            add_ast_type(node.file_path, "HeaderName")
         elif self.current_token.type == TokenType.LANGLE_BRACE:
             node.register_token(self.eat(TokenType.LANGLE_BRACE))
             result = ""

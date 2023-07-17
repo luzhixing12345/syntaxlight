@@ -82,8 +82,8 @@ class CTokenType(Enum):
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
 
-    POINTER = "*"
-    STAR = "*"
+    POINTER = "POINTER"
+    STAR = "STAR"
     TYPEDEF_ID = "typedef-id"
 
 
@@ -124,7 +124,7 @@ class CLexer(Lexer):
             if self.current_char == "/" and self.peek() == "*":
                 return self.get_comment(("/*", "*/"))
 
-            if self.current_char.isdigit() or self.current_char == TokenType.DOT.value:
+            if self.current_char.isdigit():
                 return self.get_number()
 
             if self.current_char.isalpha() or self.current_char == TokenType.UNDERLINE.value:

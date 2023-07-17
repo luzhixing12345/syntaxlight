@@ -2,15 +2,23 @@
     color: #569cd6;
 }
 
-.Token.ID, .Token.STRING.Format {
+.Token.ID,
+.Token.STRING.Format {
     color: #88D6FE;
 }
 
-.Token.Preprocess, .Token.HASH{
+.Token.Preprocess,
+.Token.HASH {
     color: #C586C0;
 }
 
-.Token.IF, .Token.ELSE, .Token.FOR, .Token.WHILE, .Token.SWITCH, .Token.CASE, .Token.DEFAULT {
+.Token.IF,
+.Token.ELSE,
+.Token.FOR,
+.Token.WHILE,
+.Token.SWITCH,
+.Token.CASE,
+.Token.DEFAULT {
     color: #C586C0;
 }
 
@@ -23,27 +31,38 @@
     border-bottom: 1px solid #CE9178;
 }
 
-.Token.StorageType, .Token.QualifyType,.Token.StructureType {
+.Token.StorageType,
+.Token.QualifyType,
+.Token.StructureType,
+.Token.EnumSpecifier,
+.Token.DefineName {
     color: #569cd6;
 }
 
-.Token.FunctionName.ID, .Token.FunctionCall.ID {
+.Token.FunctionName.ID,
+.Token.FunctionCall.ID {
     color: #DCDCAA;
+}
+
+.Token.FunctionP.ID {
+    color: #88D6FE;
 }
 
 .Token.JumpStatement {
     color: #C586C0;
 }
 
-.Token.DefineName {
-    color: #569cd6;
+.Token.Enumerator.ID {
+    color: #4FC1FF;
 }
 
-.Token.StructClass {
+.Token.StructClass,.Token.EnumID {
     color: #4EC9B0;
 }
 
-.Token.SEMI {
+.Token.SEMI,
+.Token.LT,
+.Token.GT {
     color: white;
 }
 
@@ -55,4 +74,3 @@
 .Token.COMMENT {
     color: #6A9955;
 }
-

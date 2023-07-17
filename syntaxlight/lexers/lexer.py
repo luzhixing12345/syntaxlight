@@ -67,8 +67,8 @@ class TokenType(Enum):
     STRICT_EQ = "==="
     NE = "!="
     STRICT_NE = "!=="
-    LT = "<"  # => LANGLE_BRACE
-    GT = ">"  # => RANGLE_BRACE
+    LT = "LT"  # => LANGLE_BRACE
+    GT = "GT"  # => RANGLE_BRACE
     LE = "<="
     GE = ">="
     MUL_ASSIGN = "*="
