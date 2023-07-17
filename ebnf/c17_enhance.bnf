@@ -2,10 +2,11 @@
 # 相比于 C17 增加了 preprocessing 和一些处理用于日常语法高亮
 <translation-unit> ::= {<external-declaration>}*
 
-# 加入 <group>, 预处理部分
+# <group> <statement> 均为语法高亮的扩展, C 语法层面不支持
 <external-declaration> ::= <function-definition>
                          | <declaration>
                          | <group>
+                         | <statement>
 
 <function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
 

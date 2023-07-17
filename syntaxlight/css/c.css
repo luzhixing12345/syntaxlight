@@ -56,7 +56,7 @@
     color: #4FC1FF;
 }
 
-.Token.StructClass,.Token.EnumID {
+.Token.StructClass,.Token.EnumID, .Token.Typedefine {
     color: #4EC9B0;
 }
 

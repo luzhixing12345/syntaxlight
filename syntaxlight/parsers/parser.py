@@ -76,6 +76,12 @@ class Parser:
         if DEBUG:
             traceback.print_stack()
 
+    def after_eat(self):
+        '''
+        eat 之后对于 current_token 的一些操作
+        '''
+        return
+
     def eat(self, token_type: Enum = None) -> List[Token]:
         '''
         匹配一个 token_type 类型的 token, 并获取下一个 token 更新 current_token
@@ -108,9 +114,9 @@ class Parser:
                 token=self.current_token,
                 message=f"should match {expected_value} but got {current_value}",
             )
+        
+        self.after_eat()
         return tokens
-    
-
 
     def _skip(self) -> List[Token]:
         tokens = []

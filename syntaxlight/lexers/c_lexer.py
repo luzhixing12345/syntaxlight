@@ -64,20 +64,6 @@ class CTokenType(Enum):
     _STATIC_ASSERT = "_Static_assert"  # C23 => STATIC_ASSERT
     _THREAD_LOCAL = "_Thread_local"  # C23 => THREAD_LOCAL
 
-    # 预处理关键字
-    IF_P = 'if' # 预处理命令中的 if
-    IFDEF = 'ifdef'
-    IFNDEF = 'ifndef'
-    ELIF = 'elif'
-    ELSE_P = 'else' # 预处理命令中的 else
-    ENDIF = 'endif'
-    INCLUDE = 'include'
-    DEFINE = 'define'
-    UNDEF = 'undef'
-    LINE = 'line'
-    ERROR = 'error'
-    PRAGMA = 'pragma'
-
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
@@ -85,6 +71,20 @@ class CTokenType(Enum):
     POINTER = "POINTER"
     STAR = "STAR"
     TYPEDEF_ID = "typedef-id"
+
+    # 预处理关键字, 除if else外默认被解析为 ID, 在解析过程中处理
+    IF_P = "ifp"  # 预处理命令中的 if
+    IFDEF = "ifdef"
+    IFNDEF = "ifndef"
+    ELIF = "elif"
+    ELSE_P = "elsep"  # 预处理命令中的 else
+    ENDIF = "endif"
+    INCLUDE = "include"
+    DEFINE = "define"
+    UNDEF = "undef"
+    LINE = "line"
+    ERROR = "error"
+    PRAGMA = "pragma"
 
 
 class CLexer(Lexer):
@@ -94,12 +94,12 @@ class CLexer(Lexer):
         self.build_long_op_dict(disable_long_op)
 
     def get_char(self):
-        '''
+        """
         单字符
-        '''
+        """
         self.advance()
         result = "'" + self.current_char
-        if self.current_char == '\\':
+        if self.current_char == "\\":
             self.advance()
             result += self.current_char
         self.advance()
@@ -132,7 +132,7 @@ class CLexer(Lexer):
 
             if self.current_char == '"':
                 return self.get_string()
-            
+
             if self.current_char == "'":
                 return self.get_char()
 
@@ -205,7 +205,7 @@ class CTokenSet:
         self.declaration = TokenSet(self.declaration_specifier)
         self.group_part = TokenSet(TokenType.HASH)
         self.group = TokenSet(self.group_part)
-        self.external_declaration = TokenSet(self.function_definition, self.declaration, self.group_part)
+
         self.static_assert_declaration = TokenSet(CTokenType._STATIC_ASSERT)
         self.specifier_qualifier_list = TokenSet(self.type_qualifier, self.type_specifier)
         self.struct_declarator = TokenSet(self.declarator, TokenType.COLON)
@@ -289,9 +289,26 @@ class CTokenSet:
             self.iteration_statement,
             self.jump_statement,
         )
+        self.external_declaration = TokenSet(
+            self.function_definition, self.declaration, self.group_part, self.statement
+        )
         self.block_item = TokenSet(self.declaration, self.statement, self.group)
         self.init_declarator_list = TokenSet(self.declarator)
-        self.if_group = TokenSet(CTokenType.IF, CTokenType.IFDEF, CTokenType.IFNDEF)
-        self.if_section = TokenSet(self.if_group)
-        self.control_line = TokenSet(CTokenType.INCLUDE, CTokenType.DEFINE, CTokenType.UNDEF, CTokenType.LINE, CTokenType.ERROR, CTokenType.PRAGMA, TokenType.LF, TokenType.EOF)
+        self.if_group = TokenSet(CTokenType.IF_P, CTokenType.IFDEF, CTokenType.IFNDEF)
+        self.elif_group = TokenSet(CTokenType.ELIF)
+        self.else_group = TokenSet(CTokenType.ELSE_P)
+        self.endif_group = TokenSet(CTokenType.ENDIF)
+        self.if_section = TokenSet(
+            self.if_group, self.elif_group, self.endif_group, self.else_group
+        )
+        self.control_line = TokenSet(
+            CTokenType.INCLUDE,
+            CTokenType.DEFINE,
+            CTokenType.UNDEF,
+            CTokenType.LINE,
+            CTokenType.ERROR,
+            CTokenType.PRAGMA,
+            TokenType.LF,
+            TokenType.EOF,
+        )
         # eof 是考虑结尾

@@ -173,6 +173,7 @@ class Keyword(AST):
         super().__init__()
         self.name: str = name
         self.is_bottom_ast = True
+        self._node_info += f'\\n{self.name}'
 
     def formatter(self, depth: int = 0):
         return self.name
@@ -183,6 +184,7 @@ class Identifier(AST):
         super().__init__()
         self.id: str = id
         self.is_bottom_ast = True
+        self._node_info += f'\\n{self.id}'
 
 
 class Constant(AST):
@@ -196,6 +198,7 @@ class String(AST):
         super().__init__()
         self.string = string
         self.is_bottom_ast = True
+        self._node_info += f'\\n{self.string}'
 
     def formatter(self, depth: int = 0):
         return self.string
@@ -205,6 +208,7 @@ class Char(AST):
         super().__init__()
         self.string = string
         self.is_bottom_ast = True
+        self._node_info += f'\\n{self.string}'
 
     def formatter(self, depth: int = 0):
         return self.string
@@ -215,6 +219,7 @@ class Number(AST):
         super().__init__()
         self.value = value
         self.is_bottom_ast = True
+        self._node_info += f'\\n{self.value}'
 
     def formatter(self, depth: int = 0):
         return self.value
