@@ -5,9 +5,11 @@ from typing import List
 
 AST_CREATED_INDEX = 0
 
+
 class GlobalDescriptorTable:
     def __init__(self) -> None:
         pass
+
 
 class AST(object):
     def __init__(self) -> None:
@@ -23,8 +25,9 @@ class AST(object):
         # AST 树包含的 Token
         self._tokens: List[Token] = []
         self.depth = 0  # 节点深度
+        self.is_bottom_ast = False # 底层 AST
 
-    def register_token(self, tokens: List[Token], extra_class_name:str = None):
+    def register_token(self, tokens: List[Token], extra_class_name: str = None):
         """
         将 token 注册到 AST 树中以更新 token 的属性
         """
@@ -66,10 +69,6 @@ class AST(object):
         # f'depth={self.depth}\\n'
         node_content = self._node_info + "\\n" + f"depth={self.depth}"
         return f'node{self.created_index} [label="{node_content}"]'
-
-    def add_ast_type(self, class_name: str):
-        for token in self._tokens:
-            token.class_list.append(class_name)
 
 
 class Object(AST):
@@ -163,6 +162,7 @@ class Keyword(AST):
     def __init__(self, name) -> None:
         super().__init__()
         self.name: str = name
+        self.is_bottom_ast = True
 
     def formatter(self, depth: int = 0):
         return self.name
@@ -172,17 +172,19 @@ class Identifier(AST):
     def __init__(self, id) -> None:
         super().__init__()
         self.id = id
-
+        self.is_bottom_ast = True
 
 class Constant(AST):
     def __init__(self, constant) -> None:
         super().__init__()
         self.constant = constant
 
+
 class String(AST):
     def __init__(self, string) -> None:
         super().__init__()
         self.string = string
+        self.is_bottom_ast = True
 
     def formatter(self, depth: int = 0):
         return self.string
@@ -192,6 +194,7 @@ class Number(AST):
     def __init__(self, value) -> None:
         super().__init__()
         self.value = value
+        self.is_bottom_ast = True
 
     def formatter(self, depth: int = 0):
         return self.value
@@ -215,7 +218,7 @@ class BinaryOp(AST):
     def __init__(self) -> None:
         super().__init__()
         self.expr_left = None
-        self.expr_rights:List[AST] = None
+        self.expr_rights: List[AST] = None
         self.op = None
 
     def visit(self, node_visitor: "NodeVisitor" = None):
@@ -255,13 +258,13 @@ class ConditionalExpression(AST):
             node_visitor.link(self, self.value_false)
         return super().visit(node_visitor)
 
+
 class Expression(AST):
     def __init__(self, exprs: List[AST] = None) -> None:
         super().__init__()
         self.exprs = exprs
 
     def visit(self, node_visitor: "NodeVisitor" = None):
-        
         node_visitor.link(self, self.exprs)
         return super().visit(node_visitor)
 
@@ -272,6 +275,7 @@ class Expression(AST):
                 result += expr.formatter(depth + 1)
 
         return result + "\n"
+
 
 class NodeVisitor:
     """
@@ -306,14 +310,14 @@ class NodeVisitor:
         self.dot_body.append(node.get_node_info())
 
     def link(self, root: AST, node: AST):
-        '''
+        """
         usage inside AST : node_visitor.link(self, self.xxx)
 
         内部做了各种判断, 只需考虑访问顺序
-        '''
+        """
         if root not in self.visit_node_list:
             self.register(root, self.depth)
-        
+
         # 判空
         if node is None:
             return
@@ -351,3 +355,25 @@ def display_ast(node: AST, image_name="ast.dot"):
     # node.formatter()
 
     assert node_visitor.depth == -1
+
+def add_ast_type(node:AST, class_name:str):
+    '''
+    为节点补充添加类名信息, 比如返回值 ReturnValue
+    '''
+    if node is None:
+        return
+    if type(node) == list:
+        for nod in node:
+            add_ast_type(nod, class_name)
+        return
+    
+    if node.is_bottom_ast:
+        for token in node._tokens:
+            token.class_list.append(class_name)
+            # print(token, f"[{class_name}]")
+        return
+    else:
+        # 遍历对象的所有属性
+        for _, attribute_value in vars(node).items():
+            if isinstance(attribute_value, AST):
+                add_ast_type(attribute_value, class_name)

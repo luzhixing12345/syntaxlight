@@ -2,6 +2,39 @@
     color: #569cd6;
 }
 
-.Token.DirectDeclaractor {
+.Token.DirectDeclaractor.ID {
     color: #88D6FE;
+}
+
+.Token.Preprocess, .Token.HASH {
+    color: #C586C0;
+}
+
+.Token.HeaderName {
+    color: #CE9178;
+    border-bottom: 1px solid #CE9178;
+}
+
+.Token.StorageType, .Token.QualifyType,.Token.StructureType {
+    color: #569cd6;
+}
+
+.Token.FunctionName.ID {
+    color: #DCDCAA;
+}
+
+.Token.JumpStatement {
+    color: #C586C0;
+}
+
+.Token.DefineName {
+    color: #569cd6;
+}
+
+.Token.StructClass {
+    color: #4EC9B0;
+}
+
+.Token.COMMENT {
+    color: #6A9955;
 }

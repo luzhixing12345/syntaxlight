@@ -23,11 +23,11 @@ pre[class*="language-"] {
 }
 
 .Token.LCURLY_BRACE, .Token.RCURLY_BRACE, .Token.LSQUAR_PAREN, .Token.RSQUAR_PAREN {
-    color: #DBD700;
+    color: #FFD700;
 }
 
 .Token.brace-depth-0 {
-    color: #DBD700;
+    color: #FFD700;
 }
 
 .Token.brace-depth-1 {

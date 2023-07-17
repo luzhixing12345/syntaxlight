@@ -7,3 +7,7 @@ struct x {
     int;
     int;
 };
+
+int f(struct x) {
+    
+}
