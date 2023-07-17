@@ -2,12 +2,20 @@
     color: #569cd6;
 }
 
-.Token.DirectDeclaractor.ID {
+.Token.ID, .Token.STRING.Format {
     color: #88D6FE;
 }
 
-.Token.Preprocess, .Token.HASH {
+.Token.Preprocess, .Token.HASH{
     color: #C586C0;
+}
+
+.Token.IF, .Token.ELSE, .Token.FOR, .Token.WHILE, .Token.SWITCH, .Token.CASE, .Token.DEFAULT {
+    color: #C586C0;
+}
+
+.Token.SIZEOF {
+    color: #569cd6;
 }
 
 .Token.HeaderName {
@@ -19,7 +27,7 @@
     color: #569cd6;
 }
 
-.Token.FunctionName.ID {
+.Token.FunctionName.ID, .Token.FunctionCall.ID {
     color: #DCDCAA;
 }
 
@@ -35,6 +43,16 @@
     color: #4EC9B0;
 }
 
+.Token.SEMI {
+    color: white;
+}
+
+.Token.Control {
+    color: #D7BA6E;
+}
+
+
 .Token.COMMENT {
     color: #6A9955;
 }
+

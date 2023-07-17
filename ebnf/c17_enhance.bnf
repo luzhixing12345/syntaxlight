@@ -138,6 +138,7 @@
 <primary-expression> ::= <identifier>
                        | <constant>
                        | <string>
+                       | <char>
                        | "(" <expression> ")"
                        | <generic-selection>
 

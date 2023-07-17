@@ -7,8 +7,9 @@
 *@Github: luzhixing12345
 """
 
+import re
 
-from syntaxlight.ast import NodeVisitor
+from syntaxlight.ast import AST
 from .parser import Parser
 from ..lexers import TokenType, CTokenType, CTokenSet, Token
 from ..error import ErrorCode
@@ -23,11 +24,33 @@ from ..ast import (
     Constant,
     Expression,
     AssignOp,
+    GlobalDescriptorTable,
+    NodeVisitor,
+    Char,
     add_ast_type,
 )
 from typing import List
 from enum import Enum
 
+
+class C_GDT(GlobalDescriptorTable):
+    def __init__(self) -> None:
+        super().__init__()
+    def register_id(self, node: "Declaration"):
+        if node.static_assert is not None:
+            return
+
+        for nod in node.init_declarator_list:
+            id_name = nod.declarator.direct_declarator.id.id
+            if self.descriptors.get(id_name) is None:
+                self.descriptors[id_name] = node.declaration_specifiers
+            else:
+                # 重复定义
+                ...
+
+    
+
+GDT = C_GDT()
 
 class TranslationUnit(AST):
     def __init__(self, declarations) -> None:
@@ -116,8 +139,8 @@ class Declarator(AST):
 class Declaration(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.declaration_specifiers = None
-        self.init_declarator_list = None
+        self.declaration_specifiers:List[AST] = None
+        self.init_declarator_list:List[InitDeclarator] = None
         self.static_assert = None
 
     def visit(self, node_visitor: NodeVisitor = None):
@@ -141,8 +164,8 @@ class Pointer(AST):
 class DirectDeclaractor(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.id = None
-        self.declarator:Declarator = None
+        self.id:Identifier = None
+        self.declarator: Declarator = None
         self.sub_nodes: List[DirectDeclaractorPostfix] = []
         self.is_function = False
 
@@ -205,11 +228,8 @@ class CastExpression(AST):
         self.expr = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        if self.type_names:
-            for type_name in self.type_names:
-                node_visitor.link(self, type_name)
-        if self.expr:
-            node_visitor.link(self, self.expr)
+        node_visitor.link(self, self.type_names)
+        node_visitor.link(self, self.expr)
         return super().visit(node_visitor)
 
 
@@ -449,12 +469,14 @@ class LabeledStatement(AST):
         super().__init__()
         self.id = None
         self.keyword = None
-        self.statement = None
+        self.const_expr= None
+        self.stmt = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.id)
         node_visitor.link(self, self.keyword)
-        node_visitor.link(self, self.statement)
+        node_visitor.link(self, self.const_expr)
+        node_visitor.link(self, self.stmt)
         return super().visit(node_visitor)
 
 
@@ -580,6 +602,7 @@ class ControlLine(AST):
         super().__init__()
         self.keyword = None
         self.id = None
+
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.keyword)
         node_visitor.link(self, self.id)
@@ -951,6 +974,7 @@ class CParser(Parser):
             if self.current_token.type == TokenType.LPAREN:
                 # 可以确定是一个函数名
                 node.is_function = True
+                add_ast_type(node, "FunctionName")
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.parameter_list:
                     sub_node.update(parameter_list=self.parameter_list())
@@ -1226,6 +1250,8 @@ class CParser(Parser):
                 sub_nodes.append(self.expression())
                 node.register_token(self.eat(TokenType.RSQUAR_PAREN))
             elif self.current_token.type == TokenType.LPAREN:
+                # function call
+                add_ast_type(node.primary_expr, "FunctionCall")
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.assignment_expression:
                     sub_nodes.append(self.assignment_expression())
@@ -1251,6 +1277,7 @@ class CParser(Parser):
         <primary-expression> ::= <identifier>
                                | <constant>
                                | <string>
+                               | <char>
                                | "(" <expression> ")"
                                | <generic-selection>
         """
@@ -1261,7 +1288,9 @@ class CParser(Parser):
             sub_node = Constant(self.current_token.value)
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.STRING:
-            sub_node = String(self.current_token.value)
+            sub_node = self.string()
+        elif self.current_token.type == TokenType.CHAR:
+            sub_node = Char(self.current_token.value)
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
@@ -1344,7 +1373,7 @@ class CParser(Parser):
             node.update(expr=expr)
         elif isinstance(expr.condition_expr, CastExpression):
             # CastExpression 含 type_names 必为 conditional expression
-            if expr.condition_expr.type_names is not None:
+            if len(expr.condition_expr.type_names) != 0:
                 node.update(expr=expr)
             else:
                 # 纯 unary expression
@@ -1372,7 +1401,7 @@ class CParser(Parser):
                                 | "|="
         """
         node = AssignOp(self.current_token.value)
-        node.register_token(self.current_token.type)
+        node.register_token(self.eat(self.current_token.type))
         return node
 
     def type_name(self):
@@ -1535,10 +1564,10 @@ class CParser(Parser):
             if self.current_token.type == TokenType.SEMI:
                 node.update(declaration_specifiers=declaration_specifiers)
                 node.update(init_declarator_list=init_declarator_list)
+                GDT.register_id(node) # 将声明的变量注册到 GDT 中
                 node.register_token(self.eat(TokenType.SEMI))
                 if self._is_C_function(init_declarator_list):
                     add_ast_type(declaration_specifiers, "ReturnValue")
-                    add_ast_type(init_declarator_list[0], "FunctionName")
                 return node
             elif self._is_C_function(init_declarator_list) and (
                 self.current_token.type in self.cfirst_set.compound_statement
@@ -1713,11 +1742,12 @@ class CParser(Parser):
                       | <iteration-statement>
                       | <jump-statement>
         """
-        # goto id
         if (
             self.current_token.type == TokenType.ID
             and self.peek_next_token().type == TokenType.COLON
         ):
+            # goto id;
+            # id: ...
             return self.labeled_statement()
         elif (
             self.current_token.type != TokenType.ID
@@ -1746,17 +1776,20 @@ class CParser(Parser):
         node = LabeledStatement()
         if self.current_token.type in self.cfirst_set.identifier:
             node.update(id=self.identifier())
-        elif self.current_token.type in (CTokenType.CASE, CTokenType.DEFAULT):
-            node.update(keyword=self.keyword())
+        elif self.current_token.type == CTokenType.CASE:
+            node.update(keyword=self.keyword(CTokenType.CASE))
+            node.update(const_expr = self.constant_expression())
+        elif self.current_token.type == CTokenType.DEFAULT:
+            node.update(keyword=self.keyword(CTokenType.DEFAULT))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be id or case or default")
         node.register_token(self.eat(TokenType.COLON))
-        node.update(statement=self.statement())
+        node.update(stmt=self.statement())
         return node
 
     def expression_statement(self):
         """
-        <expression-statement> ::= {<expression>}? ";"
+        <expression-statement> ::= <expression>? ";"
         """
         node = ExpressionStatement()
         if self.current_token.type in self.cfirst_set.expression:
@@ -1866,7 +1899,17 @@ class CParser(Parser):
         id
         """
         node = Identifier(self.current_token.value)
+        token_value = self.current_token.value
         node.register_token(self.eat(TokenType.ID))
+
+        # 判断一下 ID 的 class_name
+        if token_value in GDT:
+            # add_ast_type(node, GDT[token_value])
+            ...
+        elif bool(re.match(r"^[A-Z0-9_]+$", token_value)):
+            # ID 全部为 大写/数字/下划线, 很可能为宏
+            add_ast_type(node, "DefineName")
+
         return node
 
     def keyword(self, token_type: Enum = None, class_name: str = None):
@@ -1884,6 +1927,37 @@ class CParser(Parser):
         else:
             keyword.register_token(self.eat())
         return keyword
+    
+    def string(self):
+        '''
+        string
+        '''
+        return self._string_inside_format(self.current_token)
+
+    def _string_inside_format(self, token:Token):
+        '''
+        取出其中格式化字符 %d %x \n 并新建 token
+        '''
+        pattern = r"(%[0-9diufFeEgGxXoscpaAn]+|(?:\\n|\\t|\\v|\\f))"
+        sub_strings = re.split(pattern, token.value)
+        new_tokens = []
+        line = token.line
+        column = token.column - len(token.value)
+        for sub_string in sub_strings:
+            if len(sub_string) == 0:
+                continue    
+            column += len(sub_string)
+            token = Token(TokenType.STRING, sub_string, line, column)
+            if bool(re.match(r'%[0-9diufFeEgGxXoscpaAn]+', sub_string)):
+                token.class_list.append("Format")
+            elif sub_string in ["\\n","\\t","\\f","\\v","\\a","\\b"]:
+                token.class_list.append("Control")
+            new_tokens.append(token)
+            self._register_token(token)
+
+        self.current_token = self.lexer.get_next_token()
+        return new_tokens
+
 
     def static_assert_declaration(self):
         """
@@ -1894,9 +1968,7 @@ class CParser(Parser):
         node.register_token(self.eat(TokenType.LPAREN))
         node.update(const_expr=self.constant_expression())
         node.register_token(self.eat(TokenType.COMMA))
-        string = String(self.current_token.value)
-        string.register_token(self.eat(TokenType.STRING))
-        node.update(string=string)
+        node.update(string=self.string())
         return node
 
     def group(self):
@@ -2027,13 +2099,13 @@ class CParser(Parser):
             node.update(header_name=self.header_name())
         elif self.current_token.type == CTokenType.DEFINE:
             node.update(keyword=self.keyword(class_name="Preprocess"))
-            node.update(id = self.identifier())
+            node.update(id=self.identifier())
         elif self.current_token.type == CTokenType.UNDEF:
             node.update(keyword=self.keyword(class_name="Preprocess"))
-            node.update(id = self.identifier())
+            node.update(id=self.identifier())
         elif self.current_token.type in (CTokenType.LINE, CTokenType.ERROR, CTokenType.PRAGMA):
             node.update(keyword=self.keyword(class_name="Preprocess"))
-            node.update(id = self.identifier())
+            node.update(id=self.identifier())
         add_ast_type(node.id, "DefineName")
         self.eat_lf()
         return node
@@ -2058,9 +2130,7 @@ class CParser(Parser):
         """
         node = HeaderName()
         if self.current_token.type == TokenType.STRING:
-            file_path = String(self.current_token.value)
-            file_path.register_token(self.eat(self.current_token.type))
-            node.update(file_path=file_path)
+            node.update(file_path=self.string())
         elif self.current_token.type == TokenType.LANGLE_BRACE:
             node.register_token(self.eat(TokenType.LANGLE_BRACE))
             result = ""

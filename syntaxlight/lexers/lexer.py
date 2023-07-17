@@ -477,7 +477,7 @@ class Lexer:
                     result += self.current_char
                 self.advance()
 
-        token = Token(TokenType.STR, result, self.line, self.column)
+        token = Token(TokenType.STR, result, self.line, self.column-1)
         return token
 
     def get_id(self, ignore_case=False, extend_chars=["_"]):

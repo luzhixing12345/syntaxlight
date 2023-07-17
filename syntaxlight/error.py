@@ -9,6 +9,7 @@ class ErrorCode(Enum):
     NUMBER_INVALID = "Number invalid"
     UNKNOWN_CHARACTER = "unknown character"
     UNTERMINATED_COMMENT = "unterminated comment"
+    MULTICHARACTER_CONSTANT = 'Multi-character character constant'
 
     # parser error code
     UNEXPECTED_TOKEN = "Unexpected token"

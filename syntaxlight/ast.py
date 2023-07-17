@@ -1,15 +1,25 @@
 import textwrap
 
 from .lexers import Token
-from typing import List
+from typing import List, Union
 
 AST_CREATED_INDEX = 0
 
 
 class GlobalDescriptorTable:
     def __init__(self) -> None:
-        pass
+        self.descriptors = {}
 
+    def register_id(self, node: "AST"):
+        raise NotImplementedError("finish your register_id function in language GDT")
+
+    def __contains__(self, item):
+        return item in self.descriptors
+
+    def error(self):
+        '''
+        
+        '''
 
 class AST(object):
     def __init__(self) -> None:
@@ -25,7 +35,7 @@ class AST(object):
         # AST 树包含的 Token
         self._tokens: List[Token] = []
         self.depth = 0  # 节点深度
-        self.is_bottom_ast = False # 底层 AST
+        self.is_bottom_ast = False  # 底层 AST
 
     def register_token(self, tokens: List[Token], extra_class_name: str = None):
         """
@@ -171,8 +181,9 @@ class Keyword(AST):
 class Identifier(AST):
     def __init__(self, id) -> None:
         super().__init__()
-        self.id = id
+        self.id: str = id
         self.is_bottom_ast = True
+
 
 class Constant(AST):
     def __init__(self, constant) -> None:
@@ -181,6 +192,15 @@ class Constant(AST):
 
 
 class String(AST):
+    def __init__(self, string) -> None:
+        super().__init__()
+        self.string = string
+        self.is_bottom_ast = True
+
+    def formatter(self, depth: int = 0):
+        return self.string
+
+class Char(AST):
     def __init__(self, string) -> None:
         super().__init__()
         self.string = string
@@ -356,17 +376,18 @@ def display_ast(node: AST, image_name="ast.dot"):
 
     assert node_visitor.depth == -1
 
-def add_ast_type(node:AST, class_name:str):
-    '''
+
+def add_ast_type(node: AST, class_name: str):
+    """
     为节点补充添加类名信息, 比如返回值 ReturnValue
-    '''
+    """
     if node is None:
         return
     if type(node) == list:
         for nod in node:
             add_ast_type(nod, class_name)
         return
-    
+
     if node.is_bottom_ast:
         for token in node._tokens:
             token.class_list.append(class_name)

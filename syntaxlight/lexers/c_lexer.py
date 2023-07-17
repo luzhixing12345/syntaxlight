@@ -1,4 +1,4 @@
-from .lexer import Lexer, Token, TokenType, TokenSet
+from .lexer import Lexer, Token, TokenType, TokenSet, ErrorCode
 from enum import Enum
 
 
@@ -93,6 +93,24 @@ class CLexer(Lexer):
         disable_long_op = ["===", "!==", "::"]
         self.build_long_op_dict(disable_long_op)
 
+    def get_char(self):
+        '''
+        单字符
+        '''
+        self.advance()
+        result = "'" + self.current_char
+        if self.current_char == '\\':
+            self.advance()
+            result += self.current_char
+        self.advance()
+        if self.current_char != "'":
+            token = Token(TokenType.CHAR, result, self.line, self.column)
+            self.error(ErrorCode.MULTICHARACTER_CONSTANT, token)
+        result += "'"
+        token = Token(TokenType.CHAR, result, self.line, self.column)
+        self.advance()
+        return token
+
     def get_next_token(self):
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
@@ -112,8 +130,11 @@ class CLexer(Lexer):
             if self.current_char.isalpha() or self.current_char == TokenType.UNDERLINE.value:
                 return self.get_id()
 
-            if self.current_char in ("'", '"'):
+            if self.current_char == '"':
                 return self.get_string()
+            
+            if self.current_char == "'":
+                return self.get_char()
 
             if self.current_char in self.long_op_dict:
                 return self.get_long_op()
@@ -219,7 +240,7 @@ class CTokenSet:
         self.parameter_declaration = TokenSet(self.declaration_specifier)
         self.parameter_list = TokenSet(self.parameter_declaration)
         self.primary_expression = TokenSet(
-            TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.LPAREN
+            TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.LPAREN, TokenType.CHAR
         )
         self.postfix_expression = TokenSet(self.primary_expression)
         # postfix_expression 内部的
