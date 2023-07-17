@@ -1,6 +1,8 @@
 # syntaxlight
 
-syntaxlight 是一个基于 EBNF 的语法高亮的 python 库, 您可以 [在线浏览]() 所有文法的高亮结果
+> 本项目仍在开发中, 尚不可用...
+
+syntaxlight 是一个基于 BNF 的语法高亮的 python 库, 您可以 [在线浏览]() 所有文法的高亮结果
 
 目前支持 C Python 等常见编程语言和 json xml 等常见文件格式的文法解析, 默认使用 Vscode 风格的高亮显示, 也支持自定义高亮颜色
 
