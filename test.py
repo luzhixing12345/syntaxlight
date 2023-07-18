@@ -34,7 +34,5 @@ for language, files in TEST_FILES.items():
                     print(token)
             break
         syntaxlight.example_display(files[index], language)
-        continue
-    for file in files:
-        print('file = ', file)
-        syntaxlight.parse_file(file, language)
+    else:
+        syntaxlight.example_display(files, language)

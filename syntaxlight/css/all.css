@@ -1,19 +1,19 @@
 
 
-div {
-    color: #1f1f1f; /* 背景 a */
-    color: #88D6FE; /* 基础变量 a */
-    color: #569cd6; /* 类型 int */
-    color: #C586C0; /* include */
-    color: #CE9178; /* string */
-    color: #A2CEA8; /* number */
-    color: #327ED0; /* true false null */
-    color: #FFD700; /* 括号深度1 */
-    color: #DA70D6; /* 括号深度2 */
-    color: #1A9DFF; /* 括号深度3 */
-    color: #6A9955; /* 注释 */
-    color: #DCDCAA; /* 函数名 */
-    color: #4EC9B0; /* struct class */
-    color: #D7BA6E; /* \n\t */
-    color: #4FC1FF; /* enum type */
+.vscode {
+    color: #1f1f1f; /* @background */
+    color: #88D6FE; /* @variant a */
+    color: #569cd6; /* @type int */
+    color: #C586C0; /* @define include */
+    color: #CE9178; /* @string "123"*/
+    color: #A2CEA8; /* @number 123*/
+    color: #327ED0; /* @bool true false null */
+    color: #FFD700; /* @brace1 () */
+    color: #DA70D6; /* @brace2 (())*/
+    color: #1A9DFF; /* @brace3 ((()))*/
+    color: #6A9955; /* @comment */
+    color: #DCDCAA; /* @function int func() */
+    color: #4EC9B0; /* @struct class */
+    color: #D7BA6E; /* @controlchar \n\t */
+    color: #4FC1FF; /* @enum type */
 }

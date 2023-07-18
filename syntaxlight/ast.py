@@ -11,15 +11,18 @@ class GlobalDescriptorTable:
         self.descriptors = {}
 
     def register_id(self, name, class_name):
-        
         if self.descriptors.get(name) is None:
             self.descriptors[name] = class_name
+
+    def reset(self):
+        self.descriptors = {}
 
     def __getitem__(self, index):
         return self.descriptors[index]
 
     def __contains__(self, item):
         return item in self.descriptors
+
 
 class AST(object):
     def __init__(self) -> None:
@@ -173,7 +176,7 @@ class Keyword(AST):
         super().__init__()
         self.name: str = name
         self.is_bottom_ast = True
-        self._node_info += f'\\n{self.name}'
+        self._node_info += f"\\n{self.name}"
 
     def formatter(self, depth: int = 0):
         return self.name
@@ -184,31 +187,36 @@ class Identifier(AST):
         super().__init__()
         self.id: str = id
         self.is_bottom_ast = True
-        self._node_info += f'\\n{self.id}'
+        self._node_info += f"\\n{self.id}"
 
 
 class Constant(AST):
     def __init__(self, constant) -> None:
         super().__init__()
         self.constant = constant
+        self.is_bottom_ast = True
+        self._node_info += f"\\n{self.constant}"
 
 
 class String(AST):
     def __init__(self, string) -> None:
         super().__init__()
-        self.string = string
+        self.string:str = string
         self.is_bottom_ast = True
-        self._node_info += f'\\n{self.string}'
+
+        string_info = self.string.replace('\\','\\\\').replace('"','\\"')
+        self._node_info += f"\\n{string_info}"
 
     def formatter(self, depth: int = 0):
         return self.string
+
 
 class Char(AST):
     def __init__(self, string) -> None:
         super().__init__()
         self.string = string
         self.is_bottom_ast = True
-        self._node_info += f'\\n{self.string}'
+        self._node_info += f"\\n{self.string}"
 
     def formatter(self, depth: int = 0):
         return self.string
@@ -219,10 +227,11 @@ class Number(AST):
         super().__init__()
         self.value = value
         self.is_bottom_ast = True
-        self._node_info += f'\\n{self.value}'
+        self._node_info += f"\\n{self.value}"
 
     def formatter(self, depth: int = 0):
         return self.value
+
 
 class Punctuator(AST):
     def __init__(self, op) -> None:
@@ -232,6 +241,7 @@ class Punctuator(AST):
 
     def formatter(self, depth: int = 0):
         return self.op
+
 
 class UnaryOp(AST):
     def __init__(self, expr: AST = None, op: str = None) -> None:
@@ -264,6 +274,8 @@ class AssignOp(AST):
     def __init__(self, op: str = None) -> None:
         super().__init__()
         self.op = op
+        self.is_bottom_ast = True
+        self._node_info += f'\\n{self.op}'
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         return super().visit(node_visitor)
@@ -368,16 +380,16 @@ class NodeVisitor:
         for dot in self.dot_body:
             graphviz_content += f"    {dot}\n"
         graphviz_content += self.dot_footer
-        # with open(self.image_name, "w", encoding="utf-8") as f:
-        #     f.write(graphviz_content)
-        # print(f"ast tree saved in [{self.image_name}], view by grpahviz")
+        with open(self.image_name, "w", encoding="utf-8") as f:
+            f.write(graphviz_content)
+        print(f"ast tree saved in [{self.image_name}], view by grpahviz")
 
 
 def display_ast(node: AST, image_name="ast.dot"):
     node_visitor = NodeVisitor(image_name)
     node.visit(node_visitor)
 
-    node_visitor.save()
+    # node_visitor.save()
     # node.formatter()
 
     assert node_visitor.depth == -1

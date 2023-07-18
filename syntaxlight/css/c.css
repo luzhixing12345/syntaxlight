@@ -56,13 +56,16 @@
     color: #4FC1FF;
 }
 
-.Token.StructClass,.Token.EnumID, .Token.Typedefine {
+.Token.StructClass,
+.Token.EnumID,
+.Token.Typedefine {
     color: #4EC9B0;
 }
 
 .Token.SEMI,
 .Token.LT,
-.Token.GT {
+.Token.GT,
+.Token.AMPERSAND, .Token.POINTER {
     color: white;
 }
 

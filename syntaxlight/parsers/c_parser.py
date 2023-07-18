@@ -173,6 +173,7 @@ class DirectDeclaractorPostfix(AST):
         node_visitor.link(self, self.static_foot)
         node_visitor.link(self, self.parameter_list)
         node_visitor.link(self, self.identifier_list)
+        node_visitor.link(self, self.assignment_expr)
         return super().visit(node_visitor)
 
 
@@ -221,6 +222,11 @@ class UnaryExpression(AST):
         self.keyword = None
         self.initializer_list = None
 
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.keyword)
+        node_visitor.link(self, self.expr)
+        node_visitor.link(self, self.initializer_list)
+        return super().visit(node_visitor)
 
 class PostfixExpression(AST):
     def __init__(self) -> None:
@@ -229,8 +235,8 @@ class PostfixExpression(AST):
         self.sub_nodes = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        for sub_node in self.sub_nodes:
-            node_visitor.link(self, sub_node)
+        node_visitor.link(self, self.primary_expr)
+        node_visitor.link(self, self.sub_nodes)
         return super().visit(node_visitor)
 
 
@@ -368,12 +374,12 @@ class AbstractDeclarator(AST):
 class AssignmentExpression(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.unary_expr = None
+        self.expr = None
         self.assign_op = None
         self.assignment_expr = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.unary_expr)
+        node_visitor.link(self, self.expr)
         node_visitor.link(self, self.assign_op)
         node_visitor.link(self, self.assignment_expr)
         return super().visit(node_visitor)
@@ -477,12 +483,14 @@ class SelectionStatement(AST):
     def __init__(self) -> None:
         super().__init__()
         self.if_keyword = None
+        self.expr = None
         self.if_stmt = None
         self.else_stmt = None
         self.else_keyword = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.if_keyword)
+        node_visitor.link(self, self.expr)
         node_visitor.link(self, self.if_stmt)
         node_visitor.link(self, self.else_keyword)
         node_visitor.link(self, self.else_stmt)
@@ -543,11 +551,13 @@ class IfGroup(AST):
         self.keyword = None
         self.const_expr = None
         self.id = None
+        self.group = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.keyword)
         node_visitor.link(self, self.const_expr)
         node_visitor.link(self, self.id)
+        node_visitor.link(self, self.group)
         return super().visit(node_visitor)
 
 
@@ -556,10 +566,12 @@ class ElifGroup(AST):
         super().__init__()
         self.keyword = None
         self.const_expr = None
+        self.group = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.keyword)
         node_visitor.link(self, self.const_expr)
+        node_visitor.link(self, self.group)
         return super().visit(node_visitor)
 
 
@@ -567,9 +579,11 @@ class ElseGroup(AST):
     def __init__(self) -> None:
         super().__init__()
         self.keyword = None
+        self.group = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.keyword)
+        node_visitor.link(self, self.group)
         return super().visit(node_visitor)
 
 
@@ -629,6 +643,7 @@ class CParser(Parser):
         self.skip_crlf()
         if self.current_token.type != TokenType.EOF:
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
+        GDT.reset()
         return self.node
 
     def translation_unit(self):
@@ -675,12 +690,31 @@ class CParser(Parser):
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
         node.update(declaration_specifiers=declaration_specifiers)
-        node.update(declarator=self.declarator())
+        declarator = self.declarator()        
         declarations = []
         while self.current_token.type in self.cfirst_set.declaration:
             declarations.append(self.declaration())
-        node.update(declarations=declarations)
-        node.update(compound_statement=self.compound_statement())
+
+        # 正常情况
+        if self.current_token.type in self.cfirst_set.compound_statement:
+            node.update(declarator=declarator)
+            node.update(declarations=declarations)
+            node.update(compound_statement=self.compound_statement())
+        elif self.current_token.type in self.cfirst_set.assignment_operator:
+            # 扩展文法, 对于 x += 10 这种外部非初始化的赋值表达式, 从 <function-definition> 转为 <expression>
+            node = Expression()
+            assign_exprs = []
+            assign_expr = AssignmentExpression()
+            assign_expr.update(expr = declarator)
+            assign_expr.update(assign_op=self.assignment_operator())
+            assign_expr.update(assignment_expr=self.assignment_expression())
+            assign_exprs.append(assign_expr)
+            while self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                assign_exprs.append(self.assignment_expression())
+            node.update(exprs=assign_exprs)
+            return node
+
         add_ast_type(node.declaration_specifiers, "ReturnValue")
         add_ast_type(node.declarator, "FunctionName")
         return node
@@ -1213,6 +1247,8 @@ class CParser(Parser):
             unary_expr.update(expr=self.unary_expression())
             node.update(expr=unary_expr)
         elif self.current_token.type in self.cfirst_set.unary_operator:
+            if self.current_token.type == TokenType.MUL:
+                self.current_token.type = CTokenType.POINTER
             unary_expr = UnaryOp(op=self.current_token.value)
             unary_expr.register_token(self.eat(self.current_token.type))
             unary_expr.update(expr=self.cast_expression())
@@ -1420,11 +1456,12 @@ class CParser(Parser):
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or conditional expression"
             )
-
+        
         node = AssignmentExpression()
         expr = self.conditional_expression()
         if isinstance(expr.condition_expr, BinaryOp):
             # 含双目运算符, 必为 conditional expression
+            
             node.update(expr=expr)
         elif isinstance(expr.condition_expr, CastExpression):
             # CastExpression 含 type_names 必为 conditional expression
@@ -1432,6 +1469,7 @@ class CParser(Parser):
                 node.update(expr=expr)
             else:
                 # 纯 unary expression
+                node.update(expr=expr)
                 if self.current_token.type in self.cfirst_set.assignment_operator:
                     # 有赋值运算符, 是产生式A
                     node.update(assign_op=self.assignment_operator())
@@ -2023,12 +2061,17 @@ class CParser(Parser):
                 token.class_list.append("Control")
 
             self._register_token(token)
-            node = String(token)
+            node = String(token.value)
             node.register_token([token])
             new_asts.append(node)
 
         self.current_token = self.lexer.get_next_token()
         return new_asts
+
+    def unary_op(self):
+        '''
+        
+        '''
 
     def static_assert_declaration(self):
         """

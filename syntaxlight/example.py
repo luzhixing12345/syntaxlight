@@ -19,23 +19,20 @@ def example_display(file_path: str = None, language: str = "guess"):
     if not os.path.exists(example_folder_name):
         os.mkdir(example_folder_name)
 
-    if file_path is None:
-        # show default file
-        ...
-    else:
-        html = parse_file(file_path, language)
-        html = f'<div class="markdown-body"><pre class="language-{language}"><code>{html}</code></pre></div>'
-        with open(html_template_file, "r", encoding="utf-8") as f:
-            content = (
-                f.read().replace("html-scope", html).replace("css-scope", css_scope)
-            )
+    if type(file_path) == str:
+        file_path = [file_path]
+    
+    code_html = ''
+    for fp in file_path:
+        html = parse_file(fp, language)
+        code_html += f'<pre class="language-{language}"><code>{html}</code></pre>'
 
-        with open(
-            os.path.join(example_folder_name, example_html_file), "w", encoding="utf-8"
-        ) as f:
-            f.write(content)
+    code_html = f'<div class="markdown-body">{code_html}</div>'
+    with open(html_template_file, "r", encoding="utf-8") as f:
+        content = f.read().replace("html-scope", code_html).replace("css-scope", css_scope)
 
-        for file in css_files:
-            shutil.copyfile(
-                file, os.path.join(example_folder_name, file.split(os.sep)[-1])
-            )
+    with open(os.path.join(example_folder_name, example_html_file), "w", encoding="utf-8") as f:
+        f.write(content)
+
+    for file in css_files:
+        shutil.copyfile(file, os.path.join(example_folder_name, file.split(os.sep)[-1]))
