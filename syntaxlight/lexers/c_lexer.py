@@ -294,6 +294,7 @@ class CTokenSet:
         )
         self.block_item = TokenSet(self.declaration, self.statement, self.group)
         self.init_declarator_list = TokenSet(self.declarator)
+        self.identifier_list = TokenSet(TokenType.ID)
         self.if_group = TokenSet(CTokenType.IF_P, CTokenType.IFDEF, CTokenType.IFNDEF)
         self.elif_group = TokenSet(CTokenType.ELIF)
         self.else_group = TokenSet(CTokenType.ELSE_P)

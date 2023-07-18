@@ -223,11 +223,11 @@ class Parser:
                     if self.brace_list.index(brace_stack[-1]) + 1 == self.brace_list.index(
                         token.type
                     ):
-                        
                         brace_stack.pop()
                         brace_depth -= 1
                         token.class_list.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
                     else:
+                        # 加入 brace_stack
                         brace_stack.append(token.type)
                         token.class_list.append(f"brace-depth-{brace_depth%self.brace_max_depth}")
                         brace_depth += 1

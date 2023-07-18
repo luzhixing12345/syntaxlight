@@ -456,7 +456,7 @@ class CompoundStatement(AST):
 class LabeledStatement(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.id = None
+        self.id:Identifier = None
         self.keyword = None
         self.const_expr = None
         self.stmt = None
@@ -601,11 +601,17 @@ class ControlLine(AST):
     def __init__(self) -> None:
         super().__init__()
         self.keyword = None
-        self.id = None
+        self.id:Identifier = None
+        self.paramters = None
+        self.parameterization= None
+        self.pp_tokens= None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.keyword)
         node_visitor.link(self, self.id)
+        node_visitor.link(self, self.paramters)
+        node_visitor.link(self, self.parameterization)
+        node_visitor.link(self, self.pp_tokens)
         return super().visit(node_visitor)
 
 
@@ -617,6 +623,14 @@ class HeaderName(AST):
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.file_path)
         return super().visit(node_visitor)
+
+class PPtoken(AST):
+    def __init__(self, value) -> None:
+        super().__init__()
+        self.value:str = value
+        self.is_bottom_ast = True
+        value = self.value.replace('\\','\\\\').replace('"','\\"')
+        self._node_info += f'\\n{value}'
 
 
 class CParser(Parser):
@@ -1880,8 +1894,12 @@ class CParser(Parser):
                               | default ":" <statement>
         """
         node = LabeledStatement()
+
         if self.current_token.type in self.cfirst_set.identifier:
             node.update(id=self.identifier())
+            # goto 的标签
+            add_ast_type(node.id, "GotoLabel")
+            GDT.register_id(node.id.id, "GotoLabel")
         elif self.current_token.type == CTokenType.CASE:
             node.update(keyword=self.keyword(CTokenType.CASE))
             node.update(const_expr=self.constant_expression())
@@ -1989,6 +2007,7 @@ class CParser(Parser):
             if self.current_token.type == CTokenType.GOTO:
                 node.update(keyword=self.keyword())
                 node.update(expr=self.identifier())
+                add_ast_type(node.expr, "GotoLabel")
             elif self.current_token.type == CTokenType.RETURN:
                 node.update(keyword=self.keyword())
                 if self.current_token.type in self.cfirst_set.expression:
@@ -2045,7 +2064,7 @@ class CParser(Parser):
         """
         取出其中格式化字符 %d %x \n 并新建 token
         """
-        pattern = r"(%[0-9diufFeEgGxXoscpaAn]+|(?:\\n|\\t|\\v|\\f))"
+        pattern = r"(%[0-9diufFeEgGxXoscpaAn]+|(?:\\\\|\\n|\\t|\\v|\\f))"
         sub_strings = re.split(pattern, token.value)
         new_asts = []
         line = token.line
@@ -2057,7 +2076,7 @@ class CParser(Parser):
             token = Token(TokenType.STRING, sub_string, line, column)
             if bool(re.match(r"%[0-9diufFeEgGxXoscpaAn]+", sub_string)):
                 token.class_list.append("Format")
-            elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b"]:
+            elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b","\\\\"]:
                 token.class_list.append("Control")
 
             self._register_token(token)
@@ -2238,6 +2257,10 @@ class CParser(Parser):
                          | "#" error <pp-token>* <CRLF>
                          | "#" pragma <pp-token>* <CRLF>
                          | "#" <CRLF>
+
+        <pp-token> ::= any
+
+        括号要求前面无空格, 不过这里不做处理
         """
         self.eat(TokenType.HASH)
         node = ControlLine()
@@ -2247,28 +2270,57 @@ class CParser(Parser):
         elif self.current_token.type == CTokenType.DEFINE:
             node.update(keyword=self.keyword(class_name="Preprocess"))
             node.update(id=self.identifier())
+            if self.current_token.type == TokenType.LPAREN:
+                node.register_token(self.eat(TokenType.LPAREN))
+                if self.current_token.type in self.cfirst_set.identifier_list:
+                    node.update(paramters = self.identifier_list())
+                if self.current_token.type == TokenType.COMMA:
+                    node.register_token(self.eat())
+                if self.current_token.type == TokenType.VARARGS:
+                    node.update(parameterization = self.keyword(TokenType.VARARGS))
+                node.register_token(self.eat(TokenType.RPAREN))
+            
+            pp_tokens = []
+            while self.current_token.type not in (TokenType.EOF, TokenType.LF):
+                if self.current_token.type == TokenType.BACK_SLASH:
+                    pp_tokens.append(self.pp_token())
+                pp_tokens.append(self.pp_token())
+            node.update(pp_tokens = pp_tokens)
+            
         elif self.current_token.type == CTokenType.UNDEF:
             node.update(keyword=self.keyword(class_name="Preprocess"))
             node.update(id=self.identifier())
         elif self.current_token.type in (CTokenType.LINE, CTokenType.ERROR, CTokenType.PRAGMA):
             node.update(keyword=self.keyword(class_name="Preprocess"))
             node.update(id=self.identifier())
-        add_ast_type(node.id, "DefineName")
+        
+        if node.id is not None:
+            add_ast_type(node.id, "DefineName")
+            GDT.register_id(node.id.id, "DefineName")
         self.eat_lf()
         self._end_preprocessing()
         if self.current_token.type in self.cfirst_set.external_declaration:
             node.update(group = self.external_declaration())
         return node
-
+    
     def pp_token(self):
-        """
-        <pp-token> ::= <header-name>
-                     | <identifier>
-                     | <pp-number>
-                     | <character-constant>
-                     | <string>
-                     | <punctuator>
-        """
+        '''
+        any
+        '''
+        
+        if self.current_token.type == TokenType.LANGLE_BRACE:
+            self.current_token.type = TokenType.LT
+        elif self.current_token.type == TokenType.RANGLE_BRACE:
+            self.current_token.type = TokenType.GT
+
+        if self.current_token.type == TokenType.ID:
+            return self.identifier()
+        elif self.current_token.type == TokenType.STRING:
+            return self.string()
+        else:
+            node = PPtoken(self.current_token.value)
+            node.register_token(self.eat())
+            return node
 
     def header_name(self):
         """

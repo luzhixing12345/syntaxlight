@@ -34,14 +34,17 @@
 .Token.StorageType,
 .Token.QualifyType,
 .Token.StructureType,
-.Token.EnumSpecifier,
-.Token.DefineName {
+.Token.EnumSpecifier {
     color: #569cd6;
 }
 
 .Token.FunctionName.ID,
 .Token.FunctionCall.ID {
     color: #DCDCAA;
+}
+
+.Token.DefineName.ID, .Token.BACK_SLASH {
+    color: #569cd6;
 }
 
 .Token.FunctionP.ID {
@@ -65,7 +68,7 @@
 .Token.SEMI,
 .Token.LT,
 .Token.GT,
-.Token.AMPERSAND, .Token.POINTER {
+.Token.AMPERSAND, .Token.POINTER, .Token.GotoLabel  {
     color: white;
 }
 
