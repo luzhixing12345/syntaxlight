@@ -242,7 +242,7 @@ class CTokenSet:
         self.primary_expression = TokenSet(
             TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.LPAREN, TokenType.CHAR
         )
-        self.postfix_expression = TokenSet(self.primary_expression)
+        self.postfix_expression = TokenSet(self.primary_expression, TokenType.LPAREN)
         # postfix_expression 内部的
         self.postfix_expression_inside = TokenSet(
             TokenType.LSQUAR_PAREN,

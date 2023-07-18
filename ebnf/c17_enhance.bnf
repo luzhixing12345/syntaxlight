@@ -116,14 +116,12 @@
 <cast-expression> ::= <unary-expression>
                     | "(" <type-name> ")" <cast-expression>
 
-# 这里的  "{" <initializer-list> (",")? "}" 为笔者做的修改
-# 不然和下面的 postfix-expression 中 <type-name> 无法判断
 <unary-expression> ::= <postfix-expression>
                      | "++" <unary-expression>
                      | "--" <unary-expression>
                      | <unary-operator> <cast-expression>
                      | sizeof <unary-expression>
-                     | sizeof   "(" <type-name> ")" ( "{" <initializer-list> (",")? "}")?
+                     | sizeof   "(" <type-name> ")"
                      | _Alignof "(" <type-name> ")"
 
 <postfix-expression> ::= <primary-expression>
@@ -133,6 +131,7 @@
                        | <postfix-expression> "->" <identifier>
                        | <postfix-expression> "++"
                        | <postfix-expression> "--"
+                       | "(" <type-name> ")" "{" <initializer-list> (",")? "}"
 
 <static_assert-declaration> ::= _Static_assert "(" <constant-expression> "," <string> ")"
 
@@ -265,7 +264,12 @@
             #    | <text-line>
             #    | "#" <non-directive>
 
-<if-section> ::= <if-group> <elif-group>* <else-group>? <endif-line>
+# <if-section> ::= <if-group> <elif-group>* <else-group>? <endif-line>
+
+<if-section> ::= <if-group>
+                | <elif-group>
+                | <else-group>
+                | <endif-line>
 
 <if-group> ::= "#" if <constant-expression> <CRLF> <group>?
              | "#" ifdef <identifier> <CRLF> <group>?

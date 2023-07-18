@@ -108,7 +108,8 @@ class Token:
         self.line: int = line
         self.column: int = column
         self.ast: None
-        self.class_list = ["Token"]  # parser 语法分析阶段赋给 token
+        self.class_list = set()  # parser 语法分析阶段赋给 token
+        self.class_list.add("Token")
         global GLOBAL_TOKEN_ID
         self._id = GLOBAL_TOKEN_ID
         GLOBAL_TOKEN_ID += 1

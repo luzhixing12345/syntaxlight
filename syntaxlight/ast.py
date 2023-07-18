@@ -45,9 +45,9 @@ class AST(object):
         将 token 注册到 AST 树中以更新 token 的属性
         """
         for token in tokens:
-            token.class_list.append(self.class_name)
+            token.class_list.add(self.class_name)
             if extra_class_name:
-                token.class_list.append(extra_class_name)
+                token.class_list.add(extra_class_name)
             self._tokens.append(token)
             token.ast = self
 
@@ -60,7 +60,7 @@ class AST(object):
             # update 的时候将子元素的 token 也添加当前 AST 的 class
             if isinstance(value, AST):
                 for token in value._tokens:
-                    token.class_list.append(self.class_name)
+                    token.class_list.add(self.class_name)
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         """
@@ -201,10 +201,10 @@ class Constant(AST):
 class String(AST):
     def __init__(self, string) -> None:
         super().__init__()
-        self.string:str = string
+        self.string: str = string
         self.is_bottom_ast = True
 
-        string_info = self.string.replace('\\','\\\\').replace('"','\\"')
+        string_info = self.string.replace("\\", "\\\\").replace('"', '\\"')
         self._node_info += f"\\n{string_info}"
 
     def formatter(self, depth: int = 0):
@@ -275,7 +275,7 @@ class AssignOp(AST):
         super().__init__()
         self.op = op
         self.is_bottom_ast = True
-        self._node_info += f'\\n{self.op}'
+        self._node_info += f"\\n{self.op}"
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         return super().visit(node_visitor)
@@ -408,7 +408,7 @@ def add_ast_type(node: AST, class_name: str):
 
     if node.is_bottom_ast:
         for token in node._tokens:
-            token.class_list.append(class_name)
+            token.class_list.add(class_name)
             # print(token, f"[{class_name}]")
         return
     else:
@@ -416,3 +416,35 @@ def add_ast_type(node: AST, class_name: str):
         for _, attribute_value in vars(node).items():
             if isinstance(attribute_value, AST):
                 add_ast_type(attribute_value, class_name)
+            elif type(attribute_value) == list:
+                if len(attribute_value) > 0 and isinstance(attribute_value[0], AST):
+                    for a_v in attribute_value:
+                        add_ast_type(a_v, class_name)
+
+def delete_ast_type(node: AST, class_name: str):
+    """
+    为节点补充去除类名信息
+    """
+    # print(node.class_name)
+    if node is None:
+        return
+    if type(node) == list:
+        for nod in node:
+            delete_ast_type(nod, class_name)
+        return
+
+    if node.is_bottom_ast:
+        for token in node._tokens:
+            if class_name in token.class_list:
+                token.class_list.remove(class_name)
+            # print(token, f"[{class_name}]")
+        return
+    else:
+        # 遍历对象的所有属性
+        for _, attribute_value in vars(node).items():
+            if isinstance(attribute_value, AST):
+                delete_ast_type(attribute_value, class_name)
+            elif type(attribute_value) == list:
+                if len(attribute_value) > 0 and isinstance(attribute_value[0], AST):
+                    for a_v in attribute_value:
+                        delete_ast_type(a_v, class_name)
