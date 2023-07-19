@@ -205,6 +205,7 @@ class CTokenSet:
             CTokenType.UNSIGNED,
             CTokenType._BOOL,
             CTokenType._COMPLEX,
+            CTokenType.BOOL,
             self.atomic_type_specifier,
             self.struct_or_union_specifier,
             self.enum_specifier,
@@ -263,8 +264,9 @@ class CTokenSet:
         self.identifier = TokenSet(TokenType.ID)
         self.parameter_declaration = TokenSet(self.declaration_specifier)
         self.parameter_list = TokenSet(self.parameter_declaration)
+        self.constant = TokenSet(TokenType.NUMBER, CTokenType.TRUE, CTokenType.FALSE)
         self.primary_expression = TokenSet(
-            TokenType.ID, TokenType.NUMBER, TokenType.STRING, TokenType.LPAREN, TokenType.CHAR
+            TokenType.ID, TokenType.STRING, TokenType.LPAREN, TokenType.CHAR, self.constant
         )
         self.postfix_expression = TokenSet(self.primary_expression, TokenType.LPAREN)
         # postfix_expression 内部的
@@ -288,6 +290,7 @@ class CTokenSet:
             TokenType.LPAREN,
         )
         self.conditinal_expression = TokenSet(self.unary_expression, TokenType.LPAREN)
+
         self.constant_expression = TokenSet(self.conditinal_expression)
         self.assignment_expression = TokenSet(self.unary_expression, self.conditinal_expression)
         self.expression = TokenSet(self.assignment_expression)

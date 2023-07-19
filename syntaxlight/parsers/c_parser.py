@@ -682,7 +682,8 @@ class CParser(Parser):
         @扩展文法
         添加 <group> <statement> 以适配宏定义与开头的陈述语句. C 默认不支持 if for 作为陈述语句, 这里添加对于代码段的扩展支持
         """
-        # 没有类型, 即 main() 可以确定是 function_definition
+        # @修改文法
+        # 当无 <declaration-specifier>* (无类型) 只有 <declarator> 的时候匹配 <function_definition>
         if self.current_token.type in self.cfirst_set.declarator:
             return self.function_definition()
         elif self.current_token.type in self.cfirst_set.group:
@@ -703,8 +704,16 @@ class CParser(Parser):
         """
         node = Function()
         declaration_specifiers = []
+        
+        self._unknown_typedef_id_guess()
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
+            # @扩展文法
+            # 对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
+            if self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.ID:
+                self.current_token.type = CTokenType.TYPEDEF_ID
+                GDT.register_id(self.current_token.value, "Typedefine")
+
         node.update(declaration_specifiers=declaration_specifiers)
         declarator = self.declarator()
         declarations = []
@@ -761,6 +770,15 @@ class CParser(Parser):
 
         return node
 
+    def _unknown_typedef_id_guess(self):
+        '''
+        @扩展文法
+        对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
+        '''
+        if self.current_token.type == TokenType.ID and self.peek_next_token().type in (TokenType.ID, TokenType.MUL):
+            self.current_token.type = CTokenType.TYPEDEF_ID
+            GDT.register_id(self.current_token.value, "Typedefine")
+
     def storage_class_specifier(self):
         """
         <storage-class-specifier> ::= 'auto'
@@ -788,6 +806,10 @@ class CParser(Parser):
                            | <struct-or-union-specifier>
                            | <enum-specifier>
                            | <typedef-name>
+
+                           | bool
+        @扩展文法
+        bool 为 C23 中引入, 但实在是太常见了, 一般都会 typedef int bool
         """
         if self.current_token.type in self.cfirst_set.atomic_type_specifier:
             node = self.atomic_type_specifier()
@@ -1067,12 +1089,13 @@ class CParser(Parser):
                     GDT.register_id(_node.id.id, "FunctionP")
 
                 node.register_token(self.eat(TokenType.LPAREN))
+                self._unknown_typedef_id_guess()
                 if self.current_token.type in self.cfirst_set.parameter_list:
                     sub_node.update(parameter_list=self.parameter_list())
-                elif self.current_token.type == TokenType.ID:
-                    # @扩展文法
-                    # 对于未定义过的 Person 类 void updatePersonInfo(Person* person);
-                    sub_node.update(parameter_list=self.parameter_list())
+                # elif self.current_token.type == TokenType.ID:
+                #     # @扩展文法
+                #     # 对于未定义过的 Person 类 void updatePersonInfo(Person* person);
+                #     sub_node.update(parameter_list=self.parameter_list())
                 elif self.current_token.type in self.cfirst_set.identifier:
                     sub_node.update(identifier_list=self.identifier_list())
                 node.register_token(self.eat(TokenType.RPAREN))
@@ -1430,7 +1453,10 @@ class CParser(Parser):
         node = PrimaryExpression()
         if self.current_token.type == TokenType.ID:
             sub_node = self.identifier()
-        elif self.current_token.type == TokenType.NUMBER:
+        elif self.current_token.type in self.cfirst_set.constant:
+            # @扩展文法
+            # Constant 包含了 true, false
+            # 该关键字由 C23 引入, 但非常常用, 一般会 define 为 1 和 0, 所以这里引入为 Constant
             sub_node = Constant(self.current_token.value)
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.STRING:
@@ -1570,9 +1596,12 @@ class CParser(Parser):
                                   | {<declaration-specifier>}+ (<abstract-declarator>)?
         """
         node = ParameterDeclaration()
+        self._unknown_typedef_id_guess()
         declaration_sepcifiers = [self.declaration_sepcifier()]
+        self._unknown_typedef_id_guess()
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_sepcifiers.append(self.declaration_sepcifier())
+            self._unknown_typedef_id_guess()
         node.update(declaration_sepcifiers=declaration_sepcifiers)
 
         # 这里也没有办法 LL1 的判断, 先统统考虑为 <declarator>
@@ -1706,22 +1735,11 @@ class CParser(Parser):
             return node
 
         declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
-
-        # @扩展文法
-        # 对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
-        if self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.ID:
-            self.current_token.type = CTokenType.TYPEDEF_ID
-            GDT.register_id(self.current_token.value, "Typedefine")
+        self._unknown_typedef_id_guess()
+            
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
-            # @扩展文法
-            # 对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
-            if (
-                self.current_token.type == TokenType.ID
-                and self.peek_next_token().type == TokenType.ID
-            ):
-                self.current_token.type = CTokenType.TYPEDEF_ID
-                GDT.register_id(self.current_token.value, "Typedefine")
+            self._unknown_typedef_id_guess()
 
         if self.current_token.type in self.cfirst_set.init_declarator_list:
             init_declarator_list = self.init_declarator_list()
@@ -1905,6 +1923,7 @@ class CParser(Parser):
         node = CompoundStatement()
         node.register_token(self.eat(TokenType.LCURLY_BRACE))
         sub_nodes = []
+        self._unknown_typedef_id_guess()
         while self.current_token.type in self.cfirst_set.block_item:
             if self.current_token.type in self.cfirst_set.declaration:
                 sub_nodes.append(self.declaration())
@@ -2160,9 +2179,6 @@ class CParser(Parser):
 
         self.current_token = self.lexer.get_next_token()
         return new_asts
-
-    def unary_op(self):
-        """ """
 
     def static_assert_declaration(self):
         """

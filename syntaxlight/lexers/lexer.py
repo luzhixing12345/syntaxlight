@@ -502,14 +502,13 @@ class Lexer:
             if self.current_char == end_symbol[0]:
                 if end_symbol_length == 1:
                     # 单行注释不包括最后的换行
-                    if end_symbol != '\n':
-                        result += self.current_char
-                        self.advance()
+                    result += self.current_char
                     break
                 elif self.peek(end_symbol_length-1) == end_symbol[1:]:
-                    for _ in range(end_symbol_length):
-                        result += self.current_char
+                    result += self.current_char
+                    for _ in range(end_symbol_length-1):
                         self.advance()
+                        result += self.current_char
                     break
             result += self.current_char
             self.advance()
@@ -518,8 +517,13 @@ class Lexer:
         if self.current_char is None and end_symbol != "\n":
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
-            
-        token = Token(TokenType.COMMENT, result, self.line, self.column -1)
+
+        if end_symbol == '\n':
+            result = result[:-1]
+            token = Token(TokenType.COMMENT, result, self.line, self.column-1)
+        else:
+            token = Token(TokenType.COMMENT, result, self.line, self.column)
+            self.advance()
         return token
 
     def get_long_op(self):
