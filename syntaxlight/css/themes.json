@@ -1,0 +1,83 @@
+{
+    "vscode": {
+        "--background": "#1f1f1f",
+        "--variant": "#88D6FE",
+        "--type": "#569cd6",
+        "--define": "#C586C0",
+        "--string": "#CE9178",
+        "--number": "#A2CEA8",
+        "--brace1": "#FFD700",
+        "--brace2": "#DA70D6",
+        "--brace3": "#1A9DFF",
+        "--comment": "#6A9955",
+        "--function": "#DCDCAA",
+        "--struct": "#4EC9B0",
+        "--controlchar": "#D7BA6E",
+        "--enum": "#4FC1FF",
+        "--format": "#88D6FE",
+        "--punctuator": "#C1CCCC",
+        "--operator": "#D4D4D4",
+        "extension": {
+            "json": {
+                ".Token.Keyword": "color: #327ED0;"
+            },
+            "toml": {
+                ".Token.Keyword": "color: #327ED0;"
+            }
+        }
+    },
+    "one-dark-pro": {
+        "--background": "#23272E",
+        "--variant": "#DA4D3E",
+        "--type": "#C678DD",
+        "--define": "#C678DD",
+        "--string": "#94BC6D",
+        "--number": "#D19A5B",
+        "--brace1": "#D18D4B",
+        "--brace2": "#C178DD",
+        "--brace3": "#3BADC2",
+        "--comment": "#7F848E",
+        "--function": "#4DAFEF",
+        "--struct": "#E5C078",
+        "--controlchar": "#3BADC2",
+        "--enum": "#56B6C2",
+        "--format": "#D19A5B",
+        "--punctuator": "#ABB2BF",
+        "--operator": "#F92672",
+        "extension": {
+            "xml":{
+                ".Token.Tag": "color: --variant;",
+                ".Token.Prolog": "color: --variant;",
+                ".Token.Attribute.NAME": "color: --number;"
+            }
+        }
+    },
+    "monokai": {
+        "--background": "#272822",
+        "--variant": "#F8F8F2",
+        "--type": "#66D9EF",
+        "--define": "#E62758",
+        "--string": "#E6D663",
+        "--number": "#AE81F8",
+        "--brace1": "#FFCF15",
+        "--brace2": "#B770D6",
+        "--brace3": "#179FFF",
+        "--comment": "#88846F",
+        "--function": "#A6E22E",
+        "--struct": "#7ED92E",
+        "--controlchar": "#AE81FF",
+        "--enum": "#F8F8F2",
+        "--format": "#AE81FF",
+        "--punctuator": "#F8F8F2",
+        "--operator": "#F92672",
+        "extension": {
+            "json": {
+                ".Token.Pair.Key": "color: --type; font-style: italic;"
+            },
+            "toml":{
+                ".Token.TableArrayHeader.Path": "color: --struct;",
+                ".Token.TableHeader.Path": "color: --struct;"                
+            }
+        }
+    }
+}

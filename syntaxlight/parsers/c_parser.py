@@ -937,7 +937,7 @@ class CParser(Parser):
         if self.current_token.type == TokenType.ID and self.current_token.value in GDT:
             if GDT[self.current_token.value] == "Typedefine":
                 self.current_token.type = CTokenType.TYPEDEF_ID
-
+        
         if self.in_preprocessing:
             if self.current_token.type == CTokenType.IF:
                 self.current_token.type = CTokenType.IF_P
@@ -945,6 +945,7 @@ class CParser(Parser):
                 self.current_token.type = CTokenType.ELSE_P
             elif self.current_token.value in self.preprocessing_keywords:
                 self.current_token.type = CTokenType(self.current_token.value)
+
 
     def struct_declarator_list(self) -> List[AST]:
         """

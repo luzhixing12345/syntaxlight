@@ -1,8 +1,37 @@
+pre[class*="language-"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.brace-depth-0 {
+    color: --brace1;
+}
+
+.Token.brace-depth-1 {
+    color: --brace2;
+}
+
+.Token.brace-depth-2 {
+    color: --brace3;
+}
+
 .Token.Pair.Key {
     color: --variant;
 }
 
-.Token.COMMA,
-.Token.COLON {
-    color: white;
+.Token.COMMA, .Token.COLON {
+    color: --punctuator;
+}
+
+.Token.UnaryOp,
+.Token.Keyword,
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.STRING {
+    color: --string;
 }

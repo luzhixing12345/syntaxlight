@@ -1,16 +1,18 @@
-from .syntax_parse import parse_file
+from .syntax_parse import parse_file, guess_language
 import os
 import shutil
 from .export import export_css
 
-def example_display(file_path: str = None, language: str = "guess"):
+
+def example_display(file_path: str = None, language: str = "guess", style="vscode"):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
+    if language == "guess":
+        language = guess_language(file_path)
 
     syntaxlight_path = os.path.dirname(__file__)
     html_template_file = os.path.join(syntaxlight_path, "template.html")
     index_css_file = os.path.join(syntaxlight_path, "css", "index.css")
-    syntax_css_file = os.path.join(syntaxlight_path, "css", "syntaxlight.css")
-    css_files = [index_css_file, syntax_css_file]
+    css_files = [index_css_file]
     css_scope = f"<link rel='stylesheet' href='./{language}.css' />"
 
     example_html_file = os.path.join(example_folder_name, "index.html")
@@ -20,10 +22,12 @@ def example_display(file_path: str = None, language: str = "guess"):
 
     if type(file_path) == str:
         file_path = [file_path]
-    
-    code_html = ''
+
+    code_html = ""
     for fp in file_path:
         html = parse_file(fp, language)
+        if html is None:
+            continue
         code_html += f'<pre class="language-{language}"><code>{html}</code></pre>'
 
     code_html = f'<div class="markdown-body">{code_html}</div>'
@@ -36,5 +40,6 @@ def example_display(file_path: str = None, language: str = "guess"):
     for file in css_files:
         shutil.copyfile(file, os.path.join(example_folder_name, file.split(os.sep)[-1]))
 
-    export_name = os.path.join(example_folder_name, f'{language}.css')
-    export_css([language],export_name)
+    export_name = os.path.join(example_folder_name, f"{language}.css")
+    export_css([language], export_name, style)
+    print(f"open syntaxlight_example/inedx.html in browser")

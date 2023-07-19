@@ -2,14 +2,20 @@ pre[class*="language-"] {
     background: --background;
 }
 
-
 .Token {
-    color: --operator;
+    color: --punctuator;
 }
 
+.Token.brace-depth-0 {
+    color: --brace1;
+}
 
-.Token.BaseType {
-    color: --type;
+.Token.brace-depth-1 {
+    color: --brace2;
+}
+
+.Token.brace-depth-2 {
+    color: --brace3;
 }
 
 .Token.VOID,
@@ -46,14 +52,16 @@ pre[class*="language-"] {
     color: --number;
 }
 
+
+.Token.BaseType {
+    color: --type;
+}
+
+
 .Token.TRUE,
 .Token.FALSE,
 .Token.NULL {
     color: --type;
-}
-
-.Token.COMMA, .Token.COLON, .Token.DOT, .Token.SEMI, .Token.GotoLabel {
-    color: --punctuator;
 }
 
 .Token.STRING,
@@ -136,6 +144,10 @@ pre[class*="language-"] {
 
 .Token.Control {
     color: --controlchar;
+}
+
+.Token.COMMA, .Token.COLON, .Token.DOT, .Token.SEMI, .Token.GotoLabel {
+    color: --punctuator;
 }
 
 

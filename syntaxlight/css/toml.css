@@ -1,3 +1,32 @@
+pre[class*="language-"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.String {
+    color: --string;
+}
+
+.Token.brace-depth-0 {
+    color: --brace1;
+}
+
+.Token.brace-depth-1 {
+    color: --brace2;
+}
+
+.Token.brace-depth-2 {
+    color: --brace3;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+
 .Token.Path {
     color: --type;
 }

@@ -5,7 +5,6 @@
     color: #C586C0; /* @--define include */
     color: #CE9178; /* @--string "123"*/
     color: #A2CEA8; /* @--number 123*/
-    color: #327ED0; /* @--bool true false null */
     color: #FFD700; /* @--brace1 () */
     color: #DA70D6; /* @--brace2 (())*/
     color: #1A9DFF; /* @--brace3 ((()))*/
@@ -53,7 +52,7 @@
     color: #A6E22E; /* @--function int func() */
     color: #7ED92E; /* @--struct class */
     color: #AE81FF; /* @--controlchar \n\t */
-    color: #56B6C2; /* @--enum type */
+    color: #F8F8F2; /* @--enum type */
     color: #AE81FF; /* @--format type */
     color: #F8F8F2; /* @--punctuator . ; :  */
     color: #F92672; /* @--operator +-*=  */
