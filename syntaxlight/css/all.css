@@ -14,22 +14,47 @@
     color: #4EC9B0; /* @--struct class */
     color: #D7BA6E; /* @--controlchar \n\t */
     color: #4FC1FF; /* @--enum type */
+    color: #88D6FE; /* @--format type */
+    color: #9EB2BF; /* @--punctuator . ; :  */
+    color: #D4D4D4; /* @--operator +-*=  */
 }
 
 .one-dark-pro {
-    color: #1f1f1f; /* @--background */
-    color: #88D6FE; /* @--variant a */
-    color: #569cd6; /* @--type int */
-    color: #C586C0; /* @--define include */
-    color: #CE9178; /* @--string "123"*/
-    color: #A2CEA8; /* @--number 123*/
-    color: #327ED0; /* @--bool true false null */
-    color: #FFD700; /* @--brace1 () */
-    color: #DA70D6; /* @--brace2 (())*/
-    color: #1A9DFF; /* @--brace3 ((()))*/
-    color: #6A9955; /* @--comment */
-    color: #DCDCAA; /* @--function int func() */
-    color: #4EC9B0; /* @--struct class */
-    color: #D7BA6E; /* @--controlchar \n\t */
-    color: #4FC1FF; /* @--enum type */
+    color: #23272E; /* @--background */
+    color: #DA4D3E; /* @--variant a */
+    color: #C678DD; /* @--type int */
+    color: #C678DD; /* @--define include */
+    color: #94BC6D; /* @--string "123"*/
+    color: #D19A5B; /* @--number 123*/
+    color: #D18D4B; /* @--brace1 () */
+    color: #C178DD; /* @--brace2 (())*/
+    color: #3BADC2; /* @--brace3 ((()))*/
+    color: #7F848E; /* @--comment */
+    color: #4DAFEF; /* @--function int func() */
+    color: #E5C078; /* @--struct class */
+    color: #3BADC2; /* @--controlchar \n\t */
+    color: #56B6C2; /* @--enum type */
+    color: #D19A5B; /* @--format type */
+    color: #ABB2BF; /* @--punctuator . ; :  */
+    color: #F92672; /* @--operator +-*=  */
+}
+
+.monokai {
+    color: #272822; /* @--background */
+    color: #F8F8F2; /* @--variant a */
+    color: #66D9EF; /* @--type int */
+    color: #E62758; /* @--define include */
+    color: #E6D663; /* @--string "123"*/
+    color: #AE81F8; /* @--number 123*/
+    color: #FFCF15; /* @--brace1 () */
+    color: #B770D6; /* @--brace2 (())*/
+    color: #179FFF; /* @--brace3 ((()))*/
+    color: #88846F; /* @--comment */
+    color: #A6E22E; /* @--function int func() */
+    color: #7ED92E; /* @--struct class */
+    color: #AE81FF; /* @--controlchar \n\t */
+    color: #56B6C2; /* @--enum type */
+    color: #AE81FF; /* @--format type */
+    color: #F8F8F2; /* @--punctuator . ; :  */
+    color: #F92672; /* @--operator +-*=  */
 }

@@ -11,12 +11,18 @@ typedef struct {
     Point* position;
 } Person;
 
+enum COLOR {
+    RED,
+    GREEN
+};
+
 int main() {
     // 创建结构体数组
     Person people[3];
 
-    // 创建指向结构体数组的指针
+    // create pointer
     Person* ptr = people;
+    char *str = "hello world\n + %d%d";
 
     // 创建动态分配的结构体指针数组
     Person** dynamicPtrArray = (Person**)malloc(2 * sizeof(Person*));
@@ -45,7 +51,7 @@ int main() {
     printf("Position: (%d, %d)\n", ptr->position->x, ptr->position->y);
 
     // 释放动态分配的内存
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i << 2; i++) {
         free(dynamicPtrArray[i]);
     }
     free(dynamicPtrArray);

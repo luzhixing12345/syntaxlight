@@ -4,6 +4,9 @@ import re
 from typing import Dict, List, Union
 
 def export_css(languages: List[str], export_name: str = "index.css", style: str = "vscode"):
+
+    style = 'one-dark-pro'
+    style = 'monokai'
     
     themes = read_buildin_css()
     if style in themes:
