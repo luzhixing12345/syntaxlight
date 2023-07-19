@@ -1,15 +1,15 @@
 .Token.BaseType {
-    color: #569cd6;
+    color: --type;
 }
 
 .Token.ID,
 .Token.STRING.Format {
-    color: #88D6FE;
+    color: --variant;
 }
 
 .Token.Preprocess,
 .Token.HASH {
-    color: #C586C0;
+    color: --define;
 }
 
 .Token.IF,
@@ -19,64 +19,67 @@
 .Token.SWITCH,
 .Token.CASE,
 .Token.DEFAULT {
-    color: #C586C0;
+    color: --define;
 }
 
 .Token.SIZEOF {
-    color: #569cd6;
+    color: --type;
 }
 
 .Token.HeaderName {
-    color: #CE9178;
-    border-bottom: 1px solid #CE9178;
+    color: --string;
+    border-bottom: 1px solid --string;
 }
 
 .Token.StorageType,
 .Token.QualifyType,
 .Token.StructureType,
 .Token.EnumSpecifier {
-    color: #569cd6;
+    color: --type;
 }
 
 .Token.FunctionName.ID,
 .Token.FunctionCall.ID {
-    color: #DCDCAA;
+    color: --function;
 }
 
-.Token.DefineName.ID, .Token.BACK_SLASH {
-    color: #569cd6;
+.Token.DefineName.ID,
+.Token.BACK_SLASH {
+    color: --type;
 }
 
 .Token.FunctionP.ID {
-    color: #88D6FE;
+    color: --variant;
 }
 
 .Token.JumpStatement {
-    color: #C586C0;
+    color: --define;
 }
 
 .Token.Enumerator.ID {
-    color: #4FC1FF;
+    color: --enum;
 }
 
 .Token.StructClass,
 .Token.EnumID,
 .Token.Typedefine {
-    color: #4EC9B0;
+    color: --struct;
 }
 
 .Token.SEMI,
 .Token.LT,
 .Token.GT,
-.Token.AMPERSAND, .Token.POINTER, .Token.GotoLabel  {
+.Token.AMPERSAND,
+.Token.POINTER,
+.Token.GotoLabel {
     color: white;
 }
 
 .Token.Control {
-    color: #D7BA6E;
+    color: --controlchar;
 }
 
 
 .Token.COMMENT {
-    color: #6A9955;
+    color: --comment;
 }

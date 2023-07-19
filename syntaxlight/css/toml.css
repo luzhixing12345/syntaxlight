@@ -1,16 +1,16 @@
-
 .Token.Path {
-    color: #569cd6;
+    color: --type;
 }
 
-.Token.TableArrayHeader.Path, .Token.TableHeader.Path {
-    color: #88D6FE;
+.Token.TableArrayHeader.Path,
+.Token.TableHeader.Path {
+    color: --variant;
 }
 
 .Token.Date {
-    color: #A2CEA8;
+    color: --number;
 }
 
 .Token.COMMENT {
-    color: #6A9955;
+    color: --comment;
 }
