@@ -178,52 +178,20 @@ class Lexer:
             TokenType.FORM_FEED.value,
             TokenType.BACKSPACE.value,
         ]
-        self.long_ops = [
-            "<<=",  # 要排在 << 前面
-            ">>=",  # 要排在 >> 前面
-            "<<",
-            ">>",
-            "===",  # 要排在 == 前面
-            "==",
-            "!==",  # 要排在 != 前面
-            "!=",
-            "<",
-            ">",
-            "<=",
-            ">=",
-            "*=",
-            "/=",
-            "%=",
-            "+=",
-            "-=",
-            "&=",
-            "^=",
-            "|=",
-            "...",
-            "::",
-            "++",
-            "--",
-            "||",
-            "&&",
-            "->",
-            "##"
-        ]
-        self.long_op_dict: Dict[str, List] = {
-            # "+": ["+","="],
-            # "-": ["-","=",">"],
-            # "<": ["<=","<","="],
-            # ">": [">=",">","="]
-        }
 
-    def build_long_op_dict(self, disable_long_op: List[str] = []):
-        """
-        选择去除不想要的长运算符匹配
+        # 匹配长字符串时使用
+        # if self.current_char in self.long_op_dict:
+        #     return self.get_long_op()
+        self.long_op_dict: Dict[str, List] = {}
 
-        C:   ["===","!==","::"]
+    def build_long_op_dict(self, supported_long_op: List[str]):
         """
-        self.long_ops = [x for x in self.long_ops if x not in disable_long_op]
+        构造长运算符的匹配模式
+        """
+        self.long_ops = sorted(supported_long_op, key=len, reverse=True)
         for long_op in self.long_ops:
-            if self.long_op_dict.get(long_op[0], None) is None:
+            assert len(long_op) >= 2, f"{long_op} should be longer"
+            if self.long_op_dict.get(long_op[0]) is None:
                 self.long_op_dict[long_op[0]] = []
             self.long_op_dict[long_op[0]].append(long_op[1:])
 
@@ -525,35 +493,34 @@ class Lexer:
         start_symbol, end_symbol = comment_symbol
         assert start_symbol[0] == self.current_char
 
-        result = ""
-        end_p = 0
+        result = start_symbol
+        for _ in range(len(start_symbol)):
+            self.advance()
+        
+        end_symbol_length = len(end_symbol)
         while self.current_char is not None:
-            if self.current_char != end_symbol[end_p]:
-                end_p = 0  # 重新计数
-                result += self.current_char
-                self.advance()
-            else:
-                if end_p == len(end_symbol) - 1:
-                    result += self.current_char
+            if self.current_char == end_symbol[0]:
+                if end_symbol_length == 1:
+                    # 单行注释不包括最后的换行
+                    if end_symbol != '\n':
+                        result += self.current_char
+                        self.advance()
                     break
-                else:
-                    end_p += 1
-                    result += self.current_char
-                    self.advance()
+                elif self.peek(end_symbol_length-1) == end_symbol[1:]:
+                    for _ in range(end_symbol_length):
+                        result += self.current_char
+                        self.advance()
+                    break
+            result += self.current_char
+            self.advance()
+
         # 除单行注释外抛异常
         if self.current_char is None and end_symbol != "\n":
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
-
-        # 单行注释不包括最后的换行
-        if result[-1] == "\n":
-            result = result[:-1]
-            token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
-            return token
-        else:
-            token = Token(TokenType.COMMENT, result, self.line, self.column)
-            self.advance()
-            return token
+            
+        token = Token(TokenType.COMMENT, result, self.line, self.column -1)
+        return token
 
     def get_long_op(self):
         """
@@ -561,16 +528,17 @@ class Lexer:
         字符可能需要读入多个以匹配完整
         """
         assert self.current_char in self.long_op_dict
-        result = self.current_char
         token_type = TokenType(self.current_char)
+        result = self.current_char
+
         for long_op in self.long_op_dict[self.current_char]:
             if self.peek(len(long_op)) == long_op:
-                token_type = TokenType(self.current_char + long_op)
+                result = self.current_char + long_op
+                token_type = TokenType(result)
                 for _ in range(len(long_op)):
                     self.advance()
-                    result += self.current_char
                 break
-
+        
         token = Token(token_type, result, self.line, self.column)
         self.advance()
         return token

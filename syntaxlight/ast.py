@@ -389,7 +389,7 @@ def display_ast(node: AST, image_name="ast.dot"):
     node_visitor = NodeVisitor(image_name)
     node.visit(node_visitor)
 
-    node_visitor.save()
+    # node_visitor.save()
     # node.formatter()
 
     assert node_visitor.depth == -1
@@ -407,6 +407,7 @@ def add_ast_type(node: AST, class_name: str):
         return
 
     if node.is_bottom_ast:
+        node.class_name = class_name
         for token in node._tokens:
             token.class_list.add(class_name)
             # print(token, f"[{class_name}]")

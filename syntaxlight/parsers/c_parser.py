@@ -28,9 +28,9 @@ from ..ast import (
     NodeVisitor,
     Char,
     add_ast_type,
-    delete_ast_type
+    delete_ast_type,
 )
-from typing import List
+from typing import List, Union, Optional
 from enum import Enum
 
 
@@ -43,8 +43,7 @@ class TranslationUnit(AST):
         self.declarations = declarations
 
     def visit(self, node_visitor: NodeVisitor = None):
-        for declaration in self.declarations:
-            node_visitor.link(self, declaration)
+        node_visitor.link(self, self.declarations)
         return super().visit(node_visitor)
 
 
@@ -52,7 +51,7 @@ class Function(AST):
     def __init__(self) -> None:
         super().__init__()
         self.declaration_specifiers = None
-        self.declarator = None
+        self.declarator: Union[InitDeclarator, Declarator, None] = None
         self.declarations = None
         self.compound_statement = None
 
@@ -99,10 +98,8 @@ class StructDeclarator(AST):
         self.expression = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        if self.declarator:
-            node_visitor.link(self, self.declarator)
-        if self.expression:
-            node_visitor.link(self, self.expression)
+        node_visitor.link(self, self.declarator)
+        node_visitor.link(self, self.expression)
         return super().visit(node_visitor)
 
 
@@ -138,8 +135,7 @@ class Pointer(AST):
         self.type_qualifiers = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        for type_qualifier in self.type_qualifiers:
-            node_visitor.link(self, type_qualifier)
+        node_visitor.link(self, self.type_qualifiers)
         return super().visit(node_visitor)
 
 
@@ -265,10 +261,8 @@ class TypeSpecifier(AST):
         self.sub_node = None
 
     def visit(self, node_visitor: NodeVisitor = None):
-        if self.keyword:
-            node_visitor.link(self, self.keyword)
-        if self.sub_node:
-            node_visitor.link(self, self.sub_node)
+        node_visitor.link(self, self.keyword)
+        node_visitor.link(self, self.sub_node)
         return super().visit(node_visitor)
 
 
@@ -281,10 +275,8 @@ class EnumSpecifier(AST):
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.keyword)
-        if self.id:
-            node_visitor.link(self, self.id)
-        for enumerator in self.enumerators:
-            node_visitor.link(self, enumerator)
+        node_visitor.link(self, self.id)
+        node_visitor.link(self, self.enumerators)
         return super().visit(node_visitor)
 
 
@@ -296,8 +288,7 @@ class Enumerator(AST):
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.id)
-        if self.const_expr:
-            node_visitor.link(self, self.const_expr)
+        node_visitor.link(self, self.const_expr)
         return super().visit(node_visitor)
 
 
@@ -742,10 +733,10 @@ class CParser(Parser):
             return node
 
         add_ast_type(node.declaration_specifiers, "ReturnValue")
-        add_ast_type(node.declarator, "FunctionName")
+        add_ast_type(node.declarator.direct_declarator.id, "FunctionName")
         return node
 
-    def declaration_sepcifier(self):
+    def declaration_sepcifier(self) -> AST:
         """
         <declaration-specifier> ::= <storage-class-specifier>
                                   | <type-specifier>
@@ -810,7 +801,7 @@ class CParser(Parser):
             node = self.keyword(class_name="BaseType")
         else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type specifier")
-
+        add_ast_type(node, "TypeSpecifier")
         return node
 
     def function_specifier(self):
@@ -826,7 +817,6 @@ class CParser(Parser):
                                 | _Alignas "(" <constant-expression> ")"
         """
         node = TypeSpecifier()
-        node.class_name = "alignment-specifier"
         node.update(keyword=self.keyword(CTokenType._ALIGNAS))
         node.register_token(self.eat(TokenType.LPAREN))
         if self.current_token.type in self.cfirst_set.type_name:
@@ -837,6 +827,7 @@ class CParser(Parser):
             node.register_token(self.eat(TokenType.RPAREN))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type-name or constant-expression")
+        add_ast_type(node, "AlignSpecifier")
         return node
 
     def atomic_type_specifier(self):
@@ -844,11 +835,11 @@ class CParser(Parser):
         <atomic-type-specifier> ::= _Atomic "(" <type-name> ")"
         """
         node = TypeSpecifier()
-        node.class_name = "atomic-type-specifier"
         node.update(keyword=self.keyword(CTokenType._ATOMIC))
         node.register_token(self.eat(TokenType.LPAREN))
         node.update(sub_node=self.type_name())
         node.register_token(self.eat(TokenType.RPAREN))
+        add_ast_type(node, "AtomicTypeSpecifier")
         return node
 
     def struct_or_union_specifier(self):
@@ -1254,7 +1245,10 @@ class CParser(Parser):
         """
         node = CastExpression()
         type_names = []
-        while self.current_token.type == TokenType.LPAREN:
+        while (
+            self.current_token.type == TokenType.LPAREN
+            and self.peek_next_token().type in self.cfirst_set.type_name
+        ):
             node.register_token(self.eat(TokenType.LPAREN))
             type_names.append(self.type_name())
             node.register_token(self.eat(TokenType.RPAREN))
@@ -1711,9 +1705,23 @@ class CParser(Parser):
             node.update(static_assert=self.static_assert_declaration())
             return node
 
-        declaration_specifiers = [self.declaration_sepcifier()]
+        declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
+
+        # @扩展文法
+        # 对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
+        if self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.ID:
+            self.current_token.type = CTokenType.TYPEDEF_ID
+            GDT.register_id(self.current_token.value, "Typedefine")
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
+            # @扩展文法
+            # 对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
+            if (
+                self.current_token.type == TokenType.ID
+                and self.peek_next_token().type == TokenType.ID
+            ):
+                self.current_token.type = CTokenType.TYPEDEF_ID
+                GDT.register_id(self.current_token.value, "Typedefine")
 
         if self.current_token.type in self.cfirst_set.init_declarator_list:
             init_declarator_list = self.init_declarator_list()
@@ -1723,7 +1731,8 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.SEMI))
                 if self._is_C_function(init_declarator_list):
                     add_ast_type(declaration_specifiers, "ReturnValue")
-                # typedef
+                # @扩展文法
+                # 对于 typedef 重命名的符号, 加入 GDT 中
                 if (
                     type(node.declaration_specifiers[0]) == Keyword
                     and node.declaration_specifiers[0].name == "typedef"
@@ -1733,6 +1742,7 @@ class CParser(Parser):
                         GDT.register_id(
                             init_declarator.declarator.direct_declarator.id.id, "Typedefine"
                         )
+
                 return node
             elif self._is_C_function(init_declarator_list) and (
                 self.current_token.type in self.cfirst_set.compound_statement
@@ -1778,7 +1788,7 @@ class CParser(Parser):
         node = Function()
         node.update(declaration_specifiers=declaration_specifiers)
         node.update(declarator=declarator)
-        
+
         # 古早的 K&R C 写法
         # int f(a,b) int a,b; {
         #     return 1;
@@ -1790,7 +1800,7 @@ class CParser(Parser):
         node.update(compound_statement=self.compound_statement())
 
         add_ast_type(node.declaration_specifiers, "ReturnValue")
-        add_ast_type(node.declarator, "FunctionName")
+        add_ast_type(node.declarator.declarator.direct_declarator.id, "FunctionName")
         # 对于含 <declaration> 的情况取消其参数的 Typedefine
         if len(node.declarations) != 0:
             delete_ast_type(node.declarator, "Typedefine")
@@ -1898,9 +1908,9 @@ class CParser(Parser):
         while self.current_token.type in self.cfirst_set.block_item:
             if self.current_token.type in self.cfirst_set.declaration:
                 sub_nodes.append(self.declaration())
-            elif self.current_token.type == TokenType.ID and self.peek_next_token().type in (
-                TokenType.ID,
-                self.cfirst_set.declaration_specifier,
+            elif (
+                self.current_token.type == TokenType.ID
+                and self.peek_next_token().type == TokenType.ID
             ):
                 # @扩展文法
                 # 对于未声明类但直接使用的情况, 判断一下后面仍然是一个 ID 或者是 <declaration_specifier>
@@ -2110,8 +2120,6 @@ class CParser(Parser):
         @class_name: 修改 Keyword 的类名
         """
         keyword = Keyword(self.current_token.value)
-        if class_name:
-            keyword.class_name = class_name
         if token_type:
             keyword.register_token(self.eat(token_type))
         else:

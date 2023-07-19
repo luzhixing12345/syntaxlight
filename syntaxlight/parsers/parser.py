@@ -77,8 +77,10 @@ class Parser:
         查看 python 函数调用栈
         """
         if DEBUG:
-            traceback.print_stack()
-
+            stack_trace = traceback.extract_stack()
+            for stack in stack_trace:
+                _, line_number, function_name, line_of_code = stack
+                print(f"[{function_name:<25}][{line_number}]: {line_of_code.strip()}")
     def after_eat(self):
         """
         eat 之后对于 current_token 的一些操作

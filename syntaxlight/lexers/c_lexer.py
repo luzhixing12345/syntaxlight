@@ -90,8 +90,32 @@ class CTokenType(Enum):
 class CLexer(Lexer):
     def __init__(self, text: str, TokenType: TokenType = CTokenType):
         super().__init__(text, TokenType)
-        disable_long_op = ["===", "!==", "::"]
-        self.build_long_op_dict(disable_long_op)
+        supported_long_op = [
+            "<<=",
+            ">>=",
+            "<<",
+            ">>",
+            "==",
+            "!=",
+            "<=",
+            ">=",
+            "*=",
+            "/=",
+            "%=",
+            "+=",
+            "-=",
+            "&=",
+            "^=",
+            "|=",
+            "...",
+            "++",
+            "--",
+            "||",
+            "&&",
+            "->",
+            "##",
+        ]
+        self.build_long_op_dict(supported_long_op)
 
     def get_char(self):
         """

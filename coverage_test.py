@@ -33,6 +33,11 @@ class TestUnit(unittest.TestCase):
         for files in TEST_FILES['xml']:
             syntaxlight.parse_file(files)
 
+    def test_04_c(self):
+
+        for files in TEST_FILES['c']:
+            syntaxlight.parse_file(files)
+
 
 if __name__ == "__main__":
     unittest.main()

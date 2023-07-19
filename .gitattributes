@@ -1,0 +1,6 @@
+*.c     linguist-generated=false
+*.p     linguist-generated=false
+*.pas   linguist-generated=false
+*.sh    linguist-generated=false
+*.html  linguist-generated=false
+*.css   linguist-generated=false
