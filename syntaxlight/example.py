@@ -2,9 +2,9 @@ from .syntax_parse import parse_file, guess_language
 import os
 import shutil
 from .export import export_css
+from typing import Union, List
 
-
-def example_display(file_path: str = None, language: str = "guess", style="vscode"):
+def example_display(file_path: Union[str,List[str]] = None, language: str = "guess", style="vscode"):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
     if language == "guess":
         language = guess_language(file_path)

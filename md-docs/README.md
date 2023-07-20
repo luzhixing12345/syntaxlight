@@ -1,10 +1,12 @@
 # syntaxlight
 
-欢迎使用 syntaxlight!
+syntaxlight 是一个基于 BNF 的语法高亮的 python 库
 
-syntaxlight 是一个基于 EBNF 的语法高亮的 python 库, 通常用于配合 Markdown 解析器完成网页 html 中 `<pre><code>` 标签内的代码高亮, 目前支持 C Python Lua 等常见编程语言和 json xml 等文件格式的文法解析
+目前支持 C/Python 等主流编程语言和 json xml 等主流标记语言的文法解析, 支持多种高亮主题以及自定义颜色(默认使用 Vscode 风格)
 
-本文档使用 [zood](https://github.com/luzhixing12345/zood) 构建, 其 Markdown 解析器 [MarkdownParser](https://github.com/luzhixing12345/MarkdownParser) 即使用 syntaxlight 完成语法高亮, 您可在 [全部文法支持]() 中快速浏览所有高亮结果
+本文档使用 [zood](https://github.com/luzhixing12345/zood) 构建, 其 Markdown 解析器 [MarkdownParser](https://github.com/luzhixing12345/MarkdownParser) 使用 syntaxlight 完成语法高亮, **即本文全部代码段均由 syntaxlight 高亮显示**
+
+> 本项目仍在开发中, 尚未完成替换, 目前使用的仍然是 [prismjs](https://prismjs.com/)
 
 ## 文档结构
 
@@ -12,6 +14,10 @@ syntaxlight 是一个基于 EBNF 的语法高亮的 python 库, 通常用于配�
 
 - 用户手册
 
-  这部分主要介绍如何使用 syntaxlight API 以及如何支持自定义 EBNF 规则匹配文本, 以及自定义高亮颜色
+  这部分主要介绍如何使用 syntaxlight API 以及自定义高亮颜色
 
 - 开发文档
+
+  这部分主要记录开发过程中遇到的问题以及解决办法
+
+  <!-- 视频: [【编译原理】基于BNF的语法高亮]() -->

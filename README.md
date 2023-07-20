@@ -14,46 +14,21 @@ pip install syntaxlight
 
 ## 快速开始
 
-```python
-import syntaxlight
-
-code = """
-#include <stdio.h>
-
-int main() {
-    printf("hello world!\n");
-    return 0;
-}
-"""
-
-html = syntaxlight.parse(code, 'C')
-print(html)
-```
-
-syntaxlight 通常用于配合 Markdown 解析器完成网页 html 中 `<pre><code>` 标签内的代码高亮, 因此为了正确高亮显示还需要导出 css 文件
+syntaxlight 提供了一个简易的 API 用于预览结果: `syntaxlight.example_display`
 
 ```python
 import syntaxlight
 
-syntaxlight.export_css(['c','python','lua'], export_name='index.css')
-# 保存得到 index.css 文件, 将其引入 html 即可: <link rel='stylesheet' href=./index.css />
+syntaxlight.example_display('./test/c/2.c')
+
+# syntaxlight.example_display('./your-code.c', style='one-dark-pro')
 ```
 
-为了方便用户使用, syntaxlight 提供了一个简易的示例用于预览结果和调整
-
-```python
-import syntaxlight
-
-syntaxlight.example_display()
-```
-
-运行可以得到一个 `syntaxlight_example/` 文件夹, 使用浏览器打开其中的 index.html 可以快速预览 文法高亮结果 以及 切换不同高亮风格, 并提供了一键导出的快捷选项
+运行可以得到 `syntaxlight_example/` 文件夹, 使用浏览器打开其中的 index.html 即可预览
 
 ## 文档和 API
 
-[syntaxlight 使用文档](https://luzhixing12345.github.io/syntaxlight/)
-
-文档中提供了比较详细的 API 使用方法, 以及对于默认配置的修改情况
+关于详细的 API 使用方法, 以及对于默认配置的修改情况请参阅 [syntaxlight 使用文档](https://luzhixing12345.github.io/syntaxlight/)
 
 ## 参考
 

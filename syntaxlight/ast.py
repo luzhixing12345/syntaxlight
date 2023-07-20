@@ -320,8 +320,8 @@ class NodeVisitor:
     遍历 AST 节点构建 graphviz 图结构
     """
 
-    def __init__(self, image_name="ast.dot") -> None:
-        self.image_name = image_name
+    def __init__(self) -> None:
+        self.image_name = "ast.dot"
         self.depth = 0  # 当前的访问深度
         self.count = 0
         self.dot_header = textwrap.dedent(
@@ -385,11 +385,12 @@ class NodeVisitor:
         print(f"ast tree saved in [{self.image_name}], view by grpahviz")
 
 
-def display_ast(node: AST, image_name="ast.dot"):
-    node_visitor = NodeVisitor(image_name)
+def display_ast(node: AST, save_ast_tree = False):
+    node_visitor = NodeVisitor()
     node.visit(node_visitor)
 
-    # node_visitor.save()
+    if save_ast_tree:
+        node_visitor.save()
     # node.formatter()
 
     assert node_visitor.depth == -1
