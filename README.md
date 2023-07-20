@@ -19,12 +19,16 @@ syntaxlight 提供了一个简易的 API 用于预览结果: `syntaxlight.exampl
 ```python
 import syntaxlight
 
-syntaxlight.example_display('./test/c/2.c')
+syntaxlight.example_display('./1.c')
 
 # syntaxlight.example_display('./your-code.c', style='one-dark-pro')
 ```
 
-运行可以得到 `syntaxlight_example/` 文件夹, 使用浏览器打开其中的 index.html 即可预览
+运行可以得到 `syntaxlight_example/` 文件夹, 使用浏览器打开其中的 index.html 即可预览. 同时会生成解析得到的抽象语法树 ast.dot, Vscode 用户可以下载 [graphviz-interactive-preview](https://marketplace.visualstudio.com/items?itemName=tintinweb.graphviz-interactive-preview) 插件预览, 或者安装 [graphviz](https://graphviz.org/) 之后使用下面的命令导出 png
+
+```bash
+dot -Tpng ./ast.dot -o ast.png
+```
 
 ## 文档和 API
 

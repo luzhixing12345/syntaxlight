@@ -77,6 +77,10 @@
             "toml":{
                 ".Token.TableArrayHeader.Path": "color: --struct;",
                 ".Token.TableHeader.Path": "color: --struct;"                
+            },
+            "c": {
+                ".Token.Typedefine": "border-bottom: 1px solid --struct;",
+                ".Token.StorageType": "color: --define"
             }
         }
     }

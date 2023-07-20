@@ -72,11 +72,11 @@ class AST(object):
     def formatter(self, depth: int = 0):
         raise NotImplementedError(self.class_name + " should override format function to display")
 
-    # def __str__(self) -> str:
-    #     return self.formatter()
+    def __str__(self) -> str:
+        return self.formatter()
 
-    # def __repr__(self) -> str:
-    #     return self.__str__()
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def get_node_info(self):
         # f'depth={self.depth}\\n'

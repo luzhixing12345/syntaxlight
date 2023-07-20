@@ -3,12 +3,12 @@
 
 <Object> ::= '{' <Pair>? ( ',' <Pair> )* '}'
 
-<Pair> ::= <:String:> ':' <Value>
+<Pair> ::= <String> ':' <Value>
 
 <Array> ::= '[' <Value>? ( ',' <Value> )* ']'
 
-<Value> ::= <:String:>
-          | '-'? <:Number:>
+<Value> ::= <String>
+          | '-'? <Number>
           | <Object>
           | <Array>
           | 'true'

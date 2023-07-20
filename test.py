@@ -37,6 +37,6 @@ for language, files in TEST_FILES.items():
                 for token in tokens:
                     print(token)
             break
-        syntaxlight.example_display(files[INDEX], language, STYLE)
+        syntaxlight.example_display(files[INDEX], STYLE)
     else:
-        syntaxlight.example_display(files, language, STYLE)
+        syntaxlight.example_display(files, STYLE)

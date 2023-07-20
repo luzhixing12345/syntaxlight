@@ -7,7 +7,7 @@
 <Members> ::= <Pair>
             | <Pair> ',' <Members>
 
-<Pair> ::= <:String:> ':' <Value>
+<Pair> ::= <String> ':' <Value>
 
 <Array> ::= '[' ']'
           | '[' <Elements> ']'
@@ -15,8 +15,8 @@
 <Elements> ::= <Value>
              | <Value> ',' <Elements>
 
-<Value> ::= <:String:>
-          | <:Number:>
+<Value> ::= <String>
+          | <Number>
           | <Object>
           | <Array>
           | 'true'

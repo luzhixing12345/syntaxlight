@@ -4,10 +4,19 @@ import shutil
 from .export import export_css
 from typing import Union, List
 
-def example_display(file_path: Union[str,List[str]] = None, language: str = "guess", style="vscode"):
+
+def example_display(
+    file_path: Union[str, List[str]] = None,
+    style="vscode",
+    save_ast_tree=True,
+    language: str = "guess",
+):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
     if language == "guess":
-        language = guess_language(file_path)
+        if type(file_path) == list:
+            language = guess_language(file_path[0])
+        else:
+            language = guess_language(file_path)
 
     syntaxlight_path = os.path.dirname(__file__)
     html_template_file = os.path.join(syntaxlight_path, "template.html")
@@ -25,7 +34,7 @@ def example_display(file_path: Union[str,List[str]] = None, language: str = "gue
 
     code_html = ""
     for fp in file_path:
-        html = parse_file(fp, language)
+        html = parse_file(fp, language, save_ast_tree=save_ast_tree)
         if html is None:
             continue
         code_html += f'<pre class="language-{language}"><code>{html}</code></pre>'

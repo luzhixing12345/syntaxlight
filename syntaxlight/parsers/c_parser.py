@@ -605,6 +605,7 @@ class ControlLine(AST):
         self.paramters = None
         self.parameterization = None
         self.pp_tokens = None
+        self.group = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.keyword)
@@ -612,6 +613,7 @@ class ControlLine(AST):
         node_visitor.link(self, self.paramters)
         node_visitor.link(self, self.parameterization)
         node_visitor.link(self, self.pp_tokens)
+        node_visitor.link(self, self.group)
         return super().visit(node_visitor)
 
 
@@ -643,7 +645,6 @@ class CParser(Parser):
             "ifdef",
             "ifndef",
             "elif",
-            "else",  # 预处理命令中的 else,
             "endif",
             "include",
             "define",

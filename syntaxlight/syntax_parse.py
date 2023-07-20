@@ -21,13 +21,13 @@ def parse(text: str, language: str = "guess", file_path=None, show_error_context
 
     try:
         parser.parse()
-        # display_ast(parser.node)
     except Error as e:
         sys.stderr.write(e.message)
         if show_error_context:
             sys.stderr.write(e.context)
     else:
         display_ast(parser.node, save_ast_tree = save_ast_tree)
+        # print(parser.node)
         return parser.to_html()
 
 
@@ -56,6 +56,9 @@ def parse_file(
 
 
 def guess_language(file_path: str) -> str:
+    '''
+    通过文件名猜测文法类型
+    '''
     file_name = file_path.split(os.sep)[-1]
 
     languages = {
