@@ -8,7 +8,7 @@ import html
 import traceback
 
 DEBUG = False
-# DEBUG = True
+DEBUG = True
 
 
 class Parser:

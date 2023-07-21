@@ -11,18 +11,17 @@ typedef struct {
     Point* position;
 } Person;
 
-enum COLOR {
-    RED,
-    GREEN
-};
+enum COLOR { RED, GREEN };
 
-int main() {
+int 
+main() 
+{
     // 创建结构体数组
     Person people[3];
 
     // create pointer
     Person* ptr = people;
-    char *str = "hello world\n + %d%d";
+    char* str = "hello world\n + %d%d";
 
     // 创建动态分配的结构体指针数组
     Person** dynamicPtrArray = (Person**)malloc(2 * sizeof(Person*));
@@ -39,8 +38,8 @@ int main() {
     strcpy(people[1].name, "Bob");
     strcpy(people[2].name, "Charlie");
 
-    Point point1 = { 10, 20 };
-    Point point2 = { 30, 40 };
+    Point point1 = {10, 20};
+    Point point2 = {30, 40};
 
     people[0].position = &point1;
     people[1].position = &point2;

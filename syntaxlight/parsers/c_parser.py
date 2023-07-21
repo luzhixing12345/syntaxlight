@@ -683,11 +683,9 @@ class CParser(Parser):
         @扩展文法
         添加 <group> <statement> 以适配宏定义与开头的陈述语句. C 默认不支持 if for 作为陈述语句, 这里添加对于代码段的扩展支持
         """
-        # @修改文法
-        # 当无 <declaration-specifier>* (无类型) 只有 <declarator> 的时候匹配 <function_definition>
-        if self.current_token.type in self.cfirst_set.declarator:
-            return self.function_definition()
-        elif self.current_token.type in self.cfirst_set.group:
+        # function-definition 在 declaration 中被检验和修正
+        self._unknown_typedef_id_guess()
+        if self.current_token.type in self.cfirst_set.group:
             return self.group()
         elif self.current_token.type in self.cfirst_set.declaration:
             return self.declaration()
@@ -888,8 +886,10 @@ class CParser(Parser):
         if self.current_token.type == TokenType.LCURLY_BRACE:
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             struct_declarations = []
+            self._unknown_typedef_id_guess()
             while self.current_token.type in self.cfirst_set.struct_declaration:
                 struct_declarations.append(self.struct_declaration())
+                self._unknown_typedef_id_guess()
             node.update(declarations=struct_declarations)
             node.register_token(self.eat(TokenType.RCURLY_BRACE))
 
