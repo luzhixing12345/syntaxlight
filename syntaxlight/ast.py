@@ -42,7 +42,7 @@ class AST(object):
         # AST 树包含的 Token
         self._tokens: List[Token] = []
         self._depth = 0  # 节点深度
-        self.is_bottom_ast = False  # 底层 AST, 叶节点
+        self.is_leaf_ast = False  # 底层 AST, 叶节点
         self.pass_total = False  # 是否在 update 的时候将 class_name 传递到所有的子 AST 节点中
 
     def register_token(self, tokens: List[Token], extra_class_name: str = None):
@@ -79,7 +79,7 @@ class AST(object):
             for nod in node:
                 self._update_sub_ast(nod, class_name)
             return
-        if node.is_bottom_ast:
+        if node.is_leaf_ast:
             node.class_name = class_name
             for token in node._tokens:
                 token.class_list.add(class_name)
@@ -435,7 +435,7 @@ def add_ast_type(node: AST, class_name: str):
             add_ast_type(nod, class_name)
         return
 
-    if node.is_bottom_ast:
+    if node.is_leaf_ast:
         node.class_name = class_name
         for token in node._tokens:
             token.class_list.add(class_name)
@@ -464,7 +464,7 @@ def delete_ast_type(node: AST, class_name: str):
             delete_ast_type(nod, class_name)
         return
 
-    if node.is_bottom_ast:
+    if node.is_leaf_ast:
         for token in node._tokens:
             if class_name in token.class_list:
                 token.class_list.remove(class_name)
