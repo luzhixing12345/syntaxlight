@@ -1,0 +1,14 @@
+{
+    "clangd.fallbackFlags": [
+        "-I${workspaceFolder}/include"
+    ],
+    "clangd.arguments": [
+        "--background-index", // 在后台自动分析文件(基于complie_commands)
+        "-j=12", // 同时开启的任务数量
+        "--clang-tidy", // clang-tidy功能
+        "--clang-tidy-checks=performance-*,bugprone-*",
+        "--all-scopes-completion", // 全局补全(会自动补充头文件)
+        "--completion-style=detailed", // 更详细的补全内容
+        "--header-insertion=iwyu" // 补充头文件的形式
+    ]
+}

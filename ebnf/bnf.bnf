@@ -1,6 +1,4 @@
-<BNF> ::= <rule> | <rule> <BNF>
-<rule> ::= "<" <nonterminal> ">" "::=" <expression> "\n"
-<expression> ::= <term> | <term> <expression>
-<term> ::= <nonterminal> | <terminal> | "<" <special> ">"
-<nonterminal> ::= <letter> | <nonterminal> <letter_or_digit>
-<terminal> ::= <character> | <escape_sequence>
+<syntax>     ::= <rule>+
+<rule>       ::=  "<" <ID> ">"  "::="  <expression> <CRLF> 
+<expression> ::= <expr-list> ("|" <expr-list>)*
+<expr-list>  ::= (<string> | "<" <ID> ">")*

@@ -32,17 +32,18 @@ class AST(object):
     def __init__(self) -> None:
         # 节点被创建的顺序
         global AST_CREATED_INDEX
-        self.created_index = AST_CREATED_INDEX
+        self._created_index = AST_CREATED_INDEX
         AST_CREATED_INDEX = AST_CREATED_INDEX + 1
 
         self.class_name: str = self.__class__.__name__
-        self._node_info: str = f"[{self.class_name}:{self.created_index}]"
+        self.node_info: str = f"[{self.class_name}:{self._created_index}]"
 
-        self.indent = " " * 4
+        self._indent = " " * 4
         # AST 树包含的 Token
         self._tokens: List[Token] = []
-        self.depth = 0  # 节点深度
-        self.is_bottom_ast = False  # 底层 AST
+        self._depth = 0  # 节点深度
+        self.is_bottom_ast = False  # 底层 AST, 叶节点
+        self.pass_total = False  # 是否在 update 的时候将 class_name 传递到所有的子 AST 节点中
 
     def register_token(self, tokens: List[Token], extra_class_name: str = None):
         """
@@ -59,12 +60,38 @@ class AST(object):
         """
         对于一些后续才可以获取的属性, 或者子 AST 节点的注册, 调用此方法更新子 AST 对象内部的元素
         """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        for key, node in kwargs.items():
+            setattr(self, key, node)
             # update 的时候将子元素的 token 也添加当前 AST 的 class
-            if isinstance(value, AST):
-                for token in value._tokens:
+            if isinstance(node, AST):
+                for token in node._tokens:
                     token.class_list.add(self.class_name)
+            if self.pass_total:    
+                self._update_sub_ast(node, self.class_name)
+
+    def _update_sub_ast(self, node: "AST", class_name: str):
+        """
+        为叶节点补充添加类名信息, 但 token 会有很复杂的 class name, 不宜采用
+        """
+        if node is None:
+            return
+        if type(node) == list:
+            for nod in node:
+                self._update_sub_ast(nod, class_name)
+            return
+        if node.is_bottom_ast:
+            node.class_name = class_name
+            for token in node._tokens:
+                token.class_list.add(class_name)
+            return
+        else:
+            for _, attribute_value in vars(node).items():
+                if isinstance(attribute_value, AST):
+                    self._update_sub_ast(attribute_value, class_name)
+                elif type(attribute_value) == list:
+                    if len(attribute_value) > 0 and isinstance(attribute_value[0], AST):
+                        for a_v in attribute_value:
+                            self._update_sub_ast(a_v, class_name)
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         """
@@ -84,8 +111,8 @@ class AST(object):
 
     def get_node_info(self):
         # f'depth={self.depth}\\n'
-        node_content = self._node_info + "\\n" + f"depth={self.depth}"
-        return f'node{self.created_index} [label="{node_content}"]'
+        node_content = self.node_info + "\\n" + f"depth={self._depth}"
+        return f'node{self._created_index} [label="{node_content}"]'
 
 
 class Object(AST):
@@ -114,11 +141,11 @@ class Object(AST):
             result += " }"
         else:
             result += "\n"
-            result += self.indent * (depth + 1) + f"{self.pairs[0].formatter(depth)}"
+            result += self._indent * (depth + 1) + f"{self.pairs[0].formatter(depth)}"
             for i in range(1, len(self.pairs)):
                 member = self.pairs[i]
-                result += f",\n{self.indent * (depth+1)}{member.formatter(depth)}"
-            result += "\n" + self.indent * depth + "}"
+                result += f",\n{self._indent * (depth+1)}{member.formatter(depth)}"
+            result += "\n" + self._indent * depth + "}"
         return result
 
 
@@ -149,11 +176,11 @@ class Array(AST):
             result += " ]"
         else:
             result += "\n"
-            result += self.indent * (depth + 1) + f"{self.elements[0].formatter(depth)}"
+            result += self._indent * (depth + 1) + f"{self.elements[0].formatter(depth)}"
             for i in range(1, len(self.elements)):
                 element = self.elements[i]
-                result += f",\n{self.indent * (depth+1)}{element.formatter(depth)}"
-            result += "\n" + self.indent * depth + "]"
+                result += f",\n{self._indent * (depth+1)}{element.formatter(depth)}"
+            result += "\n" + self._indent * depth + "]"
         return result
 
 
@@ -162,9 +189,6 @@ class Pair(AST):
         super().__init__()
         self.key: AST = key
         self.value: AST = value
-
-    def update(self, **kwargs):
-        return super().update(**kwargs)
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         node_visitor.link(self, self.key)
@@ -180,7 +204,7 @@ class Keyword(AST):
         super().__init__()
         self.name: str = name
         self.is_bottom_ast = True
-        self._node_info += f"\\n{self.name}"
+        self.node_info += f"\\n{self.name}"
 
     def formatter(self, depth: int = 0):
         return self.name
@@ -191,7 +215,7 @@ class Identifier(AST):
         super().__init__()
         self.id: str = id
         self.is_bottom_ast = True
-        self._node_info += f"\\n{self.id}"
+        self.node_info += f"\\n{self.id}"
 
 
 class Constant(AST):
@@ -199,7 +223,7 @@ class Constant(AST):
         super().__init__()
         self.constant = constant
         self.is_bottom_ast = True
-        self._node_info += f"\\n{self.constant}"
+        self.node_info += f"\\n{self.constant}"
 
 
 class String(AST):
@@ -209,7 +233,7 @@ class String(AST):
         self.is_bottom_ast = True
 
         string_info = self.string.replace("\\", "\\\\").replace('"', '\\"')
-        self._node_info += f"\\n{string_info}"
+        self.node_info += f"\\n{string_info}"
 
     def formatter(self, depth: int = 0):
         return self.string
@@ -220,7 +244,7 @@ class Char(AST):
         super().__init__()
         self.string = string
         self.is_bottom_ast = True
-        self._node_info += f"\\n{self.string}"
+        self.node_info += f"\\n{self.string}"
 
     def formatter(self, depth: int = 0):
         return self.string
@@ -231,7 +255,7 @@ class Number(AST):
         super().__init__()
         self.value = value
         self.is_bottom_ast = True
-        self._node_info += f"\\n{self.value}"
+        self.node_info += f"\\n{self.value}"
 
     def formatter(self, depth: int = 0):
         return self.value
@@ -279,7 +303,7 @@ class AssignOp(AST):
         super().__init__()
         self.op = op
         self.is_bottom_ast = True
-        self._node_info += f"\\n{self.op}"
+        self.node_info += f"\\n{self.op}"
 
     def visit(self, node_visitor: "NodeVisitor" = None):
         return super().visit(node_visitor)
@@ -346,7 +370,7 @@ class NodeVisitor:
             exit(1)
         else:
             # 更新 AST 节点的深度
-            node.depth = depth
+            node._depth = depth
             self.visit_node_list.append(node)
 
         self.dot_body.append(node.get_node_info())
@@ -371,7 +395,7 @@ class NodeVisitor:
         if node not in self.visit_node_list:
             self.register(node, self.depth + 1)
 
-        self.dot_body.append(f"node{root.created_index} -> node{node.created_index}")
+        self.dot_body.append(f"node{root._created_index} -> node{node._created_index}")
         self.depth += 1
         node.visit(self)
 
@@ -389,7 +413,7 @@ class NodeVisitor:
         print(f"ast tree saved in [{self.image_name}], view by grpahviz")
 
 
-def display_ast(node: AST, save_ast_tree = False):
+def display_ast(node: AST, save_ast_tree=False):
     node_visitor = NodeVisitor()
     node.visit(node_visitor)
 
@@ -402,7 +426,7 @@ def display_ast(node: AST, save_ast_tree = False):
 
 def add_ast_type(node: AST, class_name: str):
     """
-    为节点补充添加类名信息, 比如返回值 ReturnValue
+    为叶节点补充添加类名信息
     """
     if node is None:
         return
@@ -427,9 +451,10 @@ def add_ast_type(node: AST, class_name: str):
                     for a_v in attribute_value:
                         add_ast_type(a_v, class_name)
 
+
 def delete_ast_type(node: AST, class_name: str):
     """
-    为节点补充去除类名信息
+    为叶节点补充去除类名信息
     """
     # print(node.class_name)
     if node is None:

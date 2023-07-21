@@ -18,24 +18,14 @@ pre[class*="language-"] {
     color: --brace3;
 }
 
-.Token.Pair.Key {
-    color: --variant;
+.Token.RuleName {
+    color: --struct;
 }
 
-.Token.COMMA, .Token.COLON {
+.Token.PRODUCTION_SYMBOL {
     color: --punctuator;
 }
 
-.Token.UnaryOp,
-.Token.Keyword,
-.Token.NUMBER {
-    color: --number;
-}
-
-.Token.STRING {
+.Token.STR {
     color: --string;
-}
-
-.Token.COMMENT {
-    color: --comment;
 }

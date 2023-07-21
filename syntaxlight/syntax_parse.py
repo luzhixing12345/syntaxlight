@@ -75,6 +75,7 @@ def guess_language(file_path: str) -> str:
         "toml": ["toml"],
         "xml": ["xml"],
         "shell": ["sh"],
+        "bnf": ["bnf"]
     }
 
     if "." in file_name:
@@ -118,6 +119,7 @@ def get_lexer(code: str, language: str) -> Lexer:
         "toml": TomlLexer,
         "xml": XmlLexer,
         "shell": ShellLexer,
+        "bnf": BNFLexer
     }
 
     lexer_class = lexers.get(language, None)
@@ -135,6 +137,7 @@ def get_parser(lexer: Lexer) -> Parser:
         "c": CParser,
         "xml": XmlParser,
         "shell": ShellParser,
+        "bnf": BNFParser
     }
 
     syntax_type = lexer.__class__.__name__.replace("Lexer", "").lower()

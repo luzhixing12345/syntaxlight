@@ -88,6 +88,7 @@ class TokenType(Enum):
     OR = "||"
     AND = "&&"
     POINT = "->"
+    PRODUCTION_SYMBOL = '::='
 
 
 class TTYColor(Enum):
@@ -188,8 +189,8 @@ class Lexer:
         """
         构造长运算符的匹配模式
         """
-        self.long_ops = sorted(supported_long_op, key=len, reverse=True)
-        for long_op in self.long_ops:
+        self._long_ops = sorted(supported_long_op, key=len, reverse=True)
+        for long_op in self._long_ops:
             assert len(long_op) >= 2, f"{long_op} should be longer"
             if self.long_op_dict.get(long_op[0]) is None:
                 self.long_op_dict[long_op[0]] = []

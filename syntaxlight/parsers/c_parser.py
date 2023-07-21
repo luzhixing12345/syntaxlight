@@ -633,7 +633,7 @@ class PPtoken(AST):
         self.value: str = value
         self.is_bottom_ast = True
         value = self.value.replace("\\", "\\\\").replace('"', '\\"')
-        self._node_info += f"\\n{value}"
+        self.node_info += f"\\n{value}"
 
 
 class CParser(Parser):
@@ -704,7 +704,7 @@ class CParser(Parser):
     #     """
     #     node = Function()
     #     declaration_specifiers = []
-        
+
     #     self._unknown_typedef_id_guess()
     #     while self.current_token.type in self.cfirst_set.declaration_specifier:
     #         declaration_specifiers.append(self.declaration_sepcifier())
@@ -771,11 +771,14 @@ class CParser(Parser):
         return node
 
     def _unknown_typedef_id_guess(self):
-        '''
+        """
         @扩展文法
         对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
-        '''
-        if self.current_token.type == TokenType.ID and self.peek_next_token().type in (TokenType.ID, TokenType.MUL):
+        """
+        if self.current_token.type == TokenType.ID and self.peek_next_token().type in (
+            TokenType.ID,
+            TokenType.MUL,
+        ):
             self.current_token.type = CTokenType.TYPEDEF_ID
             GDT.register_id(self.current_token.value, "Typedefine")
 
@@ -939,7 +942,7 @@ class CParser(Parser):
         if self.current_token.type == TokenType.ID and self.current_token.value in GDT:
             if GDT[self.current_token.value] == "Typedefine":
                 self.current_token.type = CTokenType.TYPEDEF_ID
-        
+
         if self.in_preprocessing:
             if self.current_token.type == CTokenType.IF:
                 self.current_token.type = CTokenType.IF_P
@@ -947,7 +950,6 @@ class CParser(Parser):
                 self.current_token.type = CTokenType.ELSE_P
             elif self.current_token.value in self.preprocessing_keywords:
                 self.current_token.type = CTokenType(self.current_token.value)
-
 
     def struct_declarator_list(self) -> List[AST]:
         """
@@ -1743,7 +1745,7 @@ class CParser(Parser):
 
         declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
         self._unknown_typedef_id_guess()
-            
+
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
             self._unknown_typedef_id_guess()
