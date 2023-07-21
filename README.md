@@ -34,6 +34,24 @@ dot -Tpng ./ast.dot -o ast.png
 
 关于详细的 API 使用方法, 以及对于默认配置的修改情况请参阅 [syntaxlight 使用文档](https://luzhixing12345.github.io/syntaxlight/)
 
+## 开发功能
+
+本仓库的 Makefile 与 test.py 提供了对于测试用例的渲染预览, 运行后打开 syntaxlight_example/index.html 即可
+
+```bash
+# 浏览所有 C 测试用例集合渲染结果
+make 
+
+# 浏览所有 json 测试用例集合渲染结果
+make t=json
+
+# 浏览 json 第一个 test/json/1.json 测试用例渲染结果
+make t=json i=1
+
+# 浏览 toml 第一个 test/toml/1.json 测试用例在 one-dark-pro 风格下的渲染结果
+make t=toml i=1 s=one-dark-pro
+```
+
 ## 参考
 
 - [Let's Build A Simple Interpreter](https://ruslanspivak.com/lsbasi-part1/)

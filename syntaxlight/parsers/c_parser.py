@@ -697,52 +697,53 @@ class CParser(Parser):
                 "token type should inside function definition and declaration",
             )
 
-    def function_definition(self):
-        """
-        <function-definition> ::= <declaration-specifier>* <declarator> <declaration>* <compound-statement>
-        """
-        node = Function()
-        declaration_specifiers = []
+    # # abort
+    # def function_definition(self):
+    #     """
+    #     <function-definition> ::= <declaration-specifier>* <declarator> <declaration>* <compound-statement>
+    #     """
+    #     node = Function()
+    #     declaration_specifiers = []
         
-        self._unknown_typedef_id_guess()
-        while self.current_token.type in self.cfirst_set.declaration_specifier:
-            declaration_specifiers.append(self.declaration_sepcifier())
-            # @扩展文法
-            # 对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
-            if self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.ID:
-                self.current_token.type = CTokenType.TYPEDEF_ID
-                GDT.register_id(self.current_token.value, "Typedefine")
+    #     self._unknown_typedef_id_guess()
+    #     while self.current_token.type in self.cfirst_set.declaration_specifier:
+    #         declaration_specifiers.append(self.declaration_sepcifier())
+    #         # @扩展文法
+    #         # 对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
+    #         if self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.ID:
+    #             self.current_token.type = CTokenType.TYPEDEF_ID
+    #             GDT.register_id(self.current_token.value, "Typedefine")
 
-        node.update(declaration_specifiers=declaration_specifiers)
-        declarator = self.declarator()
-        declarations = []
-        while self.current_token.type in self.cfirst_set.declaration:
-            declarations.append(self.declaration())
+    #     node.update(declaration_specifiers=declaration_specifiers)
+    #     declarator = self.declarator()
+    #     declarations = []
+    #     while self.current_token.type in self.cfirst_set.declaration:
+    #         declarations.append(self.declaration())
 
-        # 正常情况
-        if self.current_token.type in self.cfirst_set.compound_statement:
-            node.update(declarator=declarator)
-            node.update(declarations=declarations)
-            node.update(compound_statement=self.compound_statement())
-        elif self.current_token.type in self.cfirst_set.assignment_operator:
-            # @扩展文法
-            # 对于 x += 10 这种外部非初始化的赋值表达式, 从 <function-definition> 转为 <expression>
-            node = Expression()
-            assign_exprs = []
-            assign_expr = AssignmentExpression()
-            assign_expr.update(expr=declarator)
-            assign_expr.update(assign_op=self.assignment_operator())
-            assign_expr.update(assignment_expr=self.assignment_expression())
-            assign_exprs.append(assign_expr)
-            while self.current_token.type == TokenType.COMMA:
-                node.register_token(self.eat(TokenType.COMMA))
-                assign_exprs.append(self.assignment_expression())
-            node.update(exprs=assign_exprs)
-            return node
+    #     # 正常情况
+    #     if self.current_token.type in self.cfirst_set.compound_statement:
+    #         node.update(declarator=declarator)
+    #         node.update(declarations=declarations)
+    #         node.update(compound_statement=self.compound_statement())
+    #     elif self.current_token.type in self.cfirst_set.assignment_operator:
+    #         # @扩展文法
+    #         # 对于 x += 10 这种外部非初始化的赋值表达式, 从 <function-definition> 转为 <expression>
+    #         node = Expression()
+    #         assign_exprs = []
+    #         assign_expr = AssignmentExpression()
+    #         assign_expr.update(expr=declarator)
+    #         assign_expr.update(assign_op=self.assignment_operator())
+    #         assign_expr.update(assignment_expr=self.assignment_expression())
+    #         assign_exprs.append(assign_expr)
+    #         while self.current_token.type == TokenType.COMMA:
+    #             node.register_token(self.eat(TokenType.COMMA))
+    #             assign_exprs.append(self.assignment_expression())
+    #         node.update(exprs=assign_exprs)
+    #         return node
 
-        add_ast_type(node.declaration_specifiers, "ReturnValue")
-        add_ast_type(node.declarator.direct_declarator.id, "FunctionName")
-        return node
+    #     add_ast_type(node.declaration_specifiers, "ReturnValue")
+    #     add_ast_type(node.declarator.direct_declarator.id, "FunctionName")
+    #     return node
 
     def declaration_sepcifier(self) -> AST:
         """
