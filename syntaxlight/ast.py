@@ -14,6 +14,10 @@ class GlobalDescriptorTable:
         if self.descriptors.get(name) is None:
             self.descriptors[name] = class_name
 
+    def delete_id(self, name):
+        if name in self.descriptors:
+            del self.descriptors[name]
+
     def reset(self):
         self.descriptors = {}
 

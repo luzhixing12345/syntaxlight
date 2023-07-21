@@ -1036,6 +1036,10 @@ class CParser(Parser):
         node = DirectDeclaractor()
         if self.current_token.type == TokenType.ID:
             node.update(id=self.identifier())
+            # 对于初始化的变量去掉其 DefineName 的 tag
+            if node.id.id in GDT and GDT[node.id.id] == "DefineName":
+                delete_ast_type(node.id, "DefineName")
+                GDT.delete_id(node.id.id)
         elif (
             self.current_token.type == TokenType.LPAREN
             and self.peek_next_token().type in self.cfirst_set.declarator
@@ -2131,6 +2135,7 @@ class CParser(Parser):
         elif bool(re.match(r"^[A-Z0-9_]+$", token_value)):
             # ID 全部为 大写/数字/下划线, 很可能为宏
             add_ast_type(node, "DefineName")
+            GDT.register_id(node.id, "DefineName")
 
         return node
 
