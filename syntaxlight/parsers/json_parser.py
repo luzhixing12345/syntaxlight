@@ -96,7 +96,7 @@ class JsonParser(Parser):
 
     def pair(self):
         """
-        <Pair> ::= String ':' <Value>
+        <Pair> ::= <STRING> ':' <Value>
         """
         node = Pair()
 
@@ -110,8 +110,8 @@ class JsonParser(Parser):
 
     def value(self):
         """
-        <Value> ::= String
-                  | Number
+        <Value> ::= <STRING>
+                  | '-'? <NUMBER>
                   | <Object>
                   | <Array>
                   | true

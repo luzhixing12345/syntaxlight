@@ -55,5 +55,6 @@ make t=toml i=1 s=one-dark-pro
 ## 参考
 
 - [Let's Build A Simple Interpreter](https://ruslanspivak.com/lsbasi-part1/)
+- [tree-sitter](https://github.com/tree-sitter/tree-sitter)
 - [pygments](https://pygments.org/)
 - [carbon](https://carbon.now.sh/)

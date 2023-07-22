@@ -1,4 +1,16 @@
 <syntax>     ::= <rule>+
-<rule>       ::=  "<" <ID> ">"  "::="  <expression> <CRLF> 
-<expression> ::= <expr-list> ("|" <expr-list>)*
-<expr-list>  ::= (<string> | "<" <ID> ">")*
+<rule>       ::= <rule-name> "::="  <expression>
+
+# ID 可以带 -
+
+<rule-name> ::= "<" <ID> ">" <punctuator>?
+<expression> ::= <term> ("|" <term>)*
+
+<term>  ::= (<item> | <rule-name> | <group-term>)* <CRLF>?
+<item> ::= (<STR> | <ID>) <punctuator>?
+
+<group-term> ::= "(" <expression> ")" <punctuator>?
+               | "{" <expression> "}" <punctuator>?
+
+<punctuator> ::= '+' | '*' | '?'
+

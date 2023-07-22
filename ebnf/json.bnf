@@ -7,7 +7,7 @@
 <Members> ::= <Pair>
             | <Pair> ',' <Members>
 
-<Pair> ::= <String> ':' <Value>
+<Pair> ::= <STRING> ':' <Value>
 
 <Array> ::= '[' ']'
           | '[' <Elements> ']'
@@ -15,10 +15,10 @@
 <Elements> ::= <Value>
              | <Value> ',' <Elements>
 
-<Value> ::= <String>
-          | <Number>
+<Value> ::= <STRING>
+          | <NUMBER>
           | <Object>
           | <Array>
-          | 'true'
-          | 'false'
-          | 'null'
+          | true
+          | false
+          | null

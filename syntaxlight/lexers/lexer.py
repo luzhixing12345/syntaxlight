@@ -88,7 +88,7 @@ class TokenType(Enum):
     OR = "||"
     AND = "&&"
     POINT = "->"
-    PRODUCTION_SYMBOL = '::='
+    PRODUCTION_SYMBOL = "::="
 
 
 class TTYColor(Enum):
@@ -447,13 +447,14 @@ class Lexer:
                     result += self.current_char
                 self.advance()
 
-        token = Token(TokenType.STR, result, self.line, self.column-1)
+        token = Token(TokenType.STR, result, self.line, self.column - 1)
         return token
 
-    def get_id(self, ignore_case=False, extend_chars=["_"]):
+    def get_id(self, ignore_case=False, extend_chars:List[str]=["_"]):
         """
         获取标识符, 留给后续的语法分析处理
         @ignore_case : 是否忽略大小写
+        @extend_chars: 扩展字符, 默认扩展 "_", 一般还可修改为 ["_", "-"]
 
         <letter> ::= [A-Za-z]
          <digit> ::= [0-9]
@@ -497,7 +498,7 @@ class Lexer:
         result = start_symbol
         for _ in range(len(start_symbol)):
             self.advance()
-        
+
         end_symbol_length = len(end_symbol)
         while self.current_char is not None:
             if self.current_char == end_symbol[0]:
@@ -505,9 +506,9 @@ class Lexer:
                     # 单行注释不包括最后的换行
                     result += self.current_char
                     break
-                elif self.peek(end_symbol_length-1) == end_symbol[1:]:
+                elif self.peek(end_symbol_length - 1) == end_symbol[1:]:
                     result += self.current_char
-                    for _ in range(end_symbol_length-1):
+                    for _ in range(end_symbol_length - 1):
                         self.advance()
                         result += self.current_char
                     break
@@ -519,9 +520,9 @@ class Lexer:
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
 
-        if end_symbol == '\n':
+        if end_symbol == "\n":
             result = result[:-1]
-            token = Token(TokenType.COMMENT, result, self.line, self.column-1)
+            token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
         else:
             token = Token(TokenType.COMMENT, result, self.line, self.column)
             self.advance()
@@ -543,7 +544,7 @@ class Lexer:
                 for _ in range(len(long_op)):
                     self.advance()
                 break
-        
+
         token = Token(token_type, result, self.line, self.column)
         self.advance()
         return token

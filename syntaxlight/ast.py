@@ -217,6 +217,12 @@ class Identifier(AST):
         self.is_leaf_ast = True
         self.node_info += f"\\n{self.id}"
 
+class Punctuator(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.op = self.op
+        self.is_leaf_ast = True
+        self.node_info += f'\\n{self.op}'
 
 class Constant(AST):
     def __init__(self, constant) -> None:
@@ -234,6 +240,9 @@ class String(AST):
 
         string_info = self.string.replace("\\", "\\\\").replace('"', '\\"')
         self.node_info += f"\\n{string_info}"
+
+    def __str__(self) -> str:
+        return self.string
 
     def formatter(self, depth: int = 0):
         return self.string

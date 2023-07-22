@@ -16,24 +16,6 @@ class TomlLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = TomlTokenType):
         super().__init__(text, LanguageTokenType)
 
-    def get_id(self):
-        """Handle identifiers and reserved keywords"""
-        value = ""
-        while self.current_char is not None and (
-            self.current_char.isalnum() or self.current_char == "_" or self.current_char == '-'
-        ):
-            value += self.current_char
-            self.advance()
-
-        token_type = self.reserved_keywords.get(value)
-
-        if token_type is None:
-            token = Token(type=TokenType.ID, value=value, line=self.line, column=self.column - 1)
-        else:
-            # reserved keyword
-            token = Token(type=token_type, value=value, line=self.line, column=self.column - 1)
-        return token
-
     def get_next_token(self):
         while self.current_char is not None:
             # TOML 单双引号都可以
@@ -71,7 +53,7 @@ class TomlLexer(Lexer):
                     return token
 
             if self.current_char.isalpha():
-                return self.get_id()
+                return self.get_id(extend_chars=['_'])
 
             try:
                 token_type = TokenType(self.current_char)

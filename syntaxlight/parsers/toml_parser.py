@@ -190,7 +190,7 @@ class TomlParser(Parser):
 
     def path(self):
         """
-        <path> ::= (<ID> | <str>) ('.' (<ID> | <str>)) *
+        <path> ::= (<ID> | <STRING>) ( '.' (<ID> | <STRING>)) *
         """
         if self.current_token.type not in self.path_first_set:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be ID or str")
@@ -248,7 +248,7 @@ class TomlParser(Parser):
 
     def table_entry(self):
         """
-        <table_entry> ::= ( <pair> )*
+        <table_entry> ::= (<pair>)? ( <CRLF> <pair> )*
         """
         pairs = []
         accepted_token_types = [TokenType.ID, TokenType.STR]
@@ -261,7 +261,7 @@ class TomlParser(Parser):
 
     def value(self):
         """
-        <value> ::= <str> | <number> | <date> | 'true' | 'false' | <array> | <inline_table>
+        <value> ::= <STRING> | <NUMBER> | <DATE> | true | false | <array> | <inline_table> 
         """
 
         if self.current_token.type not in self.value_first_set:

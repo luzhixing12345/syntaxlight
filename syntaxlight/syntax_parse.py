@@ -115,7 +115,6 @@ def get_lexer(code: str, language: str) -> Lexer:
         "c": CLexer,
         "lua": LuaLexer,
         "json": JsonLexer,
-        "ebnf": EBNFLexer,
         "toml": TomlLexer,
         "xml": XmlLexer,
         "shell": ShellLexer,

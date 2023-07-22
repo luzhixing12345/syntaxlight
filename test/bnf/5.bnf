@@ -4,8 +4,6 @@
 
 <pair> ::= <path> '=' <value>
 
-# ID 可以带 -
-
 <path> ::= (<ID> | <STRING>) ( '.' (<ID> | <STRING>)) *
 
 <table> ::= <table_header>       <CRLF> <table_entry>

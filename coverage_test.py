@@ -38,6 +38,12 @@ class TestUnit(unittest.TestCase):
         for files in TEST_FILES['c']:
             syntaxlight.parse_file(files)
 
+    def test_05_bnf(self):
+
+        for files in TEST_FILES['bnf']:
+            syntaxlight.parse_file(files)
+
+
 
 if __name__ == "__main__":
     unittest.main()

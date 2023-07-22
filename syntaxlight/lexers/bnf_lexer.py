@@ -26,7 +26,7 @@ class BNFLexer(Lexer):
                 return self.get_str()
             
             if self.current_char.isalnum() or self.current_char == '_':
-                return self.get_id()
+                return self.get_id(extend_chars=['_','-'])
             
             if self.current_char == '#':
                 return self.get_comment(("#",'\n'))
