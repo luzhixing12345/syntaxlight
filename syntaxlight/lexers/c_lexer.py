@@ -128,10 +128,10 @@ class CLexer(Lexer):
             result += self.current_char
         self.advance()
         if self.current_char != "'":
-            token = Token(TokenType.CHAR, result, self.line, self.column)
+            token = Token(TokenType.CHARACTER, result, self.line, self.column)
             self.error(ErrorCode.MULTICHARACTER_CONSTANT, token)
         result += "'"
-        token = Token(TokenType.CHAR, result, self.line, self.column)
+        token = Token(TokenType.CHARACTER, result, self.line, self.column)
         self.advance()
         return token
 
@@ -266,7 +266,7 @@ class CTokenSet:
         self.parameter_list = TokenSet(self.parameter_declaration)
         self.constant = TokenSet(TokenType.NUMBER, CTokenType.TRUE, CTokenType.FALSE)
         self.primary_expression = TokenSet(
-            TokenType.ID, TokenType.STRING, TokenType.LPAREN, TokenType.CHAR, self.constant
+            TokenType.ID, TokenType.STRING, TokenType.LPAREN, TokenType.CHARACTER, self.constant
         )
         self.postfix_expression = TokenSet(self.primary_expression, TokenType.LPAREN)
         # postfix_expression 内部的

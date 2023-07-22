@@ -65,7 +65,7 @@ pre[class*="language-"] {
 }
 
 .Token.STRING,
-.Token.STR {
+.Token.CHARACTER {
     color: --string;
 }
 

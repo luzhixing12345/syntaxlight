@@ -11,8 +11,8 @@ class GlobalDescriptorTable:
         self.descriptors = {}
 
     def register_id(self, name, class_name):
-        if self.descriptors.get(name) is None:
-            self.descriptors[name] = class_name
+        # 允许后面覆盖前面
+        self.descriptors[name] = class_name
 
     def delete_id(self, name):
         if name in self.descriptors:
@@ -43,7 +43,7 @@ class AST(object):
         self._tokens: List[Token] = []
         self._depth = 0  # 节点深度
         self.is_leaf_ast = False  # 底层 AST, 叶节点
-        self.pass_total = False  # 是否在 update 的时候将 class_name 传递到所有的子 AST 节点中
+        self.update_subnode = False  # update 时将 class_name 传递到所有的子 AST 节点中
 
     def register_token(self, tokens: List[Token], extra_class_name: str = None):
         """
@@ -66,7 +66,7 @@ class AST(object):
             if isinstance(node, AST):
                 for token in node._tokens:
                     token.class_list.add(self.class_name)
-            if self.pass_total:    
+            if self.update_subnode:
                 self._update_sub_ast(node, self.class_name)
 
     def _update_sub_ast(self, node: "AST", class_name: str):
@@ -203,7 +203,7 @@ class Keyword(AST):
     def __init__(self, name) -> None:
         super().__init__()
         self.name: str = name
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
         self.node_info += f"\\n{self.name}"
 
     def formatter(self, depth: int = 0):
@@ -214,7 +214,7 @@ class Identifier(AST):
     def __init__(self, id) -> None:
         super().__init__()
         self.id: str = id
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
         self.node_info += f"\\n{self.id}"
 
 
@@ -222,7 +222,7 @@ class Constant(AST):
     def __init__(self, constant) -> None:
         super().__init__()
         self.constant = constant
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
         self.node_info += f"\\n{self.constant}"
 
 
@@ -230,7 +230,7 @@ class String(AST):
     def __init__(self, string) -> None:
         super().__init__()
         self.string: str = string
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
 
         string_info = self.string.replace("\\", "\\\\").replace('"', '\\"')
         self.node_info += f"\\n{string_info}"
@@ -243,7 +243,7 @@ class Char(AST):
     def __init__(self, string) -> None:
         super().__init__()
         self.string = string
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
         self.node_info += f"\\n{self.string}"
 
     def formatter(self, depth: int = 0):
@@ -254,7 +254,7 @@ class Number(AST):
     def __init__(self, value) -> None:
         super().__init__()
         self.value = value
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
         self.node_info += f"\\n{self.value}"
 
     def formatter(self, depth: int = 0):
@@ -265,7 +265,7 @@ class Punctuator(AST):
     def __init__(self, op) -> None:
         super().__init__()
         self.op = op
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
 
     def formatter(self, depth: int = 0):
         return self.op
@@ -302,7 +302,7 @@ class AssignOp(AST):
     def __init__(self, op: str = None) -> None:
         super().__init__()
         self.op = op
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
         self.node_info += f"\\n{self.op}"
 
     def visit(self, node_visitor: "NodeVisitor" = None):

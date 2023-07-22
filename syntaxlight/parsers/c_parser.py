@@ -631,7 +631,7 @@ class PPtoken(AST):
     def __init__(self, value) -> None:
         super().__init__()
         self.value: str = value
-        self.is_bottom_ast = True
+        self.is_leaf_ast = True
         value = self.value.replace("\\", "\\\\").replace('"', '\\"')
         self.node_info += f"\\n{value}"
 
@@ -1470,7 +1470,7 @@ class CParser(Parser):
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.STRING:
             sub_node = self.string()
-        elif self.current_token.type == TokenType.CHAR:
+        elif self.current_token.type == TokenType.CHARACTER:
             sub_node = Char(self.current_token.value)
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.LPAREN:
@@ -1696,7 +1696,9 @@ class CParser(Parser):
         node.update(keyword=self.keyword(CTokenType.ENUM))
         if self.current_token.type in self.cfirst_set.identifier:
             node.update(id=self.identifier())
+            delete_ast_type(node.id, "DefineName")
             add_ast_type(node.id, "EnumID")
+            GDT.register_id(node.id.id, "EnumID")
         if self.current_token.type == TokenType.LCURLY_BRACE:
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             enumerators = [self.enumerator()]
@@ -1716,6 +1718,7 @@ class CParser(Parser):
         """
         node = Enumerator()
         node.update(id=self.identifier())
+        add_ast_type(node.id, "Enumerator")
         GDT.register_id(node.id.id, "Enumerator")
         if self.current_token.type == TokenType.ASSIGN:
             node.register_token(self.eat(TokenType.ASSIGN))
@@ -2167,7 +2170,7 @@ class CParser(Parser):
         """
         取出其中格式化字符 %d %x \n 并新建 token
         """
-        pattern = r"(%[0-9diufFeEgGxXoscpaAn]+|(?:\\\\|\\n|\\t|\\v|\\f))"
+        pattern = r"(%[0-9ldiufFeEgGxXoscpaAn]+|(?:\\\\|\\n|\\t|\\v|\\f))"
         sub_strings = re.split(pattern, token.value)
         new_asts = []
         line = token.line
@@ -2177,7 +2180,7 @@ class CParser(Parser):
                 continue
             column += len(sub_string)
             token = Token(TokenType.STRING, sub_string, line, column)
-            if bool(re.match(r"%[0-9diufFeEgGxXoscpaAn]+", sub_string)):
+            if bool(re.match(r"%[0-9ldiufFeEgGxXoscpaAn]+", sub_string)):
                 token.class_list.add("Format")
             elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b", "\\\\"]:
                 token.class_list.add("Control")

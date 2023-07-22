@@ -55,7 +55,7 @@ class TokenType(Enum):
     EOF = "EOF"
     ID = "ID"
     STRING = "STRING"  # STRING 表示严格意义上的字符串, 即 "" 两个双引号包裹的
-    CHAR = "CHAR"  # CHAR 表示单个字符, 即 'a'
+    CHARACTER = "CHARACTER"  # CHARACTER 表示单个字符, 即 'a'
     STR = "STR"  # STR 表示 "" | '' 包裹的字符串
     NUMBER = "NUMBER"  # 整数 | 小数 | 科学计数法
     INT = "INT"  # 整数

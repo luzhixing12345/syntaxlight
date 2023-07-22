@@ -8,7 +8,7 @@ from typing import Union, List
 def example_display(
     file_path: Union[str, List[str]] = None,
     style="vscode",
-    save_ast_tree=True,
+    save_ast_tree=False,
     language: str = "guess",
 ):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
@@ -37,7 +37,7 @@ def example_display(
         html = parse_file(fp, language, save_ast_tree=save_ast_tree)
         if html is None:
             continue
-        code_html += f'<pre class="language-{language}"><code>{html}</code></pre>'
+        code_html += f'<p>{fp}</p><pre class="language-{language}"><code>{html}</code></pre>'
 
     code_html = f'<div class="markdown-body">{code_html}</div>'
     with open(html_template_file, "r", encoding="utf-8") as f:
