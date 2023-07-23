@@ -78,13 +78,18 @@ class Parser:
         """
         if DEBUG:
             stack_trace = traceback.extract_stack()
-            length = 0
+            function_length = 0
+            line_length = 0
             for stack in stack_trace:
-                _, _, function_name, _ = stack
-                length = max(length, len(function_name))
+                _, line_number, function_name, _ = stack
+                function_length = max(function_length, len(function_name))
+                line_length = max(line_length, len(str(line_number)))
             for stack in stack_trace:
                 _, line_number, function_name, line_of_code = stack
-                print(f"[{function_name:<{length}}][{line_number}]: {line_of_code.strip()}")
+                print(
+                    f"[{function_name:>{function_length}}][{line_number:<{line_length}}]: {line_of_code.strip()}"
+                )
+
     def after_eat(self):
         """
         eat 之后对于 current_token 的一些操作

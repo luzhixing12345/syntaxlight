@@ -51,4 +51,4 @@ def example_display(
 
     export_name = os.path.join(example_folder_name, f"{language}.css")
     export_css([language], export_name, style)
-    print(f"open syntaxlight_example/inedx.html in browser")
+    # print(f"open syntaxlight_example/inedx.html in browser")

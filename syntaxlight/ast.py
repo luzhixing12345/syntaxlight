@@ -1,31 +1,10 @@
 import textwrap
-
+from enum import Enum
 from .lexers import Token
-from typing import List, Union
+from typing import List, Union, Dict, Tuple
+from .gdt import CSS
 
 AST_CREATED_INDEX = 0
-
-
-class GlobalDescriptorTable:
-    def __init__(self) -> None:
-        self.descriptors = {}
-
-    def register_id(self, name, class_name):
-        # 允许后面覆盖前面
-        self.descriptors[name] = class_name
-
-    def delete_id(self, name):
-        if name in self.descriptors:
-            del self.descriptors[name]
-
-    def reset(self):
-        self.descriptors = {}
-
-    def __getitem__(self, index):
-        return self.descriptors[index]
-
-    def __contains__(self, item):
-        return item in self.descriptors
 
 
 class AST(object):
@@ -217,12 +196,14 @@ class Identifier(AST):
         self.is_leaf_ast = True
         self.node_info += f"\\n{self.id}"
 
+
 class Punctuator(AST):
     def __init__(self) -> None:
         super().__init__()
         self.op = self.op
         self.is_leaf_ast = True
-        self.node_info += f'\\n{self.op}'
+        self.node_info += f"\\n{self.op}"
+
 
 class Constant(AST):
     def __init__(self, constant) -> None:
@@ -433,7 +414,7 @@ def display_ast(node: AST, save_ast_tree=False):
     assert node_visitor.depth == -1
 
 
-def add_ast_type(node: AST, class_name: str):
+def add_ast_type(node: AST, css_type: CSS):
     """
     为叶节点补充添加类名信息
     """
@@ -441,50 +422,49 @@ def add_ast_type(node: AST, class_name: str):
         return
     if type(node) == list:
         for nod in node:
-            add_ast_type(nod, class_name)
+            add_ast_type(nod, css_type)
         return
 
     if node.is_leaf_ast:
-        node.class_name = class_name
+        node.class_name = css_type.value
         for token in node._tokens:
-            token.class_list.add(class_name)
+            token.class_list.add(css_type.value)
             # print(token, f"[{class_name}]")
         return
     else:
         # 遍历对象的所有属性
         for _, attribute_value in vars(node).items():
             if isinstance(attribute_value, AST):
-                add_ast_type(attribute_value, class_name)
+                add_ast_type(attribute_value, css_type)
             elif type(attribute_value) == list:
                 if len(attribute_value) > 0 and isinstance(attribute_value[0], AST):
                     for a_v in attribute_value:
-                        add_ast_type(a_v, class_name)
+                        add_ast_type(a_v, css_type)
 
 
-def delete_ast_type(node: AST, class_name: str):
+def delete_ast_type(node: AST, css_type: CSS):
     """
     为叶节点补充去除类名信息
     """
-    # print(node.class_name)
     if node is None:
         return
     if type(node) == list:
         for nod in node:
-            delete_ast_type(nod, class_name)
+            delete_ast_type(nod, css_type)
         return
 
     if node.is_leaf_ast:
         for token in node._tokens:
-            if class_name in token.class_list:
-                token.class_list.remove(class_name)
+            if css_type.value in token.class_list:
+                token.class_list.remove(css_type.value)
             # print(token, f"[{class_name}]")
         return
     else:
         # 遍历对象的所有属性
         for _, attribute_value in vars(node).items():
             if isinstance(attribute_value, AST):
-                delete_ast_type(attribute_value, class_name)
+                delete_ast_type(attribute_value, css_type)
             elif type(attribute_value) == list:
                 if len(attribute_value) > 0 and isinstance(attribute_value[0], AST):
                     for a_v in attribute_value:
-                        delete_ast_type(a_v, class_name)
+                        delete_ast_type(a_v, css_type)

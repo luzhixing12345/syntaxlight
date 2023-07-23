@@ -112,7 +112,8 @@ pre[class*="language-"] {
     color: --function;
 }
 
-.Token.DefineName.ID,
+.Token.MacroDefine.ID,
+.Token.MarcroFunction.ID,
 .Token.BACK_SLASH {
     color: --type;
 }
