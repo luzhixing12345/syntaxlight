@@ -40,6 +40,9 @@ class LuaTokenType(Enum):
 class LuaLexer(Lexer):
     def __init__(self, text: str, TokenType: TokenType = LuaTokenType):
         super().__init__(text, TokenType)
+        self.build_long_op_dict([
+            '//','>>','<<','..',"<=",">=","==","~=","::"
+        ])
 
     def get_next_token(self):
         while self.current_char is not None:
@@ -57,6 +60,9 @@ class LuaLexer(Lexer):
 
             if self.current_char in ("'", '"'):
                 return self.get_string()
+            
+            if self.current_char in self.long_op_dict:
+                return self.get_long_op()
 
             # single-character token
             try:
@@ -102,7 +108,7 @@ class LuaTokenSet:
             TokenType.RANGLE_BRACE,
             TokenType.GE,
             TokenType.EQ,
-            TokenType.NE,
+            TokenType.NORE,
             LuaTokenType.AND,
             LuaTokenType.OR,
         )

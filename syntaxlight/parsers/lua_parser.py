@@ -7,17 +7,16 @@ from ..lexers import TokenType, LuaTokenType, LuaTokenSet, Token
 from ..error import ErrorCode
 from ..ast import (
     AST,
-    STR,
-    Keyword,
     UnaryOp,
     BinaryOp,
     ConditionalExpression,
     Identifier,
     Constant,
-    Expression,
     AssignOp,
     NodeVisitor,
-    Char,
+    Number,
+    String,
+    Punctuator,
     add_ast_type,
     delete_ast_type,
 )
@@ -39,6 +38,51 @@ class Block(AST):
 
 
 class Statement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class ElseIfStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class ElseStatement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class AttributeNameList(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class Attribute(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class ReturnStatment(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class Label(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class FunctionName(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class Var(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class Expression(AST):
     def __init__(self) -> None:
         super().__init__()
 
@@ -108,47 +152,161 @@ class LuaParser(Parser):
         elif self.current_token.type in self.luafirst_set.label:
             node.update(label=self.label())
         elif self.current_token.type == LuaTokenType.BREAK:
-            node.update(keyword = self.get_keyword(LuaTokenType.BREAK))
+            node.update(keyword=self.get_keyword(LuaTokenType.BREAK))
         elif self.current_token.type == LuaTokenType.GOTO:
-            node.update(keyword = self.get_keyword(LuaTokenType.GOTO))
-            node.update(gotoid = self.identifier())
+            node.update(keyword=self.get_keyword(LuaTokenType.GOTO))
+            node.update(gotoid=self.identifier())
         elif self.current_token.type == LuaTokenType.DO:
-            node.update(keyword = self.get_keyword(LuaTokenType.DO))
-            node.update(block = self.block())
-            node.update(end = self.get_keyword(LuaTokenType.END))
+            node.update(keyword=self.get_keyword(LuaTokenType.DO))
+            node.update(block=self.block())
+            node.update(end=self.get_keyword(LuaTokenType.END))
         elif self.current_token.type == LuaTokenType.WHILE:
-            node.update(keyword = self.get_keyword(LuaTokenType.WHILE))
-            
+            node.update(keyword=self.get_keyword(LuaTokenType.WHILE))
+            node.update(exp=self.exp())
+            node.update(sub_keyword=self.get_keyword(LuaTokenType.DO))
+            node.update(block=self.block())
+            node.update(end=self.get_keyword(LuaTokenType.END))
+        elif self.current_token.type == LuaTokenType.REPEAT:
+            node.update(keyword=self.get_keyword(LuaTokenType.REPEAT))
+            node.update(block=self.block())
+            node.update(sub_keyword=self.get_keyword(LuaTokenType.UNTIL))
+            node.update(exp=self.exp())
+        elif self.current_token.type == LuaTokenType.IF:
+            node.update(keyword=self.get_keyword(LuaTokenType.IF))
+            node.update(exp=self.exp())
+            node.update(sub_keyword=self.get_keyword(LuaTokenType.THEN))
+            node.update(block=self.block())
+            elseif_exprs = []
+            while self.current_token.type == LuaTokenType.ELSEIF:
+                sub_node = ElseIfStatement()
+                sub_node.update(keyword=self.get_keyword(LuaTokenType.ELSEIF))
+                sub_node.update(exp=self.exp())
+                sub_node.update(sub_keyword=self.get_keyword(LuaTokenType.THEN))
+                sub_node.update(block=self.block())
+                elseif_exprs.append(sub_node)
+            node.update(elseif_exprs=elseif_exprs)
+            if self.current_token.type == LuaTokenType.ELSE:
+                sub_node = ElseStatement()
+                sub_node.update(keyword=self.get_keyword(LuaTokenType.ELSE))
+                sub_node.update(block=self.block())
+                node.update(else_expr=sub_node)
+            node.update(end=self.get_keyword(LuaTokenType.END))
+        elif self.current_token.type == LuaTokenType.FOR:
+            node.update(keyword=self.get_keyword(LuaTokenType.FOR))
+            if self.peek_next_token().type == TokenType.ASSIGN:
+                node.update(id=self.identifier())
+                node.register_token(self.eat(TokenType.ASSIGN))
+                exprs = [self.exp()]
+                node.register_token(self.eat(TokenType.COMMA))
+                exprs.append(self.exp())
+                if self.current_token.type == TokenType.COMMA:
+                    node.register_token(self.eat(TokenType.COMMA))
+                    exprs.append(self.exp())
+                node.update(exp=exprs)
+                node.update(sub_keyword=self.get_keyword(LuaTokenType.DO))
+                node.update(block=self.block())
+                node.update(end=self.get_keyword(LuaTokenType.END))
+            else:
+                node.update(namelist=self.namelist())
+                node.update(sub_keyword=self.get_keyword(LuaTokenType.IN))
+                node.update(explist=self.explist())
+                node.update(third_keyword=self.get_keyword(LuaTokenType.DO))
+                node.update(block=self.block())
+                node.update(end=self.get_keyword(LuaTokenType.END))
+        elif self.current_token.type == LuaTokenType.FUNCTION:
+            node.update(keyword=self.get_keyword(LuaTokenType.FUNCTION))
+            node.update(funcname=self.funcname())
+            node.update(funcbody=self.funcbody())
+        elif self.current_token.type == LuaTokenType.LOCAL:
+            node.update(keyword=self.get_keyword(LuaTokenType.LOCAL))
+            if self.current_token.type == LuaTokenType.FUNCTION:
+                node.update(sub_keyword=self.get_keyword(LuaTokenType.FUNCTION))
+                node.update(id=self.identifier())
+                node.update(funcbody=self.funcbody())
+            elif self.current_token.type in self.luafirst_set.attnamelist:
+                node.update(attnamelist=self.attnamelist())
+                if self.current_token.type == TokenType.ASSIGN:
+                    node.register_token(self.eat(TokenType.ASSIGN))
+                    node.update(explist=self.explist())
+
+        return node
 
     def attnamelist(self):
         """
         <attnamelist> ::= <ID> <attrib> ("," <ID> <attrib>)*
         """
+        node = AttributeNameList()
+
+        ids = [self.identifier()]
+        attribs = [self.attrib()]
+        while self.current_token.type == TokenType.COMMA:
+            node.register_token(self.eat(TokenType.COMMA))
+            ids.append(self.identifier())
+            attribs.append(self.attrib())
+
+        node.update(ids=ids)
+        node.update(attribs=attribs)
+        return node
 
     def attrib(self):
         """
         <attrib> ::= ("<" <ID> ">")?
         """
+        if self.current_token.type == TokenType.LANGLE_BRACE:
+            node = Attribute()
+            node.register_token(self.eat(TokenType.LANGLE_BRACE))
+            node.update(id=self.identifier())
+            node.register_token(self.eat(TokenType.RANGLE_BRACE))
+            return node
+        else:
+            return None
 
     def retstat(self):
         """
         <retstat> ::= return (<explist>)? ';'?
         """
+        node = ReturnStatment()
+        node.update(keyword=self.get_keyword(LuaTokenType.RETURN))
+        if self.current_token.type in self.luafirst_set.explist:
+            node.update(explist=self.explist())
+        if self.current_token.type == TokenType.SEMI:
+            node.register_token(self.eat(TokenType.SEMI))
+        return node
 
     def label(self):
         """
         <label> ::= '::' <ID> "::"
         """
+        node = Label()
+        node.register_token(self.eat(TokenType.DOUBLE_COLON))
+        node.update(id=self.identifier())
+        node.register_token(self.eat(TokenType.DOUBLE_COLON))
+        return node
 
     def funcname(self):
         """
         <funcname> ::= <ID> ('.' <ID>)* (':' <ID>)?
         """
+        node = FunctionName()
+        node.update(id=self.identifier())
+        sub_ids = []
+        while self.current_token.type == TokenType.DOT:
+            node.register_token(self.eat(TokenType.DOT))
+            sub_ids.append(self.identifier())
+        if self.current_token.type == TokenType.COLON:
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(return_value=self.identifier())
+        return node
 
-    def varlist(self):
+    def varlist(self) -> List[Var]:
         """
         <varlist> ::= <var> (',' <var>)*
         """
+        result = [self.var()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            result.append(self.var())
+        return result
 
     def var(self):
         """
@@ -161,11 +319,21 @@ class LuaParser(Parser):
         """
         <namelist> ::= <ID> (',' <ID>)*
         """
+        result = [self.identifier()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            result.append(self.identifier())
+        return result
 
     def explist(self):
         """
         <explist> ::= <exp> (',' <exp>)*
         """
+        result = [self.exp()]
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            result.append(self.exp())
+        return result
 
     def exp(self):
         """
@@ -181,6 +349,30 @@ class LuaParser(Parser):
                 | <exp> <binop> <exp>
                 | <unop> <exp>
         """
+        if self.current_token.type in (LuaTokenType.NIL, LuaTokenType.FALSE, LuaTokenType.TRUE):
+            node = self.get_keyword()
+        elif self.current_token.type == TokenType.NUMBER:
+            node = Number(self.current_token.value)
+            node.register_token(self.eat(TokenType.NUMBER))
+        elif self.current_token.type == TokenType.STR:
+            node = String(self.current_token.value)
+            node.register_token(self.eat(TokenType.STR))
+        elif self.current_token.type == TokenType.VARARGS:
+            node = Expression()
+            varargs = Punctuator(self.current_token.value)
+            varargs.register_token(self.eat(TokenType.VARARGS))
+            node.update(varargs=varargs)
+        elif self.current_token.type in self.luafirst_set.functiondef:
+            node = Expression()
+            node.update(functiondef = self.functiondef())
+        elif self.current_token.type in self.luafirst_set.prefixexp:
+            node = Expression()
+            node.update(prefixexp = self.prefixexp())
+        elif self.current_token.type in self.luafirst_set.tableconstructor:
+            node = Expression()
+            node.update(tableconstructor = self.tableconstructor())
+        elif self.current_token.type in self.luafirst_set.exp:
+            ...
 
     def prefixexp(self):
         """
@@ -188,12 +380,14 @@ class LuaParser(Parser):
                       | <functioncall>
                       | '(' <exp> ')'
         """
+        node = PrefixExpression()
 
     def functioncall(self):
         """
         <functioncall> ::= <prefixexp> <args>
                          | <prefixexp> ':' <ID> <args>
         """
+        node = FunctionCall()
 
     def args(self):
         """
@@ -240,6 +434,7 @@ class LuaParser(Parser):
         <fieldsep> ::= ','
                      | ';'
         """
+        return self.punctuator()
 
     def binop(self):
         """
@@ -265,6 +460,10 @@ class LuaParser(Parser):
                   | and
                   | or
         """
+        if self.current_token.type in (LuaTokenType.AND, LuaTokenType.OR):
+            return self.get_keyword()
+        else:
+            return self.punctuator()
 
     def unop(self):
         """
@@ -273,11 +472,8 @@ class LuaParser(Parser):
                  | '#'
                  | '~'
         """
+        if self.current_token.type == LuaTokenType.NOT:
+            return self.get_keyword()
+        else:
+            return self.punctuator()
 
-    def identifier(self):
-        """
-        <ID>
-        """
-        node = Identifier(self.current_token.value)
-        node.register_token(self.eat(TokenType.ID))
-        return node

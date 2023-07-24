@@ -66,6 +66,7 @@ class TokenType(Enum):
     EQ = "=="
     STRICT_EQ = "==="
     NE = "!="
+    NORE = '~='
     STRICT_NE = "!=="
     DOUBLE_DIV = "//"
     LT = "LT"  # => LANGLE_BRACE

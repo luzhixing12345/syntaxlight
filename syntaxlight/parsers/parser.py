@@ -1,7 +1,7 @@
 from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
 from ..error import ParserError, ErrorCode
 from enum import Enum
-from ..ast import AST, Keyword,add_ast_type
+from ..ast import AST, Keyword,add_ast_type, Identifier, Punctuator
 from typing import List
 import sys
 import html
@@ -277,3 +277,19 @@ class Parser:
         if css_type is not None:
             add_ast_type(keyword, css_type)
         return keyword
+    
+    def identifier(self):
+        """
+        ID
+        """
+        node = Identifier(self.current_token.value)
+        node.register_token(self.eat(TokenType.ID))
+        return node
+
+    def punctuator(self):
+        '''
+        获取运算符
+        '''
+        node = Punctuator(self.current_token.value)
+        node.register_token(self.eat())
+        return node
