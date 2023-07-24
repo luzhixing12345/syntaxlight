@@ -130,7 +130,7 @@ pre[class*="language-"] {
     color: --enum;
 }
 
-.Token.StructClass,
+.Token.StructureClass,
 .Token.EnumID,
 .Token.Typedefine {
     color: --struct;

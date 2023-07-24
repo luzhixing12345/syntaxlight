@@ -81,18 +81,18 @@ class XmlParser(Parser):
         super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
 
     def parse(self):
-        self.node = self.XML()
+        self.root = self.XML()
         if self.current_token.type == XmlTokenType.CONTENT:
             eat_flag = True
             for char in self.current_token.value:
-                if char not in self.lexer.invisible_characters or char != ' ':
+                if char not in self.lexer.invisible_characters or char != " ":
                     eat_flag = False
                     break
             if eat_flag:
                 self.eat(self.current_token.type)
         if self.current_token.type != TokenType.EOF:
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
-        return self.node
+        return self.root
 
     def XML(self):
         """

@@ -299,6 +299,7 @@ class CTokenSet:
         self.initializer = TokenSet(self.assignment_expression, TokenType.LCURLY_BRACE)
         self.designator = TokenSet(TokenType.LSQUAR_PAREN, TokenType.DOT)
         self.designation = TokenSet(self.designator)
+        self.initializer_list = TokenSet(self.designation, self.initializer)
 
         self.labeled_statement = TokenSet(self.identifier, CTokenType.CASE, CTokenType.DEFAULT)
         self.expression_statement = TokenSet(self.expression, TokenType.SEMI)

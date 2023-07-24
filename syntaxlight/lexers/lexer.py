@@ -89,6 +89,7 @@ class TokenType(Enum):
     AND = "&&"
     POINT = "->"
     PRODUCTION_SYMBOL = "::="
+    DOUBLE_HASH = "##"
 
 
 class TTYColor(Enum):
@@ -130,13 +131,12 @@ class Token:
         ID 指创建的索引值
         column 指该 token 最后一个字符的位置
         """
-        return "Token[id:{ID}]({type}, {value}, position={lineno}:{column}) {AST_type}".format(
+        return "Token[{ID}]({type}, {value}, position={lineno}:{column})".format(
             ID=self._id,
             type=self.type,
             value=repr(self.value),
             lineno=self.line,
-            column=self.column,
-            AST_type=self.get_css_class(),
+            column=self.column
         )
 
     def __repr__(self):
@@ -161,6 +161,7 @@ class Lexer:
         self.LanguageTokenType: Enum = LanguageTokenType
         self.context_bias = 10  # 发生错误时 token 的前后文行数
         self.file_path = None  # 手动修改文件路径, 用于后期错误处理的输出
+        self.status_stack = []
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
         tt_list = list(LanguageTokenType)
@@ -210,7 +211,7 @@ class Lexer:
 
         记录当前 lexer 解析状态, 被 _reset 调用时恢复
         """
-        self._clone_status = {"pos": self.pos, "line": self.line, "column": self.column}
+        self.status_stack.append({"pos": self.pos, 'c':self.current_char, "line": self.line, "column": self.column})
 
     def _reset(self):
         """
@@ -218,10 +219,11 @@ class Lexer:
 
         恢复为 lexer 之前的状态
         """
-        self.pos = self._clone_status["pos"]
-        self.line = self._clone_status["line"]
-        self.column = self._clone_status["column"]
-        self.current_char = self.text[self.pos]
+        status = self.status_stack.pop()
+        self.pos = status["pos"]
+        self.current_char = status['c']
+        self.line = status["line"]
+        self.column = status["column"]
 
     def error(self, error_code: ErrorCode = None, token: Token = None, message: str = ""):
         raise LexerError(
@@ -450,7 +452,7 @@ class Lexer:
         token = Token(TokenType.STR, result, self.line, self.column - 1)
         return token
 
-    def get_id(self, ignore_case=False, extend_chars:List[str]=["_"]):
+    def get_id(self, ignore_case=False, extend_chars: List[str] = ["_"]):
         """
         获取标识符, 留给后续的语法分析处理
         @ignore_case : 是否忽略大小写

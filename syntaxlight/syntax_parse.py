@@ -6,7 +6,9 @@ from .ast import display_ast
 import sys
 
 
-def parse(text: str, language: str = "guess", file_path=None, show_error_context=True, save_ast_tree = False) -> str:
+def parse(
+    text: str, language: str = "guess", file_path=None, show_error_context=True, save_ast_tree=False
+) -> str:
     assert type(text) == str
     assert type(language) == str
 
@@ -26,7 +28,7 @@ def parse(text: str, language: str = "guess", file_path=None, show_error_context
         if show_error_context:
             sys.stderr.write(e.context)
     else:
-        display_ast(parser.node, save_ast_tree = save_ast_tree)
+        display_ast(parser.root,parser.sub_roots, save_ast_tree=save_ast_tree)
         # print(parser.node)
         return parser.to_html()
 
@@ -56,9 +58,9 @@ def parse_file(
 
 
 def guess_language(file_path: str) -> str:
-    '''
+    """
     通过文件名猜测文法类型
-    '''
+    """
     file_name = file_path.split(os.sep)[-1]
 
     languages = {
@@ -75,7 +77,7 @@ def guess_language(file_path: str) -> str:
         "toml": ["toml"],
         "xml": ["xml"],
         "shell": ["sh"],
-        "bnf": ["bnf"]
+        "bnf": ["bnf"],
     }
 
     if "." in file_name:
@@ -118,7 +120,7 @@ def get_lexer(code: str, language: str) -> Lexer:
         "toml": TomlLexer,
         "xml": XmlLexer,
         "shell": ShellLexer,
-        "bnf": BNFLexer
+        "bnf": BNFLexer,
     }
 
     lexer_class = lexers.get(language, None)
@@ -136,7 +138,7 @@ def get_parser(lexer: Lexer) -> Parser:
         "c": CParser,
         "xml": XmlParser,
         "shell": ShellParser,
-        "bnf": BNFParser
+        "bnf": BNFParser,
     }
 
     syntax_type = lexer.__class__.__name__.replace("Lexer", "").lower()

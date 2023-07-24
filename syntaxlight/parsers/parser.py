@@ -32,7 +32,8 @@ class Parser:
             TokenType.RANGLE_BRACE,
         ]
         self.brace_max_depth = 3  # 深度循环轮次
-        self.node: AST = None
+        self.root: AST = None  # 主根节点
+        self.sub_roots: List[AST] = [] # 其他根节点, 例如预处理命令
         self.current_token: Token = self.lexer.get_next_token()
         self._skip()
 
@@ -90,19 +91,13 @@ class Parser:
                     f"[{function_name:>{function_length}}][{line_number:<{line_length}}]: {line_of_code.strip()}"
                 )
 
-    def after_eat(self):
-        """
-        eat 之后对于 current_token 的一些操作
-        """
-        return
-
     def eat(self, token_type: Enum = None) -> List[Token]:
         """
         匹配一个 token_type 类型的 token, 并获取下一个 token 更新 current_token
 
         token_type 默认值为 None, 表示匹配当前 current_token.type
         """
-        # print(self.current_token)
+        # print(token_type, self.current_token)
         # self._log_trace()
         # if DEBUG:
         #     import inspect
@@ -114,6 +109,9 @@ class Parser:
             self._register_token()
             self.current_token = self.lexer.get_next_token()
             tokens.extend(self._skip())
+            self.after_eat()
+            return tokens
+        
         else:
             current_value = self.current_token.value
             expected_value = token_type.value
@@ -129,8 +127,11 @@ class Parser:
                 message=f"should match {expected_value} but got {current_value}",
             )
 
-        self.after_eat()
-        return tokens
+    def after_eat(self):
+        """
+        eat 之后对于 current_token 的一些操作
+        """
+        return
 
     def _skip(self) -> List[Token]:
         tokens = []
@@ -196,14 +197,16 @@ class Parser:
         """
         self.lexer._record()
         token_list_length = len(self._token_list)
+        sub_roots_length = len(self.sub_roots)
         current_token = self.current_token
 
-        self.eat(self.current_token.type)
+        self.eat()
         next_token = self.current_token
 
-        self._token_list = self._token_list[:token_list_length]
-        self.current_token = current_token
         self.lexer._reset()
+        self._token_list = self._token_list[:token_list_length]
+        self.sub_roots = self.sub_roots[:sub_roots_length]
+        self.current_token = current_token
         return next_token
 
     def _register_token(self, token=None):

@@ -2,7 +2,7 @@ import textwrap
 from enum import Enum
 from .lexers import Token
 from typing import List, Union, Dict, Tuple
-from .gdt import CSS
+from .gdt import Enum
 
 AST_CREATED_INDEX = 0
 
@@ -403,18 +403,20 @@ class NodeVisitor:
         print(f"ast tree saved in [{self.image_name}], view by grpahviz")
 
 
-def display_ast(node: AST, save_ast_tree=False):
+def display_ast(node: AST, sub_roots: List[AST], save_ast_tree=False):
     node_visitor = NodeVisitor()
     node.visit(node_visitor)
+    for sub_root in sub_roots:
+        node_visitor.depth += 1
+        sub_root.visit(node_visitor)
 
     if save_ast_tree:
         node_visitor.save()
     # node.formatter()
-
     assert node_visitor.depth == -1
 
 
-def add_ast_type(node: AST, css_type: CSS):
+def add_ast_type(node: AST, css_type: Enum):
     """
     为叶节点补充添加类名信息
     """
@@ -442,7 +444,7 @@ def add_ast_type(node: AST, css_type: CSS):
                         add_ast_type(a_v, css_type)
 
 
-def delete_ast_type(node: AST, css_type: CSS):
+def delete_ast_type(node: AST, css_type: Enum):
     """
     为叶节点补充去除类名信息
     """

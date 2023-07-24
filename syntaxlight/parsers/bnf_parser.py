@@ -88,10 +88,10 @@ class BNFParser(Parser):
 
     def parse(self):
         self.skip_crlf()
-        self.node = self.syntax()
-        if self.current_token.type != TokenType.EOF: # pragma: no cover
+        self.root = self.syntax()
+        if self.current_token.type != TokenType.EOF:  # pragma: no cover
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
-        return self.node
+        return self.root
 
     def syntax(self):
         """
@@ -155,17 +155,17 @@ class BNFParser(Parser):
         if self.current_token.type == TokenType.LF:
             self.eat_lf()
         return node
-    
+
     def item(self):
-        '''
+        """
         <item> ::= (<STR> | <ID>) <punctuator>?
-        '''
+        """
         node = Item()
         if self.current_token.type == TokenType.STR:
             node.update(value=self.string())
         elif self.current_token.type == TokenType.ID:
             node.update(value=self.identifer())
-        else: # pragma: no cover
+        else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be str or id")
         if self.current_token.type in self.punctuator_first_set:
             node.update(op=self.punctuator())
@@ -208,5 +208,5 @@ class BNFParser(Parser):
         node = Identifier(self.current_token.value)
         node.register_token(self.eat(TokenType.ID))
         if node.id.isupper():
-            add_ast_type(node, 'BuiltinSymbol')
+            add_ast_type(node, "BuiltinSymbol")
         return node

@@ -142,11 +142,11 @@ class TomlParser(Parser):
         self.path_first_set = [TokenType.ID, TokenType.STR]
 
     def parse(self):
-        self.node = self.toml()
+        self.root = self.toml()
         if self.current_token.type != TokenType.EOF:
             self.error(ErrorCode.UNEXPECTED_TOKEN)
         # print(self.node)
-        return self.node
+        return self.root
 
     def toml(self):
         """
@@ -261,7 +261,7 @@ class TomlParser(Parser):
 
     def value(self):
         """
-        <value> ::= <STRING> | <NUMBER> | <DATE> | true | false | <array> | <inline_table> 
+        <value> ::= <STRING> | <NUMBER> | <DATE> | true | false | <array> | <inline_table>
         """
 
         if self.current_token.type not in self.value_first_set:
@@ -290,7 +290,7 @@ class TomlParser(Parser):
 
         elif self.current_token.type == TomlTokenType.DATE:
             node = Number(self.current_token.value)
-            node.register_token(self.eat(TomlTokenType.DATE),'Date')
+            node.register_token(self.eat(TomlTokenType.DATE), "Date")
 
         elif self.current_token.type in (TomlTokenType.TRUE, TomlTokenType.FALSE):
             node = Keyword(self.current_token.value)

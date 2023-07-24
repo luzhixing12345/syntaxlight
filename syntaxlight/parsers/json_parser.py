@@ -20,11 +20,11 @@ class JsonParser(Parser):
         ]
 
     def parse(self):
-        self.node = self.json()
+        self.root = self.json()
         if self.current_token.type != TokenType.EOF:
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
         # print(self.node)
-        return self.node
+        return self.root
 
     def json(self):
         """
@@ -84,11 +84,11 @@ class JsonParser(Parser):
                 comma = self.current_token
                 node.register_token(self.eat(TokenType.COMMA))
                 if self.current_token.type == TokenType.RSQUAR_PAREN:
-                    self.error(ErrorCode.TRAILING_COMMA, token= comma,message= TokenType.COMMA.value)
+                    self.error(ErrorCode.TRAILING_COMMA, token=comma, message=TokenType.COMMA.value)
                 elements.append(self.value())
 
             if self.current_token.type != TokenType.RSQUAR_PAREN:
-                self.error(ErrorCode.MISS_EXPECTED_TOKEN,message= TokenType.COMMA.value)
+                self.error(ErrorCode.MISS_EXPECTED_TOKEN, message=TokenType.COMMA.value)
 
         node.update(elements=elements)
         node.register_token(self.eat(TokenType.RSQUAR_PAREN))
@@ -101,9 +101,9 @@ class JsonParser(Parser):
         node = Pair()
 
         key = String(self.current_token.value)
-        key.register_token(self.eat(TokenType.STRING), 'Key')
-        
-        node.update(key = key)
+        key.register_token(self.eat(TokenType.STRING), "Key")
+
+        node.update(key=key)
         node.register_token(self.eat(TokenType.COLON))
         node.update(value=self.value())
         return node
