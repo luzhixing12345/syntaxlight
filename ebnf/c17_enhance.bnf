@@ -225,10 +225,8 @@
 
 <compound-statement> ::= "{" (<block-item>)* "}"
 
-# group
 <block-item> ::= <declaration>
                | <statement>
-               | <group>
 
 <statement> ::= <labeled-statement>
               | <expression-statement>
@@ -267,17 +265,17 @@
 # <if-section> ::= <if-group> <elif-group>* <else-group>? <endif-line>
 
 <if-section> ::= <if-group>
-                | <elif-group>
-                | <else-group>
-                | <endif-line>
+               | <elif-group>
+               | <else-group>
+               | <endif-line>
 
-<if-group> ::= "#" if <constant-expression> <CRLF> <group>?
-             | "#" ifdef <identifier> <CRLF> <group>?
-             | "#" ifndef <identifier> <CRLF> <group>?
+<if-group> ::= "#" if <constant-expression> <CRLF> 
+             | "#" ifdef <identifier> <CRLF> 
+             | "#" ifndef <identifier> <CRLF> 
 
-<elif-group> ::= "#" elif <constant-expression> <CRLF> <group>?
+<elif-group> ::= "#" elif <constant-expression> <CRLF> 
 
-<else-group> ::= "#" else <CRLF> <group>?
+<else-group> ::= "#" else <CRLF> 
 
 <endif-line> ::= "#" endif <CRLF>
 

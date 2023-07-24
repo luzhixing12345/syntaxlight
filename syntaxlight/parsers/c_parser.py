@@ -547,7 +547,6 @@ class Group(AST):
         node_visitor.link(self, self.group_parts)
         return super().visit(node_visitor)
 
-
 class IfSection(AST):
     def __init__(self) -> None:
         super().__init__()
@@ -668,6 +667,7 @@ class CParser(Parser):
             "error",
             "pragma",
         ]
+        self.after_eat()
 
     def parse(self):
         self.root = self.translation_unit()
@@ -700,9 +700,7 @@ class CParser(Parser):
         """
         # function-definition 在 declaration 中被检验和修正
         self._unknown_typedef_id_guess()
-        if self.current_token.type in self.cfirst_set.group:
-            return self.group()
-        elif self.current_token.type in self.cfirst_set.declaration:
+        if self.current_token.type in self.cfirst_set.declaration:
             return self.declaration()
         elif self.current_token.type in self.cfirst_set.statement:
             return self.statement()
@@ -921,7 +919,7 @@ class CParser(Parser):
         elif self.current_token.type == TokenType.HASH:
             # 多根节点树
             # TODO: 考虑如何格式化
-            self.sub_roots.append(self.group())
+            self.group()
             
 
     def struct_declarator_list(self) -> List[AST]:
@@ -2184,6 +2182,9 @@ class CParser(Parser):
             group_parts.append(self.group_part())
         node.update(group_parts=group_parts)
         self._end_preprocessing()
+
+        # 添加至 sub_roots
+        self.sub_roots.append(node)
         return node
 
     def _begin_preprocessing(self):
@@ -2253,9 +2254,9 @@ class CParser(Parser):
 
     def if_group(self):
         """
-        <if-group> ::= "#" if <constant-expression> <CRLF> <group>?
-                     | "#" ifdef <identifier> <CRLF> <group>?
-                     | "#" ifndef <identifier> <CRLF> <group>?
+        <if-group> ::= "#" if <constant-expression> <CRLF>
+                     | "#" ifdef <identifier> <CRLF
+                     | "#" ifndef <identifier> <CRLF>
         """
         self.eat(TokenType.HASH)
         node = IfGroup()
@@ -2271,13 +2272,11 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be if ifdef ifndef")
         self.eat_lf()
         self._end_preprocessing()
-        # if self.current_token.type in self.cfirst_set.external_declaration:
-        #     node.update(group=self.external_declaration())
         return node
 
     def elif_group(self):
         """
-        <elif-group> ::= "#" elif <constant-expression> <CRLF> <group>?
+        <elif-group> ::= "#" elif <constant-expression> <CRLF>
         """
         self.eat(TokenType.HASH)
         node = ElifGroup()
@@ -2285,13 +2284,11 @@ class CParser(Parser):
         node.update(const_expr=self.constant_expression())
         self.eat_lf()
         self._end_preprocessing()
-        # if self.current_token.type in self.cfirst_set.external_declaration:
-        #     node.update(group=self.external_declaration())
         return node
 
     def else_group(self):
         """
-        <else-group> ::= "#" else <CRLF> <group>?
+        <else-group> ::= "#" else <CRLF>
         """
         self.eat(TokenType.HASH)
         node = ElseGroup()
@@ -2302,8 +2299,6 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be else")
         self.eat_lf()
         self._end_preprocessing()
-        # if self.current_token.type in self.cfirst_set.external_declaration:
-        #     node.update(group=self.external_declaration())
         return node
 
     def endif_line(self):
@@ -2333,8 +2328,6 @@ class CParser(Parser):
                          | "#" <CRLF>
 
         <pp-token> ::= any
-
-        括号要求前面无空格, 不过这里不做处理
         """
         self.eat(TokenType.HASH)
         node = ControlLine()
@@ -2343,6 +2336,11 @@ class CParser(Parser):
             node.update(header_name=self.header_name())
         elif self.current_token.type == CTokenType.DEFINE:
             node.update(keyword=self.keyword(css_type=CSS.PREPROCESS))
+            # define 这里需要考虑空格的影响, 作为函数括号要求前面无空格
+            # define A(a,b) 1
+            # define A (a,b)
+            #
+            # 这里禁用skip_space和skip_invisible_characters以单步匹配下一个 token
             self.skip_space = False
             self.skip_invisible_characters = False
             node.update(id=self.identifier())

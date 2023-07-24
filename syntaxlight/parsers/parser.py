@@ -6,6 +6,7 @@ from typing import List
 import sys
 import html
 import traceback
+import copy
 
 DEBUG = False
 DEBUG = True
@@ -33,7 +34,8 @@ class Parser:
         ]
         self.brace_max_depth = 3  # 深度循环轮次
         self.root: AST = None  # 主根节点
-        self.sub_roots: List[AST] = [] # 其他根节点, 例如预处理命令
+        self.sub_roots: List[AST] = []  # 其他根节点, 例如预处理命令
+        self._status_stack = []  # 状态栈
         self.current_token: Token = self.lexer.get_next_token()
         self._skip()
 
@@ -111,7 +113,7 @@ class Parser:
             tokens.extend(self._skip())
             self.after_eat()
             return tokens
-        
+
         else:
             current_value = self.current_token.value
             expected_value = token_type.value
@@ -134,8 +136,12 @@ class Parser:
         return
 
     def _skip(self) -> List[Token]:
+        """
+        跳过不可见字符和空格
+
+        由 self.skip_invisible_characters 与 self.skip_space 控制
+        """
         tokens = []
-        # 跳过不可见字符和空格
         if self.skip_invisible_characters and self.skip_space:
             while (
                 self.current_token.value in self.lexer.invisible_characters
@@ -182,7 +188,7 @@ class Parser:
 
     def eat_lf(self):
         """
-        跳过一个换行
+        跳过一个换行, 如果是结尾 EOF 则不跳过
         """
         if self.current_token.type == TokenType.CR:
             self.eat(self.current_token.type)
@@ -195,6 +201,7 @@ class Parser:
         """
         查看下一个 token 的类型
         """
+        # 保存程序状态
         self.lexer._record()
         token_list_length = len(self._token_list)
         sub_roots_length = len(self.sub_roots)

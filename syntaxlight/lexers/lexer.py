@@ -161,7 +161,7 @@ class Lexer:
         self.LanguageTokenType: Enum = LanguageTokenType
         self.context_bias = 10  # 发生错误时 token 的前后文行数
         self.file_path = None  # 手动修改文件路径, 用于后期错误处理的输出
-        self.status_stack = []
+        self._status_stack = [] # 状态栈
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
         tt_list = list(LanguageTokenType)
@@ -211,7 +211,8 @@ class Lexer:
 
         记录当前 lexer 解析状态, 被 _reset 调用时恢复
         """
-        self.status_stack.append({"pos": self.pos, 'c':self.current_char, "line": self.line, "column": self.column})
+        # 采用栈的方式保存数据状态, 避免由于 peek_next_token 中的 eat 导致多次嵌套调用覆盖数据
+        self._status_stack.append({"pos": self.pos, 'c':self.current_char, "line": self.line, "column": self.column})
 
     def _reset(self):
         """
@@ -219,7 +220,7 @@ class Lexer:
 
         恢复为 lexer 之前的状态
         """
-        status = self.status_stack.pop()
+        status = self._status_stack.pop()
         self.pos = status["pos"]
         self.current_char = status['c']
         self.line = status["line"]
