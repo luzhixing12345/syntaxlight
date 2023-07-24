@@ -2,6 +2,10 @@ from .parser import Parser
 from ..lexers import TokenType
 from ..error import ErrorCode
 from ..ast import String, AST, Identifier, Expression, NodeVisitor, Punctuator, add_ast_type
+from enum import Enum
+
+class BNF_CSS(Enum):
+    BUILTIN_SYMBOL = "BuiltinSymbol"
 
 
 class Syntax(AST):
@@ -208,5 +212,5 @@ class BNFParser(Parser):
         node = Identifier(self.current_token.value)
         node.register_token(self.eat(TokenType.ID))
         if node.id.isupper():
-            add_ast_type(node, "BuiltinSymbol")
+            add_ast_type(node, BNF_CSS.BUILTIN_SYMBOL)
         return node

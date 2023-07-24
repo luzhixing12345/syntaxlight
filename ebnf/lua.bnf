@@ -1,0 +1,107 @@
+<chunk> ::= <block>
+
+<block> ::= (<stat>)* <retstat>?
+
+<stat> ::= ';'
+         | <varlist> '=' <explist> 
+         | <functioncall> 
+         | <label>
+         | break
+         | goto <ID>
+         | do <block> end 
+         | while <exp> do <block> end 
+         | repeat <block> until <exp> 
+         | if <exp> then <block> (elseif <exp> then <block>)* (else <block>)? end 
+         | for <ID> '=' <exp> ',' <exp> (',' <exp>)? do <block> end 
+         | for <namelist> in <explist> do <block> end 
+         | function <funcname> <funcbody> 
+         | local function <ID> <funcbody> 
+         | local <attnamelist> ('=' <explist>)?
+
+<attnamelist> ::= <ID> <attrib> ("," <ID> <attrib>)*
+
+<attrib> ::= ("<" <ID> ">")?
+
+<retstat> ::= return (<explist>)? ';'?
+
+<label> ::= '::' <ID> "::"
+
+<funcname> ::= <ID> ('.' <ID>)* (':' <ID>)?
+
+<varlist> ::= <var> (',' <var>)*
+
+<var> ::= <ID> 
+        | <prefixexp> '[' <exp> ']' 
+        | <prefixexp> '.' <ID> 
+
+<namelist> ::= <ID> (',' <ID>)*
+
+<explist> ::= <exp> (',' <exp>)*
+
+<exp> ::= nil 
+        | false 
+        | true 
+        | <NUMBER> 
+        | <STR>
+        | '...' 
+        | <functiondef>
+        | <prefixexp> 
+        | <tableconstructor> 
+        | <exp> <binop> <exp> 
+        | <unop> <exp> 
+
+<prefixexp> ::= <var>
+              | <functioncall> 
+              | '(' <exp> ')'
+
+<functioncall> ::= <prefixexp> <args> 
+                 | <prefixexp> ':' <ID> <args> 
+
+<args> ::= '(' <explist>? ')' 
+         | <tableconstructor> 
+         | <STR> 
+
+<functiondef>::= function <funcbody>
+
+<funcbody> ::= '(' <parlist>? ')' <block> end
+
+<parlist> ::= <namelist> (',' '...')?
+            | '...'
+
+<tableconstructor> ::= '{' <fieldlist>? '}'
+
+<fieldlist> ::= <field> (<fieldsep> <field>)* <fieldsep>?
+
+<field> ::= '[' <exp> ']' '=' <exp> 
+          | <ID> '=' <exp> 
+          | <exp>
+
+<fieldsep> ::= ',' 
+             | ';'
+
+<binop> ::= '+' 
+          | '-' 
+          | '*' 
+          | '/' 
+          | '//'
+          | '^' 
+          | '%' 
+          | '&'
+          | '~'
+          | '|'
+          | '>>'
+          | '<<'
+          | '..' 
+          | '<' 
+          | '<=' 
+          | '>' 
+          | '>=' 
+          | '==' 
+          | '~=' 
+          | and 
+          | or
+
+<unop> ::= '-' 
+         | not 
+         | '#'
+         | '~'

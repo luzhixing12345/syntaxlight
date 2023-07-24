@@ -1,63 +1,8 @@
-from syntaxlight.lexers.lexer import TokenType
-from .lexer import Lexer, Token
+from .lexer import Lexer, Token, TokenType, TokenSet
 from enum import Enum
 
 
 class LuaTokenType(Enum):
-    PLUS = "+"
-    MINUS = "-"
-    MUL = "*"
-    SLASH = "/"
-    ASSIGN = "="
-    BACK_SLASH = "\\"
-    LPAREN = "("
-    RPAREN = ")"
-    LSQUAR_PAREN = "["
-    RSQUAR_PAREN = "["
-    LCURLY_BRACE = "{"
-    RCURLY_BRACE = "}"
-    LANGLE_BRACE = "<"
-    RANGLE_BRACE = ">"
-    SEMI = ";"
-    DOT = "."
-    COLON = ":"
-    COMMA = ","
-    HASH = "#"
-    DOLLAR = "$"
-    PERCENT = "%"
-    CARET = "^"
-    AMPERSAND = "&"
-    PIPE = "|"
-    QUSTION_MARK = "?"
-    APOSTROPHE = "'"
-    QUOTO_MARK = '"'
-    SPACE = " "
-    NEWLINE = "\n"
-    TAB = "\t"
-    VERTICAL_TAB = "\v"
-    CR = "\r"
-    FORM_FEED = "\f"
-    BELL = "\a"
-    BACKSPACE = "\b"
-    NULL = "\0"
-    BANG = "!"
-    BACKTICK = "`"
-    TILDE = "~"
-    AT_SIGN = "@"
-    EOF = "EOF"
-    ID = "ID"
-    STRING = "STRING"
-    NUMBER = "NUMBER"
-    SHL = "<<"
-    SHR = ">>"
-    EQ = "=="
-    NE = "~="  # 这里不一样
-    LE = "<="
-    GE = ">="
-    VARARGS = "..."
-    DB_COLON = "::"
-    CONCAT = ".."
-
     # -----------------------------------------------
     # start - end 之间为对应语言的保留关键字
     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
@@ -96,19 +41,7 @@ class LuaLexer(Lexer):
     def __init__(self, text: str, TokenType: TokenType = LuaTokenType):
         super().__init__(text, TokenType)
 
-    def get_number(self):
-        result = ""
-        while self.current_char is not None and self.current_char.isdigit():
-            result += self.current_char
-            self.advance()
-
-        return Token(TokenType.NUMBER, result, self.line, self.column)
-
     def get_next_token(self):
-        """Lexical analyzer (also known as scanner or tokenizer)
-        This method is responsible for breaking a sentence
-        apart into tokens. One token at a time.
-        """
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
                 return self.skip_whitespace()
@@ -144,6 +77,54 @@ class LuaLexer(Lexer):
                 self.advance()
                 return token
 
-        # EOF (end-of-file) token indicates that there is no more
-        # input left for lexical analysis
         return Token(type=TokenType.EOF, value=None)
+
+
+class LuaTokenSet:
+    def __init__(self) -> None:
+        self.unop = TokenSet(TokenType.MINUS, TokenType.HASH, TokenType.TILDE, LuaTokenType.NOT)
+        self.binop = TokenSet(
+            TokenType.PLUS,
+            TokenType.MINUS,
+            TokenType.MUL,
+            TokenType.DIV,
+            TokenType.DOUBLE_DIV,
+            TokenType.CARET,
+            TokenType.MOD,
+            TokenType.AMPERSAND,
+            TokenType.TILDE,
+            TokenType.PIPE,
+            TokenType.SHL,
+            TokenType.SHR,
+            TokenType.CONCAT,
+            TokenType.LANGLE_BRACE,
+            TokenType.LE,
+            TokenType.RANGLE_BRACE,
+            TokenType.GE,
+            TokenType.EQ,
+            TokenType.NE,
+            LuaTokenType.AND,
+            LuaTokenType.OR,
+        )
+        self.fieldsep = TokenSet(TokenType.COMMA, TokenType.SEMI)
+        self.funcname = TokenSet(TokenType.ID)
+        self.label = TokenSet(TokenType.DOUBLE_COLON)
+        self.retstat = TokenSet(LuaTokenType.RETURN)
+        self.attnamelist = TokenSet(TokenType.ID)
+        self.tableconstructor = TokenSet(TokenType.LCURLY_BRACE)
+        self.namelist = TokenSet(TokenType.ID)
+        self.parlist = TokenSet(self.namelist, TokenType.VARARGS)
+        self.args = TokenSet(TokenType.LPAREN, self.tableconstructor, TokenType.STR)
+        self.funcbody = TokenSet(TokenType.LPAREN)
+        self.functiondef = TokenSet(LuaTokenType.FUNCTION)
+        self.var = TokenSet(TokenType.ID, TokenType.LPAREN)
+        self.prefixexp = TokenSet(TokenType.ID, TokenType.LPAREN)
+        self.functioncall = TokenSet(self.prefixexp)
+        self.exp = TokenSet(LuaTokenType.NIL, LuaTokenType.FALSE, LuaTokenType.TRUE, TokenType.NUMBER, TokenType.STR, TokenType.VARARGS, self.functiondef, self.prefixexp, self.tableconstructor, self.unop)
+        self.explist = TokenSet(self.exp)
+        self.varlist = TokenSet(self.var)
+        self.field = TokenSet(TokenType.LSQUAR_PAREN, TokenType.ID, self.exp)
+        self.fieldlist = TokenSet(self.field)
+        self.attrib = TokenSet(TokenType.LANGLE_BRACE)
+        self.stat = TokenSet(TokenType.SEMI, self.varlist, self.functioncall, self.label, LuaTokenType.BREAK, LuaTokenType.GOTO, LuaTokenType.DO, LuaTokenType.WHILE, LuaTokenType.WHILE, LuaTokenType.REPEAT, LuaTokenType.IF, LuaTokenType.FOR, LuaTokenType.FUNCTION, LuaTokenType.LOCAL)
+        self.block = TokenSet(self.stat, self.retstat)

@@ -1,7 +1,7 @@
 from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
 from ..error import ParserError, ErrorCode
 from enum import Enum
-from ..ast import AST
+from ..ast import AST, Keyword,add_ast_type
 from typing import List
 import sys
 import html
@@ -261,3 +261,19 @@ class Parser:
 
     def parse(self):
         raise NotImplementedError(self.__class__.__name__ + " must override the parse function")
+
+    def get_keyword(self, token_type: Enum = None, css_type: Enum = None):
+        """
+        keyword
+
+        @token_type: keyword 的类型,默认为 current_token.type
+        @class_name: 修改 Keyword 的类名
+        """
+        keyword = Keyword(self.current_token.value)
+        if token_type:
+            keyword.register_token(self.eat(token_type))
+        else:
+            keyword.register_token(self.eat())
+        if css_type is not None:
+            add_ast_type(keyword, css_type)
+        return keyword
