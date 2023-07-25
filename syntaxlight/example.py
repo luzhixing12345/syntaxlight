@@ -9,20 +9,14 @@ def example_display(
     file_path: Union[str, List[str]] = None,
     style="vscode",
     save_ast_tree=False,
-    language: str = "guess",
+    language= None,
 ):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
-    if language == "guess":
-        if type(file_path) == list:
-            language = guess_language(file_path[0])
-        else:
-            language = guess_language(file_path)
-
     syntaxlight_path = os.path.dirname(__file__)
     html_template_file = os.path.join(syntaxlight_path, "template.html")
     index_css_file = os.path.join(syntaxlight_path, "css", "index.css")
     css_files = [index_css_file]
-    css_scope = f"<link rel='stylesheet' href='./{language}.css' />"
+    
 
     example_html_file = os.path.join(example_folder_name, "index.html")
 
@@ -32,16 +26,23 @@ def example_display(
     if type(file_path) == str:
         file_path = [file_path]
 
+    all_languages = []
     code_html = ""
     for fp in file_path:
+        if language is None:
+            language = guess_language(fp)
+            all_languages.append(language)
         html = parse_file(fp, language, save_ast_tree=save_ast_tree)
         if html is None:
             continue
         code_html += f'<p>{fp}</p><pre class="language-{language}"><code>{html}</code></pre>'
 
     code_html = f'<div class="markdown-body">{code_html}</div>'
-    with open(html_template_file, "r", encoding="utf-8") as f:
-        content = f.read().replace("html-scope", code_html).replace("css-scope", css_scope)
+
+    for language in all_languages:
+        css_scope = f"<link rel='stylesheet' href='./{language}.css' />"
+        with open(html_template_file, "r", encoding="utf-8") as f:
+            content = f.read().replace("html-scope", code_html).replace("css-scope", css_scope)
 
     with open(os.path.join(example_folder_name, example_html_file), "w", encoding="utf-8") as f:
         f.write(content)

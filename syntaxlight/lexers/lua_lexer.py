@@ -40,9 +40,7 @@ class LuaTokenType(Enum):
 class LuaLexer(Lexer):
     def __init__(self, text: str, TokenType: TokenType = LuaTokenType):
         super().__init__(text, TokenType)
-        self.build_long_op_dict([
-            '//','>>','<<','..',"<=",">=","==","~=","::"
-        ])
+        self.build_long_op_dict(["//", ">>", "<<", "..", "<=", ">=", "==", "~=", "::"])
 
     def get_next_token(self):
         while self.current_char is not None:
@@ -60,9 +58,16 @@ class LuaLexer(Lexer):
 
             if self.current_char in ("'", '"'):
                 return self.get_string()
-            
+
             if self.current_char in self.long_op_dict:
                 return self.get_long_op()
+            
+            if self.current_char == '-' and self.peek(3) == '-[[':
+                return self.get_comment(('--[[',']]'))
+            
+            if self.current_char == '-' and self.peek() == '-':
+                return self.get_comment(('--','\n'))
+
 
             # single-character token
             try:
@@ -126,11 +131,37 @@ class LuaTokenSet:
         self.var = TokenSet(TokenType.ID, TokenType.LPAREN)
         self.prefixexp = TokenSet(TokenType.ID, TokenType.LPAREN)
         self.functioncall = TokenSet(self.prefixexp)
-        self.exp = TokenSet(LuaTokenType.NIL, LuaTokenType.FALSE, LuaTokenType.TRUE, TokenType.NUMBER, TokenType.STR, TokenType.VARARGS, self.functiondef, self.prefixexp, self.tableconstructor, self.unop)
+        self.exp = TokenSet(
+            LuaTokenType.NIL,
+            LuaTokenType.FALSE,
+            LuaTokenType.TRUE,
+            TokenType.NUMBER,
+            TokenType.STR,
+            TokenType.VARARGS,
+            self.functiondef,
+            self.prefixexp,
+            self.tableconstructor,
+            self.unop,
+        )
         self.explist = TokenSet(self.exp)
         self.varlist = TokenSet(self.var)
         self.field = TokenSet(TokenType.LSQUAR_PAREN, TokenType.ID, self.exp)
         self.fieldlist = TokenSet(self.field)
         self.attrib = TokenSet(TokenType.LANGLE_BRACE)
-        self.stat = TokenSet(TokenType.SEMI, self.varlist, self.functioncall, self.label, LuaTokenType.BREAK, LuaTokenType.GOTO, LuaTokenType.DO, LuaTokenType.WHILE, LuaTokenType.WHILE, LuaTokenType.REPEAT, LuaTokenType.IF, LuaTokenType.FOR, LuaTokenType.FUNCTION, LuaTokenType.LOCAL)
+        self.stat = TokenSet(
+            TokenType.SEMI,
+            self.varlist,
+            self.functioncall,
+            self.label,
+            LuaTokenType.BREAK,
+            LuaTokenType.GOTO,
+            LuaTokenType.DO,
+            LuaTokenType.WHILE,
+            LuaTokenType.WHILE,
+            LuaTokenType.REPEAT,
+            LuaTokenType.IF,
+            LuaTokenType.FOR,
+            LuaTokenType.FUNCTION,
+            LuaTokenType.LOCAL,
+        )
         self.block = TokenSet(self.stat, self.retstat)

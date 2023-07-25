@@ -1,6 +1,6 @@
 from enum import Enum
 from ..error import ErrorCode, LexerError
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 GLOBAL_TOKEN_ID = 0
 
@@ -66,7 +66,7 @@ class TokenType(Enum):
     EQ = "=="
     STRICT_EQ = "==="
     NE = "!="
-    NORE = '~='
+    NORE = "~="
     STRICT_NE = "!=="
     DOUBLE_DIV = "//"
     LT = "LT"  # => LANGLE_BRACE
@@ -490,9 +490,11 @@ class Lexer:
             token = Token(type=token_type, value=result, line=self.line, column=self.column - 1)
         return token
 
-    def get_comment(self, comment_symbol=("#", "\n")):
+    def get_comment(self, comment_symbol: Tuple[str] = ("#", "\n")):
         """
         跳过注释部分, 单行注释不包括最后的换行
+
+        多个注释的情况分多个 get_comment 函数处理
 
         python 风格: ("#", "\n")
              C 风格: ("//", "\n"), ("/*", "*/")
