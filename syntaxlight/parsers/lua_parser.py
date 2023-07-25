@@ -1,5 +1,3 @@
-import re
-
 from syntaxlight.ast import NodeVisitor
 
 from .parser import Parser
@@ -86,6 +84,47 @@ class Expression(AST):
     def __init__(self) -> None:
         super().__init__()
 
+
+class PrefixExpression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class FunctionCall(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class Argument(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class FunctionDefinition(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class FunctionBody(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class ParameterList(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+class TableConstructor(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+class FieldList(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+class Field(AST):
+    def __init__(self) -> None:
+        super().__init__()
 
 class LuaParser(Parser):
     def __init__(
@@ -314,6 +353,7 @@ class LuaParser(Parser):
                 | <prefixexp> '[' <exp> ']'
                 | <prefixexp> '.' <ID>
         """
+        node = Var()
 
     def namelist(self):
         """
@@ -364,15 +404,23 @@ class LuaParser(Parser):
             node.update(varargs=varargs)
         elif self.current_token.type in self.luafirst_set.functiondef:
             node = Expression()
-            node.update(functiondef = self.functiondef())
+            node.update(functiondef=self.functiondef())
         elif self.current_token.type in self.luafirst_set.prefixexp:
             node = Expression()
-            node.update(prefixexp = self.prefixexp())
+            node.update(prefixexp=self.prefixexp())
         elif self.current_token.type in self.luafirst_set.tableconstructor:
             node = Expression()
-            node.update(tableconstructor = self.tableconstructor())
-        elif self.current_token.type in self.luafirst_set.exp:
-            ...
+            node.update(tableconstructor=self.tableconstructor())
+        elif self.current_token.type in self.luafirst_set.unop:
+            node = Expression()
+            node.update(unop = self.unop())
+            node.update(exp = self.exp())
+
+        if self.current_token.type in self.luafirst_set.binop:
+            node.update(binop = self.binop())
+            node.update(next_exp = self.exp())
+
+        return node
 
     def prefixexp(self):
         """
@@ -384,27 +432,60 @@ class LuaParser(Parser):
 
     def functioncall(self):
         """
-        <functioncall> ::= <prefixexp> <args>
-                         | <prefixexp> ':' <ID> <args>
+        <functioncall> ::= <prefixexp> (':' <ID>)? <args>
         """
         node = FunctionCall()
-
+        node.update(prefixexp = self.prefixexp())
+        if self.current_token.type == TokenType.COLON:
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(id = self.identifier())
+        node.update(args = self.args())
+        return node
+        
     def args(self):
         """
         <args> ::= '(' <explist>? ')'
                  | <tableconstructor>
                  | <STR>
         """
+        node = Argument()
+        if self.current_token.type == TokenType.LPAREN:
+            node.register_token(self.eat(TokenType.LPAREN))
+            if self.current_token.type in self.luafirst_set.explist:
+                node.update(explist=self.explist())
+            node.register_token(self.eat(TokenType.RPAREN))
+        elif self.current_token.type in self.luafirst_set.tableconstructor:
+            node.update(table=self.tableconstructor())
+        elif self.current_token.type == TokenType.STR:
+            sub_node = String(self.current_token.value)
+            sub_node.register_token(self.eat(TokenType.STR))
+            node.update(string=sub_node)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "args error")
+
+        return node
 
     def functiondef(self):
         """
         <functiondef>::= function <funcbody>
         """
+        node = FunctionDefinition()
+        node.update(keyword=self.get_keyword(LuaTokenType.FUNCTION))
+        node.update(funcbody=self.funcbody())
+        return node
 
     def funcbody(self):
         """
         <funcbody> ::= '(' <parlist>? ')' <block> end
         """
+        node = FunctionBody()
+        node.register_token(self.eat(TokenType.LPAREN))
+        if self.current_token.type in self.luafirst_set.parlist:
+            node.update(parlist=self.parlist())
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.update(block=self.block())
+        node.update(end=self.get_keyword(LuaTokenType.END))
+        return node
 
     def parlist(self):
         """
@@ -412,15 +493,44 @@ class LuaParser(Parser):
                     | '...'
         """
 
+        if self.current_token.type == TokenType.VARARGS:
+            return self.punctuator()
+        elif self.current_token.type in self.luafirst_set.namelist:
+            node = ParameterList()
+            node.update(namelist=self.namelist())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(varargs=self.punctuator(TokenType.VARARGS))
+            return node
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "parlist error")
+
     def tableconstructor(self):
         """
         <tableconstructor> ::= '{' <fieldlist>? '}'
         """
+        node = TableConstructor()
+        node.register_token(self.eat(TokenType.LCURLY_BRACE))
+        node.update(fieldlist = self.fieldlist())
+        node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        return node
 
     def fieldlist(self):
         """
         <fieldlist> ::= <field> (<fieldsep> <field>)* <fieldsep>?
         """
+        node = FieldList()
+        node.update(field = self.field())
+        punctuators = []
+        sub_fields = []
+        while self.current_token.type in self.luafirst_set.fieldsep:
+            punctuators.append(self.fieldsep())
+            sub_fields.append(self.field())
+        node.update(punctuators = punctuators)
+        node.update(sub_fields = sub_fields)
+        if self.current_token.type in self.luafirst_set.fieldsep:
+            node.update(fieldsep = self.fieldsep())
+        return node
 
     def field(self):
         """
@@ -428,6 +538,20 @@ class LuaParser(Parser):
                   | <ID> '=' <exp>
                   | <exp>
         """
+        node = Field()
+        if self.current_token.type == TokenType.LSQUAR_PAREN:
+            node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+            node.update(exp = self.exp())
+            node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(end_exp = self.exp())
+        elif self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.ASSIGN:
+            node.update(id = self.identifier())
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(exp = self.exp())
+        else:
+            node.update(exp = self.exp())
+        return node
 
     def fieldsep(self):
         """
@@ -476,4 +600,3 @@ class LuaParser(Parser):
             return self.get_keyword()
         else:
             return self.punctuator()
-

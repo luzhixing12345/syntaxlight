@@ -286,10 +286,13 @@ class Parser:
         node.register_token(self.eat(TokenType.ID))
         return node
 
-    def punctuator(self):
+    def punctuator(self, token_type: Enum = None):
         '''
         获取运算符
         '''
         node = Punctuator(self.current_token.value)
-        node.register_token(self.eat())
+        if token_type is None:
+            node.register_token(self.eat())
+        else:
+            node.register_token(self.eat(token_type))
         return node

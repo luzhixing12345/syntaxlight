@@ -54,8 +54,7 @@
               | <functioncall> 
               | '(' <exp> ')'
 
-<functioncall> ::= <prefixexp> <args> 
-                 | <prefixexp> ':' <ID> <args> 
+<functioncall> ::= <prefixexp> (':' <ID>)? <args>
 
 <args> ::= '(' <explist>? ')' 
          | <tableconstructor> 
