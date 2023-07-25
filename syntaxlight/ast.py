@@ -85,11 +85,11 @@ class AST(object):
     def formatter(self, depth: int = 0):
         raise NotImplementedError(self.class_name + " should override format function to display")
 
-    # def __str__(self) -> str:
-    #     return self.formatter()
+    def __str__(self) -> str:
+        return self.formatter()
 
-    # def __repr__(self) -> str:
-    #     return self.__str__()
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def get_node_info(self):
         # f'depth={self.depth}\\n'
@@ -199,6 +199,8 @@ class Identifier(AST):
         self.is_leaf_ast = True
         self.node_info += f"\\n{self.id}"
 
+    def formatter(self, depth: int = 0):
+        return self.id
 
 class Punctuator(AST):
     def __init__(self) -> None:

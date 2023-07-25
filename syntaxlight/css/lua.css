@@ -39,11 +39,15 @@ pre[class*="language-"] {
     color: --function;
 }
 
-.Token.Field.ID {
+.Token.Field.ID, .Token.TableKey {
     color: --struct;
 }
 
 .Token.TRUE, .Token.FALSE, .Token.NIL {
+    color: --type;
+}
+
+.Token.COLON {
     color: --type;
 }
 

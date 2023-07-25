@@ -18,6 +18,10 @@ from enum import Enum
 from ..gdt import *
 
 
+class LuaCSS(Enum):
+    TABLE_KEY = "TableKey"
+
+
 class Block(AST):
     def __init__(self) -> None:
         super().__init__()
@@ -75,17 +79,28 @@ class FuncName(AST):
         self.sub_ids = None
 
 
-class Var(AST):
+class Variable(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.id = None
-        self.varsuffix: Optional[VarSuffix] = None
+        self.id: Identifier = None
+        self.exp = None
+        self.sub_nodes: List[VarSuffix] = None
+
+
+class VarSuffixType(Enum):
+    INDEX = 0  # [ID]
+    DOT = 1  # .ID
+    FUNCTION = 2  # F()
+    DOT_FUNCTION = 3  # .F()
+    COLON_FUNCTION = 4  # :F()
 
 
 class VarSuffix(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.prefix_exp_suffix = None
+        self.suffix_type: VarSuffixType = None
+        self.id = None
+        self.args = None
 
 
 class Expression(AST):
@@ -202,28 +217,16 @@ class LuaParser(Parser):
         node = Statement()
         if self.current_token.type == TokenType.SEMI:
             node.register_token(self.eat(TokenType.SEMI))
-        elif self.current_token.type == TokenType.LPAREN:
-            node.update(varlist=self.varlist())
-            node.register_token(self.eat(TokenType.ASSIGN))
-            node.update(explist=self.explist())
-            self._match_functiondef(node.varlist, node.explist)
-        elif self.current_token.type == TokenType.ID:
-            # <varlist> '=' <explist>
-            # <functioncall>
-            # 区分查看下一个 token
-            # BUG 无法区分
-            if self.peek_next_token().type in (
-                TokenType.COMMA,
-                TokenType.ASSIGN,
-                TokenType.DOT,
-                TokenType.LSQUAR_PAREN,
-            ):
-                node.update(varlist=self.varlist())
+        elif self.current_token.type in (TokenType.LPAREN, TokenType.ID):
+            # <varlist> 和 <functioncall>
+            varlist = self.varlist()
+            if len(varlist) == 1 and self._is_functioncall(varlist[0]):
+                node = varlist[0]
+            else:
+                node.update(varlist=varlist)
                 node.register_token(self.eat(TokenType.ASSIGN))
                 node.update(explist=self.explist())
                 self._match_functiondef(node.varlist, node.explist)
-            else:
-                node.update(functioncall=self.functioncall())
         elif self.current_token.type in self.luafirst_set.label:
             node.update(label=self.label())
         elif self.current_token.type == LuaTokenType.BREAK:
@@ -319,6 +322,7 @@ class LuaParser(Parser):
 
         while self.current_token.type == TokenType.COMMA:
             node = AttributeName()
+            node.register_token(self.eat(TokenType.COMMA))
             node.update(id=self.identifier())
             node.update(attribute=self.attrib())
             result.append(node)
@@ -381,7 +385,7 @@ class LuaParser(Parser):
             add_ast_type(node.sub_ids[-1], CSS.FUNCTION_NAME)
         return node
 
-    def varlist(self) -> List[Var]:
+    def varlist(self) -> List[Variable]:
         """
         <varlist> ::= <var> (',' <var>)*
         """
@@ -397,83 +401,83 @@ class LuaParser(Parser):
                 | <prefixexp> '[' <exp> ']'
                 | <prefixexp> '.' <ID>
 
+        <var> 与下面的 prefixexp functioncall 形成了循环推导
+
         <prefixexp> ::= <var>
                       | <functioncall>
                       | '(' <exp> ')'
 
         <functioncall> ::= <prefixexp> (':' <ID>)? <args>
-
-        <var> 同下面的 <prefixexp> <functioncall> 有比较复杂的循环推导, 处理之后的推导式如下
-
-        <var> ::= <ID> <varsuffix>
-                | "(" <exp> ")" <prefix_exp_suffix> "[" <exp> "]" <varsuffix>
-                | "(" <exp> ")" <prefix_exp_suffix> "." <ID>      <varsuffix>
-
-        <varsuffix> ::= <prefix_exp_suffix> "[" <exp> "]" <varsuffix>
-                      | <prefix_exp_suffix> "." <ID>      <varsuffix>
-                      | ε
         """
-        node = Var()
+        node = Variable()
         if self.current_token.type == TokenType.ID:
             node.update(id=self.identifier())
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(exp=self.exp())
             node.register_token(self.eat(TokenType.RPAREN))
-            node.update(prefix_exp_suffix=self.prefix_exp_suffix())
-            if self.current_token.type == TokenType.LSQUAR_PAREN:
-                node.register_token(self.eat(TokenType.LSQUAR_PAREN))
-                node.update(next_exp=self.exp())
-            elif self.current_token.type == TokenType.DOT:
-                node.register_token(self.eat(TokenType.DOT))
-                node.update(next_id=self.identifier())
-            else:
-                self.error(ErrorCode.UNEXPECTED_TOKEN, "error in inside var")
         else:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "error in var")
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "error in var, should be id or (")
 
-        node.update(varsuffix=self.varsuffix())
-        # 对于函数调用的判断
-        if node.id is not None and node.varsuffix is not None:
-            if node.varsuffix.prefix_exp_suffix is not None:
-                add_ast_type(node.id, CSS.FUNCTION_CALL)
+        sub_nodes = []
+        while self.current_token.type in (
+            TokenType.LSQUAR_PAREN,
+            TokenType.DOT,
+            TokenType.LPAREN,
+            TokenType.COLON,
+        ):
+            sub_node = VarSuffix()
+            if self.current_token.type == TokenType.LSQUAR_PAREN:
+                sub_node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+                sub_node.update(exp=self.exp())
+                sub_node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+                sub_node.suffix_type = VarSuffixType.INDEX
+
+            elif self.current_token.type == TokenType.DOT:
+                sub_node.register_token(self.eat(TokenType.DOT))
+                sub_node.update(id=self.identifier())
+                sub_node.suffix_type = VarSuffixType.DOT
+                if self.current_token.type == TokenType.LPAREN:
+                    sub_node.update(args=self.args())
+                    sub_node.suffix_type = VarSuffixType.DOT_FUNCTION
+
+            elif self.current_token.type == TokenType.LPAREN:
+                sub_node.update(args=self.args())
+                sub_node.suffix_type = VarSuffixType.FUNCTION
+            else:
+                # COLON
+                sub_node.register_token(self.eat(TokenType.COLON))
+                sub_node.update(id=self.identifier())
+                sub_node.update(args=self.args())
+                sub_node.suffix_type = VarSuffixType.COLON_FUNCTION
+            sub_nodes.append(sub_node)
+
+        node.update(sub_nodes=sub_nodes)
         return node
 
-    def varsuffix(self) -> Optional[VarSuffix]:
-        """
-        <varsuffix> ::= <prefix_exp_suffix> "[" <exp> "]" <varsuffix>
-                      | <prefix_exp_suffix> "." <ID>      <varsuffix>
-                      | ε
-        """
+    def _is_functioncall(self, node: Variable):
+        # TODO: GDT
+        functioncall_enum_set = (
+            VarSuffixType.DOT_FUNCTION,
+            VarSuffixType.COLON_FUNCTION,
+        )
 
-        if self.current_token.type in self.luafirst_set.prefix_exp_suffix:
-            node = VarSuffix()
-            node.update(prefix_exp_suffix=self.prefix_exp_suffix())
-            if self.current_token.type in (TokenType.LSQUAR_PAREN, TokenType.DOT):
-                if self.current_token.type == TokenType.LSQUAR_PAREN:
-                    node.register_token(self.eat(TokenType.LSQUAR_PAREN))
-                    node.update(exp=self.exp())
-                    node.register_token(self.eat(TokenType.RSQUAR_PAREN))
-                elif self.current_token.type == TokenType.DOT:
-                    node.register_token(self.eat(TokenType.DOT))
-                    node.update(id=self.identifier())
+        if len(node.sub_nodes) > 0:
+            if len(node.sub_nodes) == 1 and node.sub_nodes[0].suffix_type == VarSuffixType.FUNCTION:
+                add_ast_type(node.id, CSS.FUNCTION_CALL)
+                add_ast_type(node.exp, CSS.FUNCTION_CALL)
+                return True
 
-                node.update(next_exp=self.varsuffix())
-            return node
-        elif self.current_token.type in (TokenType.LSQUAR_PAREN, TokenType.DOT):
-            node = VarSuffix()
-            if self.current_token.type == TokenType.LSQUAR_PAREN:
-                node.register_token(self.eat(TokenType.LSQUAR_PAREN))
-                node.update(exp=self.exp())
-                node.register_token(self.eat(TokenType.RSQUAR_PAREN))
-            elif self.current_token.type == TokenType.DOT:
-                node.register_token(self.eat(TokenType.DOT))
-                node.update(id=self.identifier())
+            for sub_node in node.sub_nodes:
+                if sub_node.suffix_type in functioncall_enum_set:
+                    add_ast_type(sub_node.id, CSS.FUNCTION_CALL)
+                elif sub_node.suffix_type == VarSuffixType.DOT:
+                    add_ast_type(sub_node, LuaCSS.TABLE_KEY)
+                # INDEX 不做处理
 
-            node.update(next_exp=self.varsuffix())
-            return node
-        else:
-            return None
+            if node.sub_nodes[-1].suffix_type in functioncall_enum_set:
+                return True
+        return False
 
     def namelist(self):
         """
@@ -549,73 +553,16 @@ class LuaParser(Parser):
         <prefixexp> ::= <var>
                       | <functioncall>
                       | '(' <exp> ')'
-
-        处理之后的推导式如下
-
-        <prefixexp> ::= <var> <prefix_exp_suffix>
-                      | "(" <exp> ")" <prefix_exp_suffix>
-
-        <prefix_exp_suffix> ::= (':' <ID>)? <args> <prefix_exp_suffix>
-                            | ε
         """
-        node = PrefixExpression()
-        if self.current_token.type == TokenType.ID:
-            node.update(var=self.var())
-            node.update(prefix_exp_suffix=self.prefix_exp_suffix())
-        elif self.current_token.type == TokenType.LPAREN:
-            # <var> 的推导式中与 "(" <exp> ")" <prefix_exp_suffix> 无法直接区分
-            self.eat(TokenType.LPAREN)
-            exp = self.exp()
-            self.eat(TokenType.RPAREN)
-            prefix_exp_suffix = self.prefix_exp_suffix()
-            if self.current_token.type in (TokenType.LSQUAR_PAREN, TokenType.DOT):
-                var = Var()
-                var.update(exp=exp)
-                var.update(prefix_exp_suffix=prefix_exp_suffix)
-                if self.current_token.type == TokenType.LSQUAR_PAREN:
-                    var.register_token(self.eat(TokenType.LSQUAR_PAREN))
-                    var.update(next_exp=self.exp())
-                    var.register_token(self.eat(TokenType.RSQUAR_PAREN))
-                else:
-                    var.register_token(self.eat(TokenType.DOT))
-                    var.update(next_id=self.identifier())
-                var.update(varsuffix=self.varsuffix())
-                node.update(var=var)
-            else:
-                node.update(exp=exp)
-                node.update(prefix_exp_suffix=prefix_exp_suffix)
-        else:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "error in prefixexp")
-
+        node = self.var()
+        self._is_functioncall(node)
         return node
-
-    def prefix_exp_suffix(self):
-        """
-        <prefix_exp_suffix> ::= (':' <ID>)? <args> <prefix_exp_suffix>
-                            | ε
-        """
-        if self.current_token.type in self.luafirst_set.prefix_exp_suffix:
-            node = PrefixExpressionSuffix()
-            if self.current_token.type == TokenType.COLON:
-                node.register_token(self.eat(TokenType.COLON))
-                node.update(id=self.identifier())
-            node.update(args=self.args())
-            node.update(next_exp=self.prefix_exp_suffix())
-            return node
-        else:
-            return None
 
     def functioncall(self):
         """
         <functioncall> ::= <prefixexp> (':' <ID>)? <args>
         """
-        node = FunctionCall()
-        node.update(prefixexp=self.prefixexp())
-        if self.current_token.type == TokenType.COLON:
-            node.register_token(self.eat(TokenType.COLON))
-            node.update(id=self.identifier())
-        # node.update(args = self.args())
-        return node
+        return self.var()
 
     def args(self):
         """
@@ -793,6 +740,7 @@ class LuaParser(Parser):
             var_number = len(varlist)
             exp_number = len(explist)
             if var_number > exp_number:
+                # TODO 检查返回值个数是否匹配
                 self.warning("var will be set to nil because of not enough value")
             elif var_number < exp_number:
                 self.warning("value will be ignore")
