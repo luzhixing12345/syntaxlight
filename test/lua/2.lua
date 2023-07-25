@@ -37,7 +37,7 @@ sayHello("Alice")
 local person = {
     name = "Bob",
     age = 30,
-    isMale = true,
+    isMale = true
 }
 
 print(person.name) -- Output: Bob

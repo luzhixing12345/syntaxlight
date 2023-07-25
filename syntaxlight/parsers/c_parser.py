@@ -2140,14 +2140,12 @@ class CParser(Parser):
             elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b", "\\\\"]:
                 token.class_list.add("Control")
 
-            self._register_token(token)
+            self.manual_register_token(token)
             node = String(token.value)
             node.register_token([token])
             new_asts.append(node)
 
-        self.current_token = self.lexer.get_next_token()
-        self._skip()
-        self.after_eat()
+        self.manual_get_next_token()
         return new_asts
 
     def static_assert_declaration(self):
@@ -2423,9 +2421,7 @@ class CParser(Parser):
                 result += self.current_token.value
                 line = self.current_token.line
                 column = self.current_token.column
-                self.current_token = self.lexer.get_next_token()
-                self._skip()
-                self.after_eat()
+                self.manual_get_next_token()
             if self.current_token.type == TokenType.EOF:
                 self.error(ErrorCode.UNEXPECTED_TOKEN, "miss >")
             if self.current_token.type == TokenType.LF:
@@ -2434,7 +2430,7 @@ class CParser(Parser):
             new_token = Token(TokenType.STRING, result, line, column)
             file_path = String(new_token.value)
             file_path.register_token([new_token])
-            self._register_token(new_token)
+            self.manual_register_token(new_token)
             node.update(file_path=file_path)
             node.register_token(self.eat(TokenType.RANGLE_BRACE))
         else:

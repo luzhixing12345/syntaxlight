@@ -22,7 +22,10 @@ class AST(object):
         self._tokens: List[Token] = []
         self._depth = 0  # 节点深度
         self.is_leaf_ast = False  # 底层 AST, 叶节点
-        self.update_subnode = False  # update 时将 class_name 传递到所有的子 AST 节点中
+
+        # 默认 update 的时候只会为一级 AST 添加当前类名, 启用此选项后会递归地将类名传递给其下的每一个叶节点
+        # 默认不开启以减少对子类的影响
+        self.update_subnode = False  
 
     def register_token(self, tokens: List[Token], extra_class_name: str = None):
         """

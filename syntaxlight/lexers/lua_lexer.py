@@ -57,7 +57,7 @@ class LuaLexer(Lexer):
                 return self.get_id()
 
             if self.current_char in ("'", '"'):
-                return self.get_string()
+                return self.get_str()
 
             if self.current_char in self.long_op_dict:
                 return self.get_long_op()
@@ -126,6 +126,7 @@ class LuaTokenSet:
         self.namelist = TokenSet(TokenType.ID)
         self.parlist = TokenSet(self.namelist, TokenType.VARARGS)
         self.args = TokenSet(TokenType.LPAREN, self.tableconstructor, TokenType.STR)
+        self.prefix_exp_suffix = TokenSet(self.args, TokenType.COLON)
         self.funcbody = TokenSet(TokenType.LPAREN)
         self.functiondef = TokenSet(LuaTokenType.FUNCTION)
         self.var = TokenSet(TokenType.ID, TokenType.LPAREN)

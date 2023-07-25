@@ -72,15 +72,16 @@ class Parser:
 
         warning_color = TTYColor.MAGENTA
 
-        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color) + message + "\n")
-        sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
+        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color, underline=False) + message + "\n")
+        # sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
     def _log_trace(self):
         """
         查看 python 函数调用栈
         """
         if DEBUG:
-            stack_trace = traceback.extract_stack()
+            # 前4后2不重要
+            stack_trace = traceback.extract_stack()[4:-2]
             function_length = 0
             line_length = 0
             for stack in stack_trace:
@@ -128,10 +129,26 @@ class Parser:
                 token=self.current_token,
                 message=f"should match {expected_value} but got {current_value}",
             )
+    
+    def manual_get_next_token(self):
+        '''
+        正常情况下调用 eat 获取下一个 token, 如果需要合并多个 token 并生成一个新的 token 时可调用此函数
+        '''
+        self.current_token = self.lexer.get_next_token()
+        self._skip()
+        self.after_eat()
+
+    def manual_register_token(self, token):
+        '''
+        正常情况下不需要手动将 token 注册到 _token_list 当中, eat 内部会调用此方法
+
+        如果因为合并或分割创建了新的 token 可调用此方法注册
+        '''
+        self._register_token(token)
 
     def after_eat(self):
         """
-        eat 之后对于 current_token 的一些操作
+        如果希望在 eat 之后对于 current_token 进行一些操作, 比如查 GDT 或处理预处理关键字, 可在继承类中重载此方法
         """
         return
 

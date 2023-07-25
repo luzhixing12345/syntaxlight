@@ -97,13 +97,13 @@ class TokenType(Enum):
 
 class TTYColor(Enum):
     BLACK = 30
-    RED = 31
-    GREEN = 32
-    YELLOW = 33
-    BLUE = 34
-    MAGENTA = 35
-    CYAN = 36
-    WHITE = 37
+    RED = 91
+    GREEN = 92
+    YELLOW = 93
+    BLUE = 94
+    MAGENTA = 95
+    CYAN = 96
+    WHITE = 97
 
 
 class Token:
@@ -200,13 +200,16 @@ class Lexer:
                 self.long_op_dict[long_op[0]] = []
             self.long_op_dict[long_op[0]].append(long_op[1:])
 
-    def ttyinfo(self, text: str, color: TTYColor = TTYColor.RED) -> str:
+    def ttyinfo(self, text: str, color: TTYColor = TTYColor.RED, underline = True) -> str:
         """
         tty 彩色输出, 默认红色
         """
         ESC = "\033"
         UNDERLINE = 4
-        return f"{ESC}[{color.value}m{ESC}[{UNDERLINE}m{text}{ESC}[0m"
+        if underline:
+            return f"{ESC}[{color.value}m{ESC}[{UNDERLINE}m{text}{ESC}[0m"
+        else:
+            return f"{ESC}[{color.value}m{text}{ESC}[0m"
 
     def _record(self):
         """
