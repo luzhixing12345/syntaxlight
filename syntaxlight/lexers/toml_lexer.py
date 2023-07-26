@@ -18,11 +18,13 @@ class TomlLexer(Lexer):
 
     def get_next_token(self):
         while self.current_char is not None:
+            if self.current_char == "'" and self.peek(2) == "''":
+                return self.get_extend_str(("'''", "'''"))
+            if self.current_char == '"' and self.peek(2) == '""':
+                return self.get_extend_str(('"""', '"""'))
+
             # TOML 单双引号都可以
-            if (
-                self.current_char == TokenType.QUOTO.value
-                or self.current_char == TokenType.APOSTROPHE.value
-            ):
+            if self.current_char in ('"', "'"):
                 return self.get_str()
 
             if self.current_char == TokenType.SPACE.value:
@@ -30,7 +32,7 @@ class TomlLexer(Lexer):
 
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
-            
+
             if self.current_char == TokenType.HASH.value:
                 # match comment
                 return self.get_comment()
@@ -53,11 +55,11 @@ class TomlLexer(Lexer):
                     return token
 
             if self.current_char.isalpha():
-                return self.get_id(extend_chars=['_'])
+                return self.get_id(extend_chars=["_"])
 
             try:
                 token_type = TokenType(self.current_char)
-            except ValueError: # pragma: no cover
+            except ValueError:  # pragma: no cover
                 token = Token(None, self.current_char, self.line, self.column)
                 self.error(ErrorCode.UNKNOWN_CHARACTER, token)
             else:
@@ -72,4 +74,4 @@ class TomlLexer(Lexer):
 
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
-        return Token(type=TokenType.EOF, value='EOF', line=self.line, column=self.column)
+        return Token(type=TokenType.EOF, value="EOF", line=self.line, column=self.column)

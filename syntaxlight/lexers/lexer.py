@@ -1,6 +1,7 @@
 from enum import Enum
 from ..error import ErrorCode, LexerError
 from typing import Dict, List, Tuple
+import re
 
 GLOBAL_TOKEN_ID = 0
 
@@ -200,7 +201,7 @@ class Lexer:
                 self.long_op_dict[long_op[0]] = []
             self.long_op_dict[long_op[0]].append(long_op[1:])
 
-    def ttyinfo(self, text: str, color: TTYColor = TTYColor.RED, underline = True) -> str:
+    def ttyinfo(self, text: str, color: TTYColor = TTYColor.RED, underline=True) -> str:
         """
         tty 彩色输出, 默认红色
         """
@@ -349,39 +350,84 @@ class Lexer:
         else:
             return self.text[self.pos + 1 : peek_pos + 1]
 
-    def get_number(self) -> Token:
+    def get_number(self, accept_float = True, accept_hex = False, accept_bit = False, accept_p = False) -> Token:
         """
          <digit> ::= [0-9]
         <digits> ::= <digit>*
         <number> ::= <digits>(.<digits>)?(E|e[+-]?<digits>)?
+
+        @accept_float: 允许小数和科学计数法
+        @accept_hex  : 允许16进制表示 0xfff
+        @accept_bit  : 允许二进制表示 0b111
         """
+        bit_matching_status = False
+        hex_matching_status = False
+        def is_match_char(char:str) -> bool:
+            
+            if hex_matching_status:
+                return bool(re.match(r'[0-9a-fA-F]',char))
+            if bit_matching_status:
+                return bool(re.match(r'[01]',char))
+            return char.isdigit()
 
         result = ""
+
+        if accept_hex:
+            if self.current_char == '0' and self.peek() in ('x', 'X'):
+                result = self.current_char
+                self.advance()
+                result += self.current_char
+                self.advance()
+                hex_matching_status = True
+
+        if accept_bit:
+            if self.current_char == '0' and self.peek() in ('b', 'B'):
+                result = self.current_char
+                self.advance()
+                result += self.current_char
+                self.advance()
+                # 如果此时已经处于 hex_matching_status 状态了则忽略 
+                if not hex_matching_status:
+                    bit_matching_status = True
+
+
         # <digits>
-        while self.current_char is not None and self.current_char.isdigit():
+        while self.current_char is not None and is_match_char(self.current_char):
             result += self.current_char
             self.advance()
 
-        # (.<digits>)?
-        if self.current_char == ".":
-            result += self.current_char
-            self.advance()
-            while self.current_char is not None and self.current_char.isdigit():
+        if accept_float:
+            # (.<digits>)?
+            if self.current_char == ".":
                 result += self.current_char
                 self.advance()
+                while self.current_char is not None and is_match_char(self.current_char):
+                    result += self.current_char
+                    self.advance()
 
-        # (E|e[+-]?<digits>)?
-        if self.current_char == "e" or self.current_char == "E":
-            result += self.current_char
-            self.advance()
-            if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+            # (E|e[+-]?<digits>)?
+            if self.current_char == "e" or self.current_char == "E":
                 result += self.current_char
                 self.advance()
-            while self.current_char is not None and self.current_char.isdigit():
+                if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+                    result += self.current_char
+                    self.advance()
+                while self.current_char is not None and is_match_char(self.current_char):
+                    result += self.current_char
+                    self.advance()
+        
+        if accept_p:
+            if self.current_char in ('P','p'):
                 result += self.current_char
                 self.advance()
+                if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
+                    result += self.current_char
+                    self.advance()
+                while self.current_char is not None and is_match_char(self.current_char):
+                    result += self.current_char
+                    self.advance()
+
         # column - 1, 因为判断结束需要跳出 number
-
         return Token(TokenType.NUMBER, result, self.line, self.column - 1)
 
     def get_string(self):
@@ -412,10 +458,10 @@ class Lexer:
 
     def get_str(self):
         """
-        'xxx' "xxx" \"\"\"xxx\"\"\" '''xxx''' 都可以
+        匹配 "" 和 '' 之间的字符
         """
         result = self.current_char
-        if result not in (TokenType.QUOTO.value, TokenType.APOSTROPHE.value):
+        if result not in ("'", '"'):
             token = Token(TokenType.STRING, result, self.line, self.column)
             self.advance()
             self.error(ErrorCode.UNEXPECTED_TOKEN, token)
@@ -429,36 +475,52 @@ class Lexer:
                 if self.current_char is None:
                     self.error(
                         ErrorCode.UNEXPECTED_TOKEN,
-                        Token(TokenType.STRING, result, self.line, self.column),
+                        Token(TokenType.STRING, result, self.line, self.column - 1),
                     )
                 result += self.current_char
             self.advance()
 
         result += end_character
+        token = Token(TokenType.STR, result, self.line, self.column)
         self.advance()
-        # ''' or """
-        if len(result) == 2 and self.current_char == end_character:
-            result += self.current_char
+        return token
+
+    def get_extend_str(self, extend_symbol_pair: Tuple[str, str], token_type: Enum = TokenType.STR):
+        """
+        扩展匹配字符串, 比如 """ """ 和 ''' '''
+        """
+        start_symbol, end_symbol = extend_symbol_pair
+        assert len(start_symbol) > 0 and len(end_symbol) > 0
+        assert self.current_char == start_symbol[0]
+        if len(start_symbol) > 1:
+            assert self.peek(len(start_symbol) - 1) == start_symbol[1:]
+
+        result = start_symbol
+        for _ in range(len(start_symbol)):
             self.advance()
-            count = 0
-            while self.current_char is not None and count != 3:
-                if self.current_char == end_character:
-                    count += 1
-                else:
-                    count = 0
-                result += self.current_char
+
+        end_symbol_length = len(end_symbol)
+        while self.current_char is not None:
+            if (
+                self.current_char == end_symbol[0]
+                and self.peek(end_symbol_length - 1) == end_symbol[1:]
+            ):
+                break
+            else:
                 if self.current_char == "\\":
-                    self.advance()
-                    if self.current_char is None:
-                        self.error(
-                            ErrorCode.UNEXPECTED_TOKEN,
-                            Token(TokenType.STRING, result, self.line, self.column),
-                        )
-                    count = 0
                     result += self.current_char
+                    self.advance()
+                result += self.current_char
                 self.advance()
 
-        token = Token(TokenType.STR, result, self.line, self.column - 1)
+        if self.current_char is None:
+            token = Token(token_type, result, self.line, self.column - 1)
+        else:
+            result += end_symbol
+            for _ in range(end_symbol_length):
+                self.advance()
+            token = Token(token_type, result, self.line, self.column - 1)
+
         return token
 
     def get_id(self, ignore_case=False, extend_chars: List[str] = ["_"]):
@@ -493,7 +555,7 @@ class Lexer:
             token = Token(type=token_type, value=result, line=self.line, column=self.column - 1)
         return token
 
-    def get_comment(self, comment_symbol: Tuple[str] = ("#", "\n")):
+    def get_comment(self, start_symbol="#", end_symbol="\n"):
         """
         跳过注释部分, 单行注释不包括最后的换行
 
@@ -502,10 +564,8 @@ class Lexer:
         python 风格: ("#", "\n")
              C 风格: ("//", "\n"), ("/*", "*/")
         pascal 风格: ("//", "\n"), ("{", "}"), ("(*", "*)")
-           lua 风格: ("--[[", "]]"), ("--", "\n") # 有二义性的放前面
         """
 
-        start_symbol, end_symbol = comment_symbol
         assert start_symbol[0] == self.current_char
 
         result = start_symbol

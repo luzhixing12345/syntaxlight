@@ -10,8 +10,7 @@ from ..ast import (
     String,
     Punctuator,
     Identifier,
-    add_ast_type,
-    delete_ast_type,
+    add_ast_type
 )
 from typing import List, Union, Optional
 from enum import Enum
@@ -20,6 +19,7 @@ from ..gdt import *
 
 class LuaCSS(Enum):
     TABLE_KEY = "TableKey"
+    ATTRIBUTE_TYPE = 'AttributeType'
 
 
 class Block(AST):
@@ -55,11 +55,13 @@ class ElseStatement(AST):
 class AttributeName(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.attribute = None
 
 
 class Attribute(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.id:Identifier = None
 
 
 class ReturnStatment(AST):
@@ -83,30 +85,78 @@ class Variable(AST):
     def __init__(self) -> None:
         super().__init__()
         self.id: Identifier = None
-        self.exp = None
+        self.exp: AST = None
         self.sub_nodes: List[VarSuffix] = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.id)
+        node_visitor.link(self, self.exp)
+        node_visitor.link(self, self.sub_nodes)
+        return super().visit(node_visitor)
+
+    def formatter(self, depth: int = 0):
+        result = ""
+        if self.id:
+            result += self.id.formatter(depth + 1)
+        else:
+            result += f"({self.exp.formatter(depth+1)})"
+        for sub_node in self.sub_nodes:
+            result += sub_node.formatter(depth=depth + 1)
+        return result
 
 
 class VarSuffixType(Enum):
-    INDEX = 0  # [ID]
-    DOT = 1  # .ID
-    FUNCTION = 2  # F()
-    DOT_FUNCTION = 3  # .F()
-    COLON_FUNCTION = 4  # :F()
+    INDEX_ID = 0  # [ID]
+    DOT_ID = 1  # .ID
+    FUNCTION = 2  # ()
+    DOT_ID_FUNCTION = 3  # .F()
+    COLON_ID_FUNCTION = 4  # :F()
 
 
 class VarSuffix(AST):
     def __init__(self) -> None:
         super().__init__()
         self.suffix_type: VarSuffixType = None
-        self.id = None
-        self.args = None
+        self.id: Identifier = None
+        self.exp: AST = None
+        self.args: Argument = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.id)
+        node_visitor.link(self, self.exp)
+        node_visitor.link(self, self.args)
+        return super().visit(node_visitor)
+
+    def formatter(self, depth: int = 0):
+        result = ""
+        assert self.suffix_type is not None
+        if self.suffix_type == VarSuffixType.INDEX_ID:
+            result += f"[{self.exp.formatter(depth=depth+1)}]"
+        elif self.suffix_type == VarSuffixType.DOT_ID:
+            result += f".{self.id.formatter(depth=depth+1)}"
+        elif self.suffix_type == VarSuffixType.FUNCTION:
+            result += f"{self.args.formatter(depth=depth+1)}"
+        elif self.suffix_type == VarSuffixType.DOT_ID_FUNCTION:
+            result += f".{self.id.formatter(depth=depth+1)}({self.args.formatter(depth=depth+1)})"
+        else:
+            result += f":{self.id.formatter(depth=depth+1)}({self.args.formatter(depth=depth+1)})"
+
+        return result
 
 
 class Expression(AST):
     def __init__(self) -> None:
         super().__init__()
         self.functiondef = None
+        self.string: List[String] = None
+
+    def formatter(self, depth: int = 0):
+        result = ""
+        if self.string:
+            for st in self.string:
+                result += st.formatter(depth=depth + 1)
+
+        return result
 
 
 class PrefixExpression(AST):
@@ -129,6 +179,30 @@ class FunctionCall(AST):
 class Argument(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.explist: List[Expression] = None
+        self.table: TableConstructor = None
+        self.string: List[String] = None
+
+    def visit(self, node_visitor: NodeVisitor = None):
+        node_visitor.link(self, self.explist)
+        node_visitor.link(self, self.table)
+        node_visitor.link(self, self.string)
+        return super().visit(node_visitor)
+
+    def formatter(self, depth: int = 0):
+        result = ""
+        if self.explist is not None:
+            result += "("
+            for exp in self.explist:
+                result += exp.formatter(depth=depth + 1)
+            result += ")"
+        elif self.table is not None:
+            result += "table"
+        else:
+            print(self.string, "xx")
+            # for st in self.string:
+            #     result += st.formatter(depth=depth + 1)
+        return result
 
 
 class FunctionDefinition(AST):
@@ -310,7 +384,7 @@ class LuaParser(Parser):
 
         return node
 
-    def attnamelist(self):
+    def attnamelist(self) -> List[AttributeName]:
         """
         <attnamelist> ::= <ID> <attrib> ("," <ID> <attrib>)*
         """
@@ -331,12 +405,17 @@ class LuaParser(Parser):
     def attrib(self):
         """
         <attrib> ::= ("<" <ID> ">")?
+
+        https://www.lua.org/manual/5.4/manual.html#3.3.7
         """
         if self.current_token.type == TokenType.LANGLE_BRACE:
             node = Attribute()
             node.register_token(self.eat(TokenType.LANGLE_BRACE))
             node.update(id=self.identifier())
             node.register_token(self.eat(TokenType.RANGLE_BRACE))
+            # 对于 close 和 const 特殊标记
+            if node.id.id in ('close','const'):
+                add_ast_type(node.id, LuaCSS.ATTRIBUTE_TYPE)
             return node
         else:
             return None
@@ -393,6 +472,7 @@ class LuaParser(Parser):
         while self.current_token.type == TokenType.COMMA:
             self.eat(TokenType.COMMA)
             result.append(self.var())
+
         return result
 
     def var(self):
@@ -423,25 +503,28 @@ class LuaParser(Parser):
         while self.current_token.type in (
             TokenType.LSQUAR_PAREN,
             TokenType.DOT,
-            TokenType.LPAREN,
             TokenType.COLON,
+            # argument
+            TokenType.LPAREN,
+            TokenType.STR,
+            TokenType.LCURLY_BRACE,
         ):
             sub_node = VarSuffix()
             if self.current_token.type == TokenType.LSQUAR_PAREN:
                 sub_node.register_token(self.eat(TokenType.LSQUAR_PAREN))
                 sub_node.update(exp=self.exp())
                 sub_node.register_token(self.eat(TokenType.RSQUAR_PAREN))
-                sub_node.suffix_type = VarSuffixType.INDEX
+                sub_node.suffix_type = VarSuffixType.INDEX_ID
 
             elif self.current_token.type == TokenType.DOT:
                 sub_node.register_token(self.eat(TokenType.DOT))
                 sub_node.update(id=self.identifier())
-                sub_node.suffix_type = VarSuffixType.DOT
-                if self.current_token.type == TokenType.LPAREN:
+                sub_node.suffix_type = VarSuffixType.DOT_ID
+                if self.current_token.type in self.luafirst_set.args:
                     sub_node.update(args=self.args())
-                    sub_node.suffix_type = VarSuffixType.DOT_FUNCTION
+                    sub_node.suffix_type = VarSuffixType.DOT_ID_FUNCTION
 
-            elif self.current_token.type == TokenType.LPAREN:
+            elif self.current_token.type in self.luafirst_set.args:
                 sub_node.update(args=self.args())
                 sub_node.suffix_type = VarSuffixType.FUNCTION
             else:
@@ -449,7 +532,7 @@ class LuaParser(Parser):
                 sub_node.register_token(self.eat(TokenType.COLON))
                 sub_node.update(id=self.identifier())
                 sub_node.update(args=self.args())
-                sub_node.suffix_type = VarSuffixType.COLON_FUNCTION
+                sub_node.suffix_type = VarSuffixType.COLON_ID_FUNCTION
             sub_nodes.append(sub_node)
 
         node.update(sub_nodes=sub_nodes)
@@ -457,25 +540,37 @@ class LuaParser(Parser):
 
     def _is_functioncall(self, node: Variable):
         # TODO: GDT
-        functioncall_enum_set = (
-            VarSuffixType.DOT_FUNCTION,
-            VarSuffixType.COLON_FUNCTION,
-        )
-
         if len(node.sub_nodes) > 0:
-            if len(node.sub_nodes) == 1 and node.sub_nodes[0].suffix_type == VarSuffixType.FUNCTION:
-                add_ast_type(node.id, CSS.FUNCTION_CALL)
-                add_ast_type(node.exp, CSS.FUNCTION_CALL)
-                return True
-
+            has_functioncall = False
+            # 对 .ID() 和 :ID() 的 sub_node 设置为 functioncall
+            #
+            # a.b(name)().c():d().e.f()
+            #
+            # b c d f 应为 functioncall
+            # e 应为 key
             for sub_node in node.sub_nodes:
-                if sub_node.suffix_type in functioncall_enum_set:
+                if sub_node.suffix_type in (
+                    VarSuffixType.DOT_ID_FUNCTION,
+                    VarSuffixType.COLON_ID_FUNCTION,
+                ):
                     add_ast_type(sub_node.id, CSS.FUNCTION_CALL)
-                elif sub_node.suffix_type == VarSuffixType.DOT:
+                    has_functioncall = True
+                elif sub_node.suffix_type == VarSuffixType.DOT_ID:
                     add_ast_type(sub_node, LuaCSS.TABLE_KEY)
                 # INDEX 不做处理
 
-            if node.sub_nodes[-1].suffix_type in functioncall_enum_set:
+            if node.sub_nodes[-1].suffix_type in (
+                VarSuffixType.DOT_ID_FUNCTION,
+                VarSuffixType.COLON_ID_FUNCTION,
+                VarSuffixType.FUNCTION,
+            ):
+                # 如果最后一个 sub_node 是 () 且之前未设置 functioncall
+                # 则将开头 node 的 id/exp 设置为 functioncall
+                # myModule(name)
+                # io.write(name)
+                if not has_functioncall:
+                    add_ast_type(node.id, CSS.FUNCTION_CALL)
+                    add_ast_type(node.exp, CSS.FUNCTION_CALL)
                 return True
         return False
 
@@ -484,7 +579,10 @@ class LuaParser(Parser):
         <namelist> ::= <ID> (',' <ID>)*
         """
         result = [self.identifier()]
-        while self.current_token.type == TokenType.COMMA:
+        while (
+            self.current_token.type == TokenType.COMMA
+            and self.peek_next_token().type == TokenType.ID
+        ):
             self.eat(TokenType.COMMA)
             result.append(self.identifier())
         return result
@@ -519,8 +617,8 @@ class LuaParser(Parser):
             node = Number(self.current_token.value)
             node.register_token(self.eat(TokenType.NUMBER))
         elif self.current_token.type == TokenType.STR:
-            node = String(self.current_token.value)
-            node.register_token(self.eat(TokenType.STR))
+            node = Expression()
+            node.update(string=self.string_inside_format(self.current_token))
         elif self.current_token.type == TokenType.VARARGS:
             node = Expression()
             varargs = Punctuator(self.current_token.value)
@@ -575,12 +673,13 @@ class LuaParser(Parser):
             node.register_token(self.eat(TokenType.LPAREN))
             if self.current_token.type in self.luafirst_set.explist:
                 node.update(explist=self.explist())
+            else:
+                node.update(explist=[])
             node.register_token(self.eat(TokenType.RPAREN))
         elif self.current_token.type in self.luafirst_set.tableconstructor:
             node.update(table=self.tableconstructor())
         elif self.current_token.type == TokenType.STR:
-            sub_node = String(self.current_token.value)
-            sub_node.register_token(self.eat(TokenType.STR))
+            sub_node = self.string_inside_format(self.current_token)
             node.update(string=sub_node)
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "args error")
@@ -741,13 +840,23 @@ class LuaParser(Parser):
             exp_number = len(explist)
             if var_number > exp_number:
                 # TODO 检查返回值个数是否匹配
-                self.warning("var will be set to nil because of not enough value")
+                # self.warning("var will be set to nil because of not enough value")
+                pass
             elif var_number < exp_number:
-                self.warning("value will be ignore")
+                # self.warning("value will be ignore")
+                pass
             number = min(var_number, exp_number)
             for i in range(number):
                 self._match_single_functiondef(varlist[i], explist[i])
 
-    def _match_single_functiondef(self, var: AST, exp: Expression):
+    def _match_single_functiondef(self, var: Union[Variable,AttributeName], exp: Expression):
         if isinstance(exp, Expression) and exp.functiondef is not None:
-            add_ast_type(var, CSS.FUNCTION_NAME)
+            if isinstance(var, Variable):
+                if len(var.sub_nodes) == 0:
+                    add_ast_type(var, CSS.FUNCTION_NAME)
+                else:
+                    if var.sub_nodes[-1].suffix_type == VarSuffixType.DOT_ID:
+                        add_ast_type(var.sub_nodes[-1], CSS.FUNCTION_NAME)
+            else:
+                # AttributeName
+                add_ast_type(var, CSS.FUNCTION_NAME)

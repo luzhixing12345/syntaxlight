@@ -38,7 +38,7 @@ class JsonLexer(Lexer):
                 return self.get_id()
             
             if self.current_char == '/' and self.peek() == '/':
-                return self.get_comment(('//','\n'))
+                return self.get_comment('//','\n')
             
             try:
                 token_type = TokenType(self.current_char)

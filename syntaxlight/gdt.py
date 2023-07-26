@@ -21,10 +21,10 @@ class Descriptor(TypedDict):
     type: Enum
     scope: str
 
-class Argument(TypedDict):
+
+class FuncArgument(TypedDict):
     name: str
     type: Tuple[str]
-
 
 
 class GlobalDescriptorTable:
@@ -50,7 +50,7 @@ class GlobalDescriptorTable:
     def register_function(
         self,
         function_name: str,
-        arguments: List[Argument],
+        arguments: List[FuncArgument],
         return_value: Tuple[str],
         type: Enum,
         scope: str = "global",

@@ -29,7 +29,7 @@ class BNFLexer(Lexer):
                 return self.get_id(extend_chars=['_','-'])
             
             if self.current_char == '#':
-                return self.get_comment(("#",'\n'))
+                return self.get_comment("#",'\n')
             
             if self.current_char in self.long_op_dict:
                 return self.get_long_op()

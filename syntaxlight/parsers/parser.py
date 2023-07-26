@@ -1,12 +1,13 @@
 from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
 from ..error import ParserError, ErrorCode
 from enum import Enum
-from ..ast import AST, Keyword,add_ast_type, Identifier, Punctuator
+from ..ast import AST, Keyword, add_ast_type, Identifier, Punctuator, String
 from typing import List
 import sys
 import html
 import traceback
-import copy
+import re
+
 
 DEBUG = False
 DEBUG = True
@@ -72,7 +73,9 @@ class Parser:
 
         warning_color = TTYColor.MAGENTA
 
-        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color, underline=False) + message + "\n")
+        sys.stderr.write(
+            self.lexer.ttyinfo("warning: ", warning_color, underline=False) + message + "\n"
+        )
         # sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
     def _log_trace(self):
@@ -129,21 +132,21 @@ class Parser:
                 token=self.current_token,
                 message=f"should match {expected_value} but got {current_value}",
             )
-    
+
     def manual_get_next_token(self):
-        '''
+        """
         正常情况下调用 eat 获取下一个 token, 如果需要合并多个 token 并生成一个新的 token 时可调用此函数
-        '''
+        """
         self.current_token = self.lexer.get_next_token()
         self._skip()
         self.after_eat()
 
     def manual_register_token(self, token):
-        '''
+        """
         正常情况下不需要手动将 token 注册到 _token_list 当中, eat 内部会调用此方法
 
         如果因为合并或分割创建了新的 token 可调用此方法注册
-        '''
+        """
         self._register_token(token)
 
     def after_eat(self):
@@ -279,7 +282,7 @@ class Parser:
     def parse(self):
         raise NotImplementedError(self.__class__.__name__ + " must override the parse function")
 
-    def get_keyword(self, token_type: Enum = None, css_type: Enum = None):
+    def get_keyword(self, token_type: Enum = None, css_type: Enum = None) -> Keyword:
         """
         keyword
 
@@ -294,8 +297,8 @@ class Parser:
         if css_type is not None:
             add_ast_type(keyword, css_type)
         return keyword
-    
-    def identifier(self):
+
+    def identifier(self) -> Identifier:
         """
         ID
         """
@@ -303,13 +306,41 @@ class Parser:
         node.register_token(self.eat(TokenType.ID))
         return node
 
-    def punctuator(self, token_type: Enum = None):
-        '''
+    def punctuator(self, token_type: Enum = None) -> Punctuator:
+        """
         获取运算符
-        '''
+        """
         node = Punctuator(self.current_token.value)
         if token_type is None:
             node.register_token(self.eat())
         else:
             node.register_token(self.eat(token_type))
         return node
+
+    def string_inside_format(self, token: Token) -> List[String]:
+        """
+        取出其中格式化字符(如 %d %x \n) 并新建 token
+        """
+        pattern = r"(%[0-9ldiufFeEgGxXoscpaAn]+|(?:\\\\|\\n|\\t|\\v|\\f))"
+        sub_strings = re.split(pattern, token.value)
+        new_asts = []
+        line = token.line
+        column = token.column - len(token.value)
+        token_type = token.type
+        for sub_string in sub_strings:
+            if len(sub_string) == 0:
+                continue
+            column += len(sub_string)
+            token = Token(token_type, sub_string, line, column)
+            if bool(re.match(r"%[0-9ldiufFeEgGxXoscpaAn]+", sub_string)):
+                token.class_list.add("Format")
+            elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b", "\\\\"]:
+                token.class_list.add("Control")
+
+            self.manual_register_token(token)
+            node = String(token.value)
+            node.register_token([token])
+            new_asts.append(node)
+
+        self.manual_get_next_token()
+        return new_asts

@@ -1,4 +1,4 @@
-from .lexer import Lexer, Token, TokenType, TokenSet
+from .lexer import Lexer, Token, TokenType, TokenSet, ErrorCode
 from enum import Enum
 
 
@@ -40,7 +40,63 @@ class LuaTokenType(Enum):
 class LuaLexer(Lexer):
     def __init__(self, text: str, TokenType: TokenType = LuaTokenType):
         super().__init__(text, TokenType)
-        self.build_long_op_dict(["//", ">>", "<<", "..", "<=", ">=", "==", "~=", "::"])
+        self.build_long_op_dict(["//", ">>", "<<", "..", "...", "<=", ">=", "==", "~=", "::"])
+
+    def get_literal_str(self):
+        """
+        [[ ... ]]
+        [====[ ]====]
+        数量相等的匹配长换行字符串
+
+        保留内部所有字符串的原始值, 包括转义字符 \\
+        """
+        assert self.current_char == "["
+        result = "["
+        self.advance()
+        assign_op_number = 0
+        while self.current_char == "=":
+            assign_op_number += 1
+            result += self.current_char
+            self.advance()
+        
+        assert self.current_char == "["
+        result += self.current_char
+        self.advance()
+
+        end_symbol = f']{"="*assign_op_number}]'
+        is_match = False
+        while self.current_char is not None:
+            if self.current_char == "]" and self.peek(len(end_symbol) - 1) == end_symbol[1:]:
+                result += end_symbol
+                for _ in range(len(end_symbol)):
+                    self.advance()
+                is_match = True
+                break
+            else:
+                # 保留内部所有字符串的原始值, 包括转义字符 \\
+                result += self.current_char
+                self.advance()
+
+        if is_match is False:
+            token = Token(TokenType.STR, result, self.line, self.column-1)
+            self.error(ErrorCode.UNTERMINATED_STRING, token, f"miss end symbol {end_symbol}")
+        else:
+            token = Token(TokenType.STR, result, self.line, self.column - 1)
+        return token
+
+    def get_long_comment(self):
+        '''
+        --[[...]]
+        --[===[ ... ]===]
+        '''
+        result = '--'
+        self.advance()
+        self.advance()
+        token = self.get_literal_str()
+        token.type = TokenType.COMMENT
+        token.value = result + token.value
+        return token
+
 
     def get_next_token(self):
         while self.current_char is not None:
@@ -51,23 +107,32 @@ class LuaLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
-                return self.get_number()
+                return self.get_number(accept_hex=True, accept_p=True)
 
             if self.current_char.isalpha() or self.current_char == "_":
                 return self.get_id()
 
+            if self.current_char in self.long_op_dict:
+                return self.get_long_op()
+
+            if self.current_char == "-":
+                # --[ xxx 短注释
+                # --[[ ... ]] 长注释
+                # --[==[ ... ]==] 长注释
+                # -- [[ 第一行是短注释
+                # ... ]]  
+                next_three_chars = self.peek(3)
+                if next_three_chars[0] == '-':
+                    if next_three_chars[1] == '[' and next_three_chars[2] in ('[','='):
+                        return self.get_long_comment()
+                    else:
+                        return self.get_comment("--", "\n")
+
             if self.current_char in ("'", '"'):
                 return self.get_str()
 
-            if self.current_char in self.long_op_dict:
-                return self.get_long_op()
-            
-            if self.current_char == '-' and self.peek(3) == '-[[':
-                return self.get_comment(('--[[',']]'))
-            
-            if self.current_char == '-' and self.peek() == '-':
-                return self.get_comment(('--','\n'))
-
+            if self.current_char == "[" and self.peek() in ("[", "="):
+                return self.get_literal_str()
 
             # single-character token
             try:

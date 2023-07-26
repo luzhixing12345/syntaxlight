@@ -48,7 +48,7 @@ class XmlLexer(Lexer):
                     self.advance()
                     return token
                 elif self.peek(3) == "!--":
-                    return self.get_comment(("<!--", "-->"))
+                    return self.get_comment("<!--", "-->")
                 elif self.peek() == "/":
                     self.advance()
                     token = Token(XmlTokenType.TAG_COMPLETE_BEGIN, "</", self.line, self.column)

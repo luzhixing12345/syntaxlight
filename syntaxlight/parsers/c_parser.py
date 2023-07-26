@@ -2119,34 +2119,7 @@ class CParser(Parser):
         """
         string
         """
-        return self._string_inside_format(self.current_token)
-
-    def _string_inside_format(self, token: Token):
-        """
-        取出其中格式化字符 %d %x \n 并新建 token
-        """
-        pattern = r"(%[0-9ldiufFeEgGxXoscpaAn]+|(?:\\\\|\\n|\\t|\\v|\\f))"
-        sub_strings = re.split(pattern, token.value)
-        new_asts = []
-        line = token.line
-        column = token.column - len(token.value)
-        for sub_string in sub_strings:
-            if len(sub_string) == 0:
-                continue
-            column += len(sub_string)
-            token = Token(TokenType.STRING, sub_string, line, column)
-            if bool(re.match(r"%[0-9ldiufFeEgGxXoscpaAn]+", sub_string)):
-                token.class_list.add("Format")
-            elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b", "\\\\"]:
-                token.class_list.add("Control")
-
-            self.manual_register_token(token)
-            node = String(token.value)
-            node.register_token([token])
-            new_asts.append(node)
-
-        self.manual_get_next_token()
-        return new_asts
+        return self.string_inside_format(self.current_token)
 
     def static_assert_declaration(self):
         """
@@ -2367,7 +2340,7 @@ class CParser(Parser):
                 add_ast_type(node.id, CSS.MACRO_FUNCTION)
                 arguments = []
                 for i_node in node.paramters:
-                    arguments.append(Argument(name=i_node.id, type=None))
+                    arguments.append(FuncArgument(name=i_node.id, type=None))
                 GDT.register_function(node.id.id, arguments, (), CSS.MACRO_FUNCTION)
             else:
                 # 常规宏定义变量

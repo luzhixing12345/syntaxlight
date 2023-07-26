@@ -144,9 +144,9 @@ class CLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char == "/" and self.peek() == "/":
-                return self.get_comment(("//", "\n"))
+                return self.get_comment("//", "\n")
             if self.current_char == "/" and self.peek() == "*":
-                return self.get_comment(("/*", "*/"))
+                return self.get_comment("/*", "*/")
 
             if self.current_char.isdigit():
                 return self.get_number()
