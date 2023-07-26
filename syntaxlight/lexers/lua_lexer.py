@@ -77,7 +77,7 @@ class LuaLexer(Lexer):
                 result += self.current_char
                 self.advance()
 
-        if is_match is False:
+        if is_match is False: # pragma: no cover
             token = Token(TokenType.STR, result, self.line, self.column-1)
             self.error(ErrorCode.UNTERMINATED_STRING, token, f"miss end symbol {end_symbol}")
         else:
@@ -139,7 +139,7 @@ class LuaLexer(Lexer):
                 # get enum member by value, e.g.
                 # TokenType(';') --> TokenType.SEMI
                 token_type = TokenType(self.current_char)
-            except ValueError:
+            except ValueError: # pragma: no cover
                 # no enum member with value equal to self.current_char
                 self.error()
             else:

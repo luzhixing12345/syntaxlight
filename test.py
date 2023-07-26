@@ -18,6 +18,8 @@ STYLE = args.style
 LEXER_TEST = args.lexer
 TEST_FILES = {}
 
+AST = True
+
 for language in languages:
     if language != FILE_TYPE:
         continue
@@ -37,6 +39,6 @@ for language, files in TEST_FILES.items():
                 for token in tokens:
                     print(token)
             break
-        syntaxlight.example_display(files[INDEX], STYLE)
+        syntaxlight.example_display(files[INDEX], STYLE,AST)
     else:
         syntaxlight.example_display(files, STYLE)

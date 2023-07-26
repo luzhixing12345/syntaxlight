@@ -43,6 +43,11 @@ class TestUnit(unittest.TestCase):
         for files in TEST_FILES['bnf']:
             syntaxlight.parse_file(files)
 
+    def test_06_lua(self):
+
+        for files in TEST_FILES['lua']:
+            syntaxlight.parse_file(files)
+
 
 
 if __name__ == "__main__":

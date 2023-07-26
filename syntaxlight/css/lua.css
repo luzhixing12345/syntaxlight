@@ -68,7 +68,7 @@ pre[class*="language-"] {
     color: --punctuator;
 }
 
-.Token.COLON {
+.Token.COLON, .Token.DOUBLE_COLON {
     color: --type;
 }
 
