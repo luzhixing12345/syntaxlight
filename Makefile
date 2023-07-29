@@ -1,6 +1,6 @@
 
 i = 0
-t = lua
+t = c
 s = vscode
 
 .PHONY: test lexer cover

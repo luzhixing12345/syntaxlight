@@ -841,7 +841,20 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be struct or union")
 
         node = Structure()
+        
         node.update(structure_type=self.struct_or_union())
+
+        # 对于如下情况
+        # typedef struct State State;
+        # struct State {
+        #     int c;
+        #     State *out;
+        #     State *out1;
+        #     int lastlist;
+        # };
+        # 将当前 struct 中当前 token: "State" 从 CTokenType.TYPEDEF_ID 恢复为TokenType.ID
+        if self.current_token.type == CTokenType.TYPEDEF_ID:
+            self.current_token.type = TokenType.ID
         if self.current_token.type == TokenType.ID:
             node.update(id=self.identifier())
         # else:
@@ -1720,10 +1733,10 @@ class CParser(Parser):
         if self.current_token.type in self.cfirst_set.static_assert_declaration:
             node.update(static_assert=self.static_assert_declaration())
             return node
-
+        
         declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
         self._unknown_typedef_id_guess()
-
+        
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
             self._unknown_typedef_id_guess()

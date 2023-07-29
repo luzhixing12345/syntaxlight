@@ -359,6 +359,7 @@ class Lexer:
         @accept_float: 允许小数和科学计数法
         @accept_hex  : 允许16进制表示 0xfff
         @accept_bit  : 允许二进制表示 0b111
+        @accept_p    : 允许后面跟 P/p
         """
         bit_matching_status = False
         hex_matching_status = False

@@ -1,5 +1,7 @@
-const static int x[] = {
-#define A
-    1,
-#define B
+typedef struct State State;
+struct State {
+    int c;
+    State *out;
+    State *out1;
+    int lastlist;
 };
