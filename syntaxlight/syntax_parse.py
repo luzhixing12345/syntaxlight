@@ -1,38 +1,10 @@
 import os
 from .lexers import *
-from .error import Error
 from .parsers import *
+from .error import Error
+from .language import guess_language, SUPPORTED_SYNTAX, show_help_info, clean_language
 from .ast import display_ast
 import sys
-from typing import List, TypedDict
-
-class SyntaxDict(TypedDict):
-    lexer: Lexer
-    parser: Parser
-    suffix: List[str]
-
-SUPPORTED_SYNTAX = {
-    "json": SyntaxDict(lexer=JsonLexer, parser=JsonParser, suffix=['json']),
-    "c": SyntaxDict(lexer=CLexer, parser=CParser, suffix=["c", "h"]),
-    "lua": SyntaxDict(lexer=LuaLexer, parser=LuaParser, suffix=['lua']),
-    "bnf": SyntaxDict(lexer=BNFLexer, parser=BNFParser, suffix=['bnf']),
-    "toml": SyntaxDict(lexer=TomlLexer, parser=TomlParser, suffix=['toml']),
-    "xml": SyntaxDict(lexer=XmlLexer, parser=XmlParser, suffix=['xml']),
-    "shell": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=['sh']),
-    "bash": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=['sh'])
-}
-
-
-def is_language_support(language: str):
-    """
-    检验 syntaxlight 是否支持当前语言
-    """
-    global SUPPORTED_SYNTAX
-    language = language.lower()
-    if language in SUPPORTED_SYNTAX:
-        return True
-    else:
-        return False
 
 
 def parse(
@@ -40,7 +12,7 @@ def parse(
 ) -> str:
     if len(text) == 0:
         return ""
-
+    language = clean_language(language)
     parser = get_parser(text, language)
     parser.lexer.file_path = file_path
 
@@ -65,6 +37,8 @@ def parse_file(file_path: str, language=None, show_error_context=True, save_ast_
 
     if language is None:
         language = guess_language(file_path)
+    else:
+        language = clean_language(language)
 
     return parse(
         text,
@@ -73,30 +47,6 @@ def parse_file(file_path: str, language=None, show_error_context=True, save_ast_
         show_error_context=show_error_context,
         save_ast_tree=save_ast_tree,
     )
-
-
-def guess_language(file_path: str) -> str:
-    """
-    通过文件名猜测文法类型
-    """
-    suffix_name = file_path.split(os.sep)[-1].split(".")[-1]
-    for language in SUPPORTED_SYNTAX:
-        if suffix_name in SUPPORTED_SYNTAX[language]["suffix"]:
-            return language
-
-    if suffix_name in SUPPORTED_SYNTAX:
-        return suffix_name
-
-    print("fail to guess language")
-    show_help_info()
-    exit(1)
-
-
-def show_help_info():
-    print(f"supported language:")
-    for language in SUPPORTED_SYNTAX:
-        print(f"{language:>10}:", SUPPORTED_SYNTAX[language]["suffix"])
-    exit(1)
 
 
 def get_tokens(lexer: Lexer):
@@ -142,4 +92,5 @@ def _preprocess(code_or_path: str, language: str = None):
     else:
         code = code_or_path
 
+    language = clean_language(language)
     return code, language

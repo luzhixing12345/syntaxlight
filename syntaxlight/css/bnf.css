@@ -1,4 +1,4 @@
-pre[class*="language-"] {
+pre[class*="language-bnf"] {
     background: --background;
 }
 
@@ -46,6 +46,7 @@ pre[class*="language-"] {
     color: --variant;
 }
 
-.Token.RANGLE_BRACE, .Token.LANGLE_BRACE {
+.Token.RANGLE_BRACE,
+.Token.LANGLE_BRACE {
     color: --punctuator;
 }

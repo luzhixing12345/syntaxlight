@@ -1,6 +1,7 @@
-pre[class*="language-"] {
+pre[class*="language-xml"] {
     background: --background;
 }
+
 .Token {
     color: --punctuator;
 }

@@ -50,6 +50,5 @@ def example_display(
     for file in css_files:
         shutil.copyfile(file, os.path.join(example_folder_name, file.split(os.sep)[-1]))
 
-    export_name = os.path.join(example_folder_name, f"{language}.css")
-    export_css([language], export_name, style)
+    export_css([language], example_folder_name, style)
     # print(f"open syntaxlight_example/inedx.html in browser")

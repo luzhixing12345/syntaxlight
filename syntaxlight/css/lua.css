@@ -1,4 +1,4 @@
-pre[class*="language-"] {
+pre[class*="language-lua"] {
     background: --background;
 }
 
@@ -30,7 +30,8 @@ pre[class*="language-"] {
     color: --string;
 }
 
-.Token.Attribute.LANGLE_BRACE, .Token.Attribute.RANGLE_BRACE {
+.Token.Attribute.LANGLE_BRACE,
+.Token.Attribute.RANGLE_BRACE {
     color: --punctuator;
 }
 
@@ -56,19 +57,25 @@ pre[class*="language-"] {
     color: --function;
 }
 
-.Token.Field.ID, .Token.TableKey {
+.Token.Field.ID,
+.Token.TableKey {
     color: --struct;
 }
 
-.Token.TRUE, .Token.FALSE, .Token.NIL {
+.Token.TRUE,
+.Token.FALSE,
+.Token.NIL {
     color: --type;
 }
 
-.Token.AND, .Token.NOT, .Token.OR {
+.Token.AND,
+.Token.NOT,
+.Token.OR {
     color: --punctuator;
 }
 
-.Token.COLON, .Token.DOUBLE_COLON {
+.Token.COLON,
+.Token.DOUBLE_COLON {
     color: --type;
 }
 
