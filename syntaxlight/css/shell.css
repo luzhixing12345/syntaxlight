@@ -1,0 +1,62 @@
+pre[class*="language-"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.brace-depth-0 {
+    color: --brace1;
+}
+
+.Token.brace-depth-1 {
+    color: --brace2;
+}
+
+.Token.brace-depth-2 {
+    color: --brace3;
+}
+
+
+.Token.PATH {
+    color: --variant;
+}
+
+.Token.Program, .Token.Function {
+    color: --function;
+}
+
+
+.Token.STR {
+    color: --string;
+}
+
+.Token.NUMBER {
+    color:  --number;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.Keyword {
+    color: --define;
+}
+
+
+.Token.GlobalVariant {
+    color: --type;
+}
+
+.Token.Variant, .Token.VARIANT {
+    color: --variant;
+}
+
+.Token.Format {
+    color: --format;
+}
+
+.Token.Control {
+    color: --control;
+}

@@ -23,6 +23,9 @@
             },
             "toml": {
                 ".Token.Keyword": "color: #327ED0;"
+            },
+            "shell": {
+                ".Token.OPTION": "color: #ABABAB;"
             }
         }
     },

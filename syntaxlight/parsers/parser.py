@@ -7,6 +7,7 @@ import sys
 import html
 import traceback
 import re
+from ..gdt import CSS
 
 
 DEBUG = False
@@ -321,7 +322,7 @@ class Parser:
         """
         取出其中格式化字符(如 %d %x \n) 并新建 token
         """
-        pattern = r"(%[0-9ldiufFeEgGxXoscpaAn]+|(?:\\\\|\\n|\\t|\\v|\\f))"
+        pattern = r"(%[0-9ldiufFeEgGxXoscpaAnYyMmHhSs]+|(?:\\\\|\\n|\\t|\\v|\\f))"
         sub_strings = re.split(pattern, token.value)
         new_asts = []
         line = token.line
@@ -332,10 +333,10 @@ class Parser:
                 continue
             column += len(sub_string)
             token = Token(token_type, sub_string, line, column)
-            if bool(re.match(r"%[0-9ldiufFeEgGxXoscpaAn]+", sub_string)):
-                token.class_list.add("Format")
+            if bool(re.match(r"%[0-9ldiufFeEgGxXoscpaAnYyMmHhSs]+", sub_string)):
+                token.add_css(CSS.FORMAT)
             elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b", "\\\\"]:
-                token.class_list.add("Control")
+                token.add_css(CSS.CONTROL)
 
             self.manual_register_token(token)
             node = String(token.value)

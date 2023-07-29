@@ -15,6 +15,8 @@ class CSS(Enum):
     MACRO_FUNCTION = "MarcroFunction"  # 宏定义函数
     ENUMERATOR = "Enumerator"  # 枚举类
     ENUM_ID = "EnumID"  # 枚举类型
+    FORMAT = 'Format'
+    CONTROL = 'Control'
 
 
 class Descriptor(TypedDict):

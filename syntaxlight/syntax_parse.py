@@ -4,23 +4,35 @@ from .error import Error
 from .parsers import *
 from .ast import display_ast
 import sys
+from typing import List, TypedDict
 
+class SyntaxDict(TypedDict):
+    lexer: Lexer
+    parser: Parser
+    suffix: List[str]
 
 SUPPORTED_SYNTAX = {
-    "json": {"lexer": JsonLexer, "parser": JsonParser, "suffix": ["json"]},
-    "c": {"lexer": CLexer, "parser": CParser, "suffix": ["c", "h"]},
-    "lua": {"lexer": LuaLexer, "parser": LuaParser, "suffix": ["lua"]},
-    "bnf": {"lexer": BNFLexer, "parser": BNFParser, "suffix": ["bnf"]},
-    "makefile": {"lexer": None, "parser": None, "suffix": ["Makefile", "mk", "mak", "makefile"]},
-    "java": {"lexer": None, "parser": None, "suffix": ["java"]},
-    "rust": {"lexer": None, "parser": None, "suffix": ["rs"]},
-    "javascript": {"lexer": None, "parser": None, "suffix": ["js"]},
-    "typescript": {"lexer": None, "parser": None, "suffix": ["ts", "tsx", "tsc"]},
-    "pascal": {"lexer": None, "parser": None, "suffix": ["pas"]},
-    "toml": {"lexer": TomlLexer, "parser": TomlParser, "suffix": ["toml"]},
-    "xml": {"lexer": XmlLexer, "parser": XmlParser, "suffix": ["xml"]},
-    "shell": {"lexer": ShellLexer, "parser": ShellParser, "suffix": ["sh"]},
+    "json": SyntaxDict(lexer=JsonLexer, parser=JsonParser, suffix=['json']),
+    "c": SyntaxDict(lexer=CLexer, parser=CParser, suffix=["c", "h"]),
+    "lua": SyntaxDict(lexer=LuaLexer, parser=LuaParser, suffix=['lua']),
+    "bnf": SyntaxDict(lexer=BNFLexer, parser=BNFParser, suffix=['bnf']),
+    "toml": SyntaxDict(lexer=TomlLexer, parser=TomlParser, suffix=['toml']),
+    "xml": SyntaxDict(lexer=XmlLexer, parser=XmlParser, suffix=['xml']),
+    "shell": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=['sh']),
+    "bash": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=['sh'])
 }
+
+
+def is_language_support(language: str):
+    """
+    检验 syntaxlight 是否支持当前语言
+    """
+    global SUPPORTED_SYNTAX
+    language = language.lower()
+    if language in SUPPORTED_SYNTAX:
+        return True
+    else:
+        return False
 
 
 def parse(

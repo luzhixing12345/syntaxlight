@@ -40,3 +40,4 @@ def export_css(languages: List[str], export_name: str = "index.css", style: str 
         print(f"unknown style {style}")
         print(f"supported style: {list(themes.keys())}")
         exit(1)
+

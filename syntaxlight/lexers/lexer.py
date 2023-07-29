@@ -110,7 +110,7 @@ class TTYColor(Enum):
 class Token:
     def __init__(self, type: Enum, value, line=None, column=None):
         self.type: Enum = type
-        self.value = value
+        self.value:str = value
         self.line: int = line
         self.column: int = column
         self.ast: None
@@ -142,6 +142,9 @@ class Token:
             lineno=self.line,
             column=self.column,
         )
+    
+    def add_css(self, CSS: Enum):
+        self.class_list.add(CSS.value)
 
     def __repr__(self):
         return self.__str__()

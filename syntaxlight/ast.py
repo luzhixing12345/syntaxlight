@@ -409,6 +409,8 @@ class NodeVisitor:
 
 
 def display_ast(node: AST, sub_roots: List[AST], save_ast_tree=False):
+    if node is None:
+        return
     node_visitor = NodeVisitor()
     node.visit(node_visitor)
     for sub_root in sub_roots:
