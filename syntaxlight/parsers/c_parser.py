@@ -1400,6 +1400,16 @@ class CParser(Parser):
                 node.register_token(self.eat())
             node.register_token(self.eat(TokenType.RCURLY_BRACE))
 
+        # 检查是不是宏定义
+        if node.primary_expr is not None:
+            if isinstance(node.primary_expr.sub_node, Identifier):
+                if node.primary_expr.sub_node.id in GDT or bool(
+                    re.match(r"^[A-Z_][0-9A-Z_]+$", node.primary_expr.sub_node.id)
+                ):
+                    if self.current_token.type == TokenType.LPAREN:
+                        # 宏函数匹配
+                        self._match_macro_function(node.primary_expr.sub_node.id)
+
         sub_nodes = []
         while self.current_token.type in self.cfirst_set.postfix_expression_inside:
             if self.current_token.type == TokenType.LSQUAR_PAREN:
@@ -1520,6 +1530,39 @@ class CParser(Parser):
         node.register_token(self.eat(TokenType.COLON))
         node.update(assignment_expr=self.assignment_expression())
         return node
+
+    def _match_macro_function(self, macro_name:str):
+        """
+        匹配不符合 C 文法的宏定义函数
+
+        1. 对于全大写 ID 的会被认为是宏函数
+
+           XBOX_ARG_BOOLEAN(NULL, [-h][--help][help = "show help information"])
+
+        2. 对于前面定义过的宏函数会被匹配
+
+           #define container_of()
+
+           struct ipc_namespace *ns = container_of(table->data, struct ipc_namespace, shm_rmid_forced);
+        """
+        
+        assert self.current_token.type == TokenType.LPAREN
+        self.eat(TokenType.LPAREN)
+        brace_number = 1
+
+        while self.current_token.type != TokenType.EOF:
+            if self.current_token.type == TokenType.RPAREN:
+                brace_number -= 1
+                if brace_number == 0:
+                    self.eat()
+                    return
+            elif self.current_token.type == TokenType.LPAREN:
+                brace_number += 1
+            self.pp_token()
+
+        self.error(ErrorCode.BRACE_MISS_MATCH, f'in macro define function {macro_name}')
+
+
 
     def expression(self):
         """
@@ -2137,7 +2180,7 @@ class CParser(Parser):
                            | inline
                            | goto
 
-        <OutputOperands> ::= ":" <STRING>? ( "(" <conditional-expression> ")" ) ("," <STRING>? ( "(" <conditional-expression> ")" ))*
+        <OutputOperands> ::= ":" <STRING>? ( "(" <constant_expression> ")" ) ("," <STRING>? ( "(" <constant_expression> ")" ))*
         """
         node = GNU_C_Assembly()
         node.update(keyword=self.get_keyword(CTokenType._ASM, css_type=C_CSS.GNU_C_EXTENSION))
@@ -2154,7 +2197,7 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.STRING))
             if self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
-                self.assignment_expression()
+                self.constant_expression()
                 node.register_token(self.eat(TokenType.RPAREN))
                 while self.current_token.type == TokenType.COMMA:
                     node.register_token(self.eat())
@@ -2162,7 +2205,7 @@ class CParser(Parser):
                         node.register_token(self.eat(TokenType.STRING))
                     if self.current_token.type == TokenType.LPAREN:
                         node.register_token(self.eat(TokenType.LPAREN))
-                        self.assignment_expression()
+                        self.constant_expression()
                         node.register_token(self.eat(TokenType.RPAREN))
 
         node.register_token(self.eat(TokenType.RPAREN))
@@ -2436,6 +2479,10 @@ class CParser(Parser):
             return self.identifier()
         elif self.current_token.type == TokenType.STRING:
             return self.string()
+        elif self.current_token.value in self.lexer.reserved_keywords:
+            return self.get_keyword()
+        elif self.current_token.type in self.cfirst_set.struct_or_union:
+            return self.struct_or_union()
         else:
             node = PPtoken(self.current_token.value)
             node.register_token(self.eat())

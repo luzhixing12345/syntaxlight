@@ -83,6 +83,7 @@ pre[class*="language-c"] {
 .Token.ELSE,
 .Token.FOR,
 .Token.WHILE,
+.Token.DO,
 .Token.SWITCH,
 .Token.CASE,
 .Token.DEFAULT {
@@ -102,8 +103,11 @@ pre[class*="language-c"] {
 }
 
 .Token.StorageType,
+.Token.FunctionType,
 .Token.QualifyType,
 .Token.StructureType,
+.Token.STRUCT,
+.Token.UNION,
 .Token.EnumSpecifier {
     color: --type;
 }
@@ -148,7 +152,11 @@ pre[class*="language-c"] {
     color: --controlchar;
 }
 
-.Token.COMMA, .Token.COLON, .Token.DOT, .Token.SEMI, .Token.GotoLabel {
+.Token.COMMA,
+.Token.COLON,
+.Token.DOT,
+.Token.SEMI,
+.Token.GotoLabel {
     color: --punctuator;
 }
 

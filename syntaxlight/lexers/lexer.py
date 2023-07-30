@@ -144,7 +144,8 @@ class Token:
         )
     
     def add_css(self, CSS: Enum):
-        self.class_list.add(CSS.value)
+        if CSS is not None:
+            self.class_list.add(CSS.value)
 
     def __repr__(self):
         return self.__str__()

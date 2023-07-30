@@ -218,7 +218,7 @@ class Parser:
         self.eat(TokenType.LF)
         self.skip_crlf()
 
-    def peek_next_token(self) -> Token:
+    def peek_next_token(self, n = 1) -> Token:
         """
         查看下一个 token 的类型
         """
@@ -228,7 +228,8 @@ class Parser:
         sub_roots_length = len(self.sub_roots)
         current_token = self.current_token
 
-        self.eat()
+        for _ in range(n):
+            self.eat()
         next_token = self.current_token
 
         self.lexer._reset()

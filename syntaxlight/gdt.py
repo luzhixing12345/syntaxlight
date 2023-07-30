@@ -89,3 +89,7 @@ class GlobalDescriptorTable:
 
     def __contains__(self, item):
         return item in self._descriptors
+
+    def __repr__(self) -> str:
+        
+        return str(list(self._descriptors.keys()))

@@ -1,5 +1,5 @@
 from .parser import Parser
-from ..lexers import TokenType, ShellTokenType
+from ..lexers import TokenType, ShellTokenType, Token
 from ..gdt import *
 import re
 
@@ -9,7 +9,9 @@ class ShellCSS(Enum):
     PROGRAM = "Program"
     VARIANT = "Variant"
     FUNCTION = "Function"
-    URL = 'Url'
+    URL = "Url"
+    HOST_NAME = "HostName"
+    DIR_PATH = "DirPath"
 
 
 class ShellParser(Parser):
@@ -25,7 +27,6 @@ class ShellParser(Parser):
         is_program_name = True
         new_program_token_type = [TokenType.LF, TokenType.PIPE, TokenType.SEMI, TokenType.AND]
         while self.current_token.type != TokenType.EOF:
-
             if self.current_token.type == TokenType.BACK_SLASH:
                 self.eat()
                 self.eat_lf()
@@ -36,6 +37,28 @@ class ShellParser(Parser):
                 self.current_token.add_css(ShellCSS.KEYWORD)
                 if is_program_name:
                     is_program_name = False
+
+            if self.current_token.type == ShellTokenType.LINUX_USER_PATH:
+                match_result = re.match(
+                    r"^(?P<HostName>\w+@[\w.-]+)(?P<colon>:)(?P<DirPath>[~\w/]+)(?P<Tag>[$#]?)",
+                    self.current_token.value,
+                )
+                line = self.current_token.line
+                column = self.current_token.column - len(self.current_token.value)
+                linux_path_type = [
+                    ShellTokenType.HOST_NAME,
+                    TokenType.COLON,
+                    ShellTokenType.DIR_PATH,
+                    ShellTokenType.TAG,
+                ]
+                for name, path_type in zip(match_result.groupdict(), linux_path_type):
+                    value = match_result.group(name)
+                    column += len(value)
+                    token = Token(path_type, value, line, column)
+                    self.manual_register_token(token)
+                is_program_name = True
+                self.manual_get_next_token()
+                continue
 
             if (
                 self.current_token.type == TokenType.DOLLAR
@@ -76,13 +99,15 @@ class ShellParser(Parser):
 
     def is_valid_path(self, path):
         # 匹配Linux系统的绝对路径或相对路径
-        linux_path_pattern = r'^/[^/\0]+(/[^/\0]+)*$|^(\./[^/\0]+)+$'
+        linux_path_pattern = r"^/[^/\0]+(/[^/\0]+)*$|^(\./[^/\0]+)+$"
 
         # 匹配Windows系统的绝对路径或相对路径
-        windows_path_pattern = r'^[a-zA-Z]:\\(\\[^\\/\0]+)*$|^(\.\\[^\\/\0]+)+$'
+        windows_path_pattern = r"^[a-zA-Z]:\\(\\[^\\/\0]+)*$|^(\.\\[^\\/\0]+)+$"
 
-        any_path_pattern = r'[0-9a-zA-Z/\.\-\_]*/[0-9a-zA-Z/\.\-\_]*'
+        any_path_pattern = r"[0-9a-zA-Z/\.\-\_]*/[0-9a-zA-Z/\.\-\_]*"
 
-        return re.match(linux_path_pattern, path) is not None or \
-            re.match(windows_path_pattern, path) is not None or \
-            re.match(any_path_pattern, path) is not None
+        return (
+            re.match(linux_path_pattern, path) is not None
+            or re.match(windows_path_pattern, path) is not None
+            or re.match(any_path_pattern, path) is not None
+        )

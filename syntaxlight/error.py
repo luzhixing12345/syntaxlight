@@ -16,6 +16,7 @@ class ErrorCode(Enum):
     UNEXPECTED_TOKEN = "Unexpected token"
     MISS_EXPECTED_TOKEN = "Miss expected token"
     TRAILING_COMMA = "Trailing comma not allowed"
+    BRACE_MISS_MATCH = 'brace number miss match'
 
 
 class Error(Exception):

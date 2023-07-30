@@ -61,3 +61,11 @@ pre[class*="language-shell"] {
 .Token.Url {
     border-bottom: 1px solid --punctuator;
 }
+
+.Token.HOST_NAME {
+    color: --struct;
+}
+
+.Token.DIR_PATH {
+    color: --type;
+}

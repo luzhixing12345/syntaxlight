@@ -1,6 +1,6 @@
 from .lexer import Lexer, Token, TokenType, ErrorCode
 from enum import Enum
-
+import re
 
 class ShellTokenType(Enum):
     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
@@ -26,6 +26,10 @@ class ShellTokenType(Enum):
     REDIRECT_TO = ">"
     REDIRECT_FROM = "<"
     TEXT = 'text' # 未知符号, 可能只是借用 bash
+    LINUX_USER_PATH = 'root@kamilu'
+    HOST_NAME = 'HostName'
+    DIR_PATH = 'DirPath'
+    TAG = 'Tag'
 
 
 class ShellLexer(Lexer):
@@ -75,7 +79,15 @@ class ShellLexer(Lexer):
                 return self.get_number(accept_bit=True, accept_hex=True)
 
             if self.current_char.isalnum() or self.current_char in ('_','.','/'):
-                return self.get_id(extend_chars=["_", "-", ".",'/',':','+','-'])
+                token = self.get_id(extend_chars=["_", "-", ".",'/',':','+','-','@','~'])
+                if bool(re.match(r'^\w+@[\w.-]+:[~\w/]+', token.value)):
+                    if self.current_char in ('#', '$'):
+                        token.value += self.current_char
+                        token.column += 1
+                        self.advance()
+                    token.type = ShellTokenType.LINUX_USER_PATH
+
+                return token
 
             # 只接受双引号, 因为无法判断 can't ... 这种
             if self.current_char == '"':
