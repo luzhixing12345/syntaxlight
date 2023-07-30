@@ -263,7 +263,7 @@
                     | inline
                     | goto
 
-<OutputOperands> ::= ":" <STRING>? ( "(" <ID> ")" )
+<OutputOperands> ::= ":" <STRING>? ( "(" <conditional-expression> ")" ) ("," <STRING>? ( "(" <conditional-expression> ")" ))*
 
 <group> ::= <group-part>*
 

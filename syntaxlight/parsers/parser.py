@@ -324,7 +324,7 @@ class Parser:
         """
         if token is None:
             token = self.current_token
-        pattern = r"(%[0-9ldiufFeEgGxXoscpaAnYyMmHhSs]+|(?:\\\\|\\n|\\t|\\v|\\f))"
+        pattern = r"(%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+|(?:\\\\|\\n|\\t|\\v|\\f))"
         sub_strings = re.split(pattern, token.value)
         new_asts = []
         line = token.line
@@ -335,7 +335,7 @@ class Parser:
                 continue
             column += len(sub_string)
             token = Token(token_type, sub_string, line, column)
-            if bool(re.match(r"%[0-9ldiufFeEgGxXoscpaAnYyMmHhSs]+", sub_string)):
+            if bool(re.match(r"%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+", sub_string)):
                 token.add_css(CSS.FORMAT)
             elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b", "\\\\"]:
                 token.add_css(CSS.CONTROL)

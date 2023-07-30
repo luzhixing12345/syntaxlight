@@ -431,7 +431,7 @@ class Lexer:
                     result += self.current_char
                     self.advance()
 
-        if self.current_char in end_chars:
+        while self.current_char in end_chars:
             result += self.current_char
             self.advance()
         # column - 1, 因为判断结束需要跳出 number

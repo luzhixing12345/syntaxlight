@@ -2137,7 +2137,7 @@ class CParser(Parser):
                            | inline
                            | goto
 
-        <OutputOperands> ::= ":" <STRING>? ( "(" <ID> ")" )
+        <OutputOperands> ::= ":" <STRING>? ( "(" <conditional-expression> ")" ) ("," <STRING>? ( "(" <conditional-expression> ")" ))*
         """
         node = GNU_C_Assembly()
         node.update(keyword=self.get_keyword(CTokenType._ASM, css_type=C_CSS.GNU_C_EXTENSION))
@@ -2154,8 +2154,17 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.STRING))
             if self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
-                node.register_token(self.eat())
+                self.assignment_expression()
                 node.register_token(self.eat(TokenType.RPAREN))
+                while self.current_token.type == TokenType.COMMA:
+                    node.register_token(self.eat())
+                    if self.current_token.type == TokenType.STRING:
+                        node.register_token(self.eat(TokenType.STRING))
+                    if self.current_token.type == TokenType.LPAREN:
+                        node.register_token(self.eat(TokenType.LPAREN))
+                        self.assignment_expression()
+                        node.register_token(self.eat(TokenType.RPAREN))
+
         node.register_token(self.eat(TokenType.RPAREN))
 
     def identifier(self):
