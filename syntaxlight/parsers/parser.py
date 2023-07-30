@@ -318,10 +318,12 @@ class Parser:
             node.register_token(self.eat(token_type))
         return node
 
-    def string_inside_format(self, token: Token) -> List[String]:
+    def string_inside_format(self, token: Token = None) -> List[String]:
         """
         取出其中格式化字符(如 %d %x \n) 并新建 token
         """
+        if token is None:
+            token = self.current_token
         pattern = r"(%[0-9ldiufFeEgGxXoscpaAnYyMmHhSs]+|(?:\\\\|\\n|\\t|\\v|\\f))"
         sub_strings = re.split(pattern, token.value)
         new_asts = []

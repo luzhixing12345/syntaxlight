@@ -47,6 +47,7 @@ class C_CSS(Enum):
     ATOMAIC_TYPE_SPECIFIER = "AtomicTypeSpecifier"
     STRUCTURE_CLASS = "StructureClass"
     GOTO_LABEL = "GotoLabel"
+    GNU_C_EXTENSION = "GNU-C-Extension"
 
 
 class TranslationUnit(AST):
@@ -650,6 +651,11 @@ class PPtoken(AST):
         self.node_info += f"\\n{value}"
 
 
+class GNU_C_Assembly(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
 class CParser(Parser):
     def __init__(self, lexer, skip_invisible_characters=True, skip_space=True):
         super().__init__(lexer, skip_invisible_characters, skip_space)
@@ -841,7 +847,7 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be struct or union")
 
         node = Structure()
-        
+
         node.update(structure_type=self.struct_or_union())
 
         # 对于如下情况
@@ -1446,6 +1452,10 @@ class CParser(Parser):
         node = PrimaryExpression()
         if self.current_token.type == TokenType.ID:
             sub_node = self.identifier()
+            # 多个 STRING 可以拼接在一起
+            # printk(KERN_INFO "%s\n")
+            while self.current_token.type == TokenType.STRING:
+                self.string_inside_format()
         elif self.current_token.type in self.cfirst_set.constant:
             # @扩展文法
             # Constant 包含了 true, false
@@ -1454,6 +1464,10 @@ class CParser(Parser):
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.STRING:
             sub_node = self.string()
+            # 多个 STRING 可以拼接在一起
+            # printk(KERN_INFO "%s\n")
+            while self.current_token.type == TokenType.STRING:
+                self.string_inside_format()
         elif self.current_token.type == TokenType.CHARACTER:
             sub_node = Char(self.current_token.value)
             sub_node.register_token(self.eat(self.current_token.type))
@@ -1733,10 +1747,10 @@ class CParser(Parser):
         if self.current_token.type in self.cfirst_set.static_assert_declaration:
             node.update(static_assert=self.static_assert_declaration())
             return node
-        
+
         declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
         self._unknown_typedef_id_guess()
-        
+
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
             self._unknown_typedef_id_guess()
@@ -1952,6 +1966,7 @@ class CParser(Parser):
                       | <selection-statement>
                       | <iteration-statement>
                       | <jump-statement>
+                      | <gnu-c-statement-extension>
         """
         if (
             self.current_token.type == TokenType.ID
@@ -1975,6 +1990,8 @@ class CParser(Parser):
             return self.iteration_statement()
         elif self.current_token.type in self.cfirst_set.jump_statement:
             return self.jump_statement()
+        elif self.current_token.type in self.cfirst_set.gnu_c_statement_extension:
+            return self.gnu_c_statement_extension()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be a statement")
 
@@ -2109,6 +2126,37 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be goto continue break return")
         node.register_token(self.eat(TokenType.SEMI))
         return node
+
+    def gnu_c_statement_extension(self):
+        """
+        https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html
+
+        <gnu-c-statement-extension> ::= __asm__ <asm-qualifiers> "(" <STRING>+ <OutputOperands >* ")"
+
+        <asm-qualifiers> ::= volatile
+                           | inline
+                           | goto
+
+        <OutputOperands> ::= ":" <STRING>? ( "(" <ID> ")" )
+        """
+        node = GNU_C_Assembly()
+        node.update(keyword=self.get_keyword(CTokenType._ASM, css_type=C_CSS.GNU_C_EXTENSION))
+        if self.current_token.type in (CTokenType.VOLATILE, CTokenType.INLINE, CTokenType.GOTO):
+            node.update(asm_qualifier=self.get_keyword(css_type=C_CSS.GNU_C_EXTENSION))
+        node.register_token(self.eat(TokenType.LPAREN))
+
+        while self.current_token.type == TokenType.STRING:
+            self.string_inside_format()
+
+        while self.current_token.type == TokenType.COLON:
+            node.register_token(self.eat(TokenType.COLON))
+            if self.current_token.type == TokenType.STRING:
+                node.register_token(self.eat(TokenType.STRING))
+            if self.current_token.type == TokenType.LPAREN:
+                node.register_token(self.eat(TokenType.LPAREN))
+                node.register_token(self.eat())
+                node.register_token(self.eat(TokenType.RPAREN))
+        node.register_token(self.eat(TokenType.RPAREN))
 
     def identifier(self):
         """

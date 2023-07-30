@@ -1,40 +1,14 @@
-if (M == 32) {
-
+static int __init dummy_numa_init(void)
+{
+    printk(KERN_INFO "%s\n",
+           numa_off ? "NUMA turned off" : "No NUMA configuration found");
+    /* max_pfn是e820探测到的最大物理内存页,其初始化是max_pfn = e820__end_of_ram_pfn() */
+    // printk(KERN_INFO "Faking a node at [mem %#018Lx-%#018Lx]\n",
+    //        0LLU, PFN_PHYS(max_pfn) - 1);
+    /* 一个nodemask_t是 位图, 最多支持MAX_NUMNODES个node
+     * 这里将node 0置位
+     */
+    node_set(0, numa_nodes_parsed);
 }
-else if (M == 64) {
-    int i, j, k, l;
-    int t0, t1, t2, t3;
-    for (i = 0; i < N; i += 4) {
-        for (j = 0; j < M; j += 4) {
-            if (i != j) {
-                for (k = i; k < i + 4; k++) {
-                    for (l = j; l < j + 4; l++) {
-                        B[l][k] = A[k][l];
-                    }
-                }
-            } else {
-                for (k = i; k < i + 4; k++) {
-                    t0 = A[k][j];
-                    t1 = A[k][j + 1];
-                    t2 = A[k][j + 2];
-                    t3 = A[k][j + 3];
 
-                    B[k][j] = t0;
-                    B[k][j + 1] = t1;
-                    B[k][j + 2] = t2;
-                    B[k][j + 3] = t3;
-                }
-
-                for (k = i; k < i + 4; k++) {
-                    for (l = j + (k - i + 1); l < j + 4; l++) {
-                        if (k != l) {
-                            t0 = B[k][l];
-                            B[k][l] = B[l][k];
-                            B[l][k] = t0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+char *x = "asdjkl" "asdjkl""asdjkl" "asdjkl""asdjkl" "asdjkl";

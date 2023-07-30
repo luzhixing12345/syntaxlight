@@ -40,7 +40,8 @@ pre[class*="language-c"] {
 .Token.RESTRICT,
 .Token._ATOMIC,
 .Token._STATIC_ASSERT,
-.Token._GENERIC {
+.Token._GENERIC,
+.Token.GNU-C-Extension {
     color: --type;
 }
 

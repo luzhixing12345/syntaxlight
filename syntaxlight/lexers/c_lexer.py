@@ -47,7 +47,7 @@ class CTokenType(Enum):
     UNION = "union"
     UNSIGNED = "unsigned"
     VOID = "void"
-    VOLATITLE = "volatile"
+    VOLATILE = "volatile"
     WHILE = "while"
     _ALIGNAS = "_Alignas"  # C23 => ALIGNAS
     ALIGNAS = "alignas"
@@ -63,6 +63,10 @@ class CTokenType(Enum):
     _NORETURN = "_Noreturn"
     _STATIC_ASSERT = "_Static_assert"  # C23 => STATIC_ASSERT
     _THREAD_LOCAL = "_Thread_local"  # C23 => THREAD_LOCAL
+
+    # GNU C extension
+    _ASM = "__asm__"
+    _ATTRIBUTE = "__attribute__"
 
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
     # start - end 之间为对应语言的保留关键字
@@ -149,7 +153,12 @@ class CLexer(Lexer):
                 return self.get_comment("/*", "*/")
 
             if self.current_char.isdigit():
-                return self.get_number(accept_hex=True, accept_bit=True,accept_p=True, end_chars=['f','F','l','L','U','u'])
+                return self.get_number(
+                    accept_hex=True,
+                    accept_bit=True,
+                    accept_p=True,
+                    end_chars=["f", "F", "l", "L", "U", "u"],
+                )
 
             if self.current_char.isalpha() or self.current_char == TokenType.UNDERLINE.value:
                 return self.get_id()
@@ -212,7 +221,7 @@ class CTokenSet:
             self.typedef_name,
         )
         self.type_qualifier = TokenSet(
-            CTokenType.CONST, CTokenType.VOLATITLE, CTokenType.RESTRICT, CTokenType._ATOMIC
+            CTokenType.CONST, CTokenType.VOLATILE, CTokenType.RESTRICT, CTokenType._ATOMIC
         )
         self.function_speficier = TokenSet(CTokenType.INLINE, CTokenType._NORETURN)
         self.alignment_specifier = TokenSet(CTokenType._ALIGNAS)
@@ -309,6 +318,7 @@ class CTokenSet:
         self.jump_statement = TokenSet(
             CTokenType.GOTO, CTokenType.CONTINUE, CTokenType.BREAK, CTokenType.RETURN
         )
+        self.gnu_c_statement_extension = TokenSet(CTokenType._ASM)
         self.statement = TokenSet(
             self.labeled_statement,
             self.expression_statement,
@@ -316,6 +326,7 @@ class CTokenSet:
             self.selection_statement,
             self.iteration_statement,
             self.jump_statement,
+            self.gnu_c_statement_extension,
         )
         self.external_declaration = TokenSet(
             self.function_definition, self.declaration, self.group_part, self.statement

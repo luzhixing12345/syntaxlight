@@ -228,12 +228,14 @@
 <block-item> ::= <declaration>
                | <statement>
 
+# GNU C Extension
 <statement> ::= <labeled-statement>
               | <expression-statement>
               | <compound-statement>
               | <selection-statement>
               | <iteration-statement>
               | <jump-statement>
+              | <gnu-c-statement-extension>
 
 <labeled-statement> ::= <identifier> ":" <statement>
                       | case <constant-expression> ":" <statement>
@@ -254,6 +256,14 @@
                    | continue ";"
                    | break ";"
                    | return {<expression>}? ";"
+
+<gnu-c-statement-extension> ::= __asm__ <asm-qualifiers> "(" <STRING>+ <OutputOperands >* ")"
+
+<asm-qualifiers> ::= volatile
+                    | inline
+                    | goto
+
+<OutputOperands> ::= ":" <STRING>? ( "(" <ID> ")" )
 
 <group> ::= <group-part>*
 
