@@ -13,10 +13,10 @@ def parse(
     if len(text) == 0:
         return ""
     language = clean_language(language)
-    parser = get_parser(text, language)
-    parser.lexer.file_path = file_path
-
+    
     try:
+        parser = get_parser(text, language)
+        parser.lexer.file_path = file_path
         parser.parse()
     except Error as e:
         sys.stderr.write(e.message)

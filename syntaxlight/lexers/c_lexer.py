@@ -149,7 +149,7 @@ class CLexer(Lexer):
                 return self.get_comment("/*", "*/")
 
             if self.current_char.isdigit():
-                return self.get_number(accept_hex=True, accept_bit=True,accept_p=True)
+                return self.get_number(accept_hex=True, accept_bit=True,accept_p=True, end_chars=['f','F','l','L','U','u'])
 
             if self.current_char.isalpha() or self.current_char == TokenType.UNDERLINE.value:
                 return self.get_id()

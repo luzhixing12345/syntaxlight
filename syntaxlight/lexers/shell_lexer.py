@@ -25,6 +25,7 @@ class ShellTokenType(Enum):
     VARIANT = "variant"
     REDIRECT_TO = ">"
     REDIRECT_FROM = "<"
+    TEXT = 'text' # 未知符号, 可能只是借用 bash
 
 
 class ShellLexer(Lexer):
@@ -76,6 +77,7 @@ class ShellLexer(Lexer):
             if self.current_char.isalnum() or self.current_char in ('_','.','/'):
                 return self.get_id(extend_chars=["_", "-", ".",'/',':','+','-'])
 
+            # 只接受双引号, 因为无法判断 can't ... 这种
             if self.current_char == '"':
                 return self.get_string()
 
@@ -101,8 +103,10 @@ class ShellLexer(Lexer):
             try:
                 token_type = TokenType(self.current_char)
             except ValueError:  # pragma: no cover
-                token = Token(None, self.current_char, self.line, self.column)
-                self.error(ErrorCode.UNKNOWN_CHARACTER, token)
+                # 考虑一些特殊的情况: test\shell\11.sh
+                token = Token(ShellTokenType.TEXT, self.current_char, self.line, self.column)
+                self.advance()
+                return token
             else:
                 token = Token(
                     type=token_type,

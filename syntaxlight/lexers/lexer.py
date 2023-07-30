@@ -353,7 +353,7 @@ class Lexer:
         else:
             return self.text[self.pos + 1 : peek_pos + 1]
 
-    def get_number(self, accept_float = True, accept_hex = False, accept_bit = False, accept_p = False) -> Token:
+    def get_number(self, accept_float = True, accept_hex = False, accept_bit = False, accept_p = False, end_chars: List[str] = []) -> Token:
         """
          <digit> ::= [0-9]
         <digits> ::= <digit>*
@@ -431,6 +431,9 @@ class Lexer:
                     result += self.current_char
                     self.advance()
 
+        if self.current_char in end_chars:
+            result += self.current_char
+            self.advance()
         # column - 1, 因为判断结束需要跳出 number
         return Token(TokenType.NUMBER, result, self.line, self.column - 1)
 
