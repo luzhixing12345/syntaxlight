@@ -11,7 +11,7 @@ from ..gdt import CSS
 
 
 DEBUG = False
-DEBUG = True
+# DEBUG = True
 
 
 class Parser:

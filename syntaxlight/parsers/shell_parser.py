@@ -81,7 +81,7 @@ class ShellParser(Parser):
         # 匹配Windows系统的绝对路径或相对路径
         windows_path_pattern = r'^[a-zA-Z]:\\(\\[^\\/\0]+)*$|^(\.\\[^\\/\0]+)+$'
 
-        any_path_pattern = r'[0-9a-zA-Z/.-_]*/[0-9a-zA-Z/.-_]*'
+        any_path_pattern = r'[0-9a-zA-Z/\.\-\_]*/[0-9a-zA-Z/\.\-\_]*'
 
         return re.match(linux_path_pattern, path) is not None or \
             re.match(windows_path_pattern, path) is not None or \
