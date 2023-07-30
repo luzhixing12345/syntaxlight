@@ -1,0 +1,52 @@
+pre[class*="language-bnf"] {
+    background: #1f1f1f;
+}
+
+pre[class*="language-bnf"] .Token {
+    color: #C1CCCC;
+}
+
+pre[class*="language-bnf"] .Token.brace-depth-0 {
+    color: #FFD700;
+}
+
+pre[class*="language-bnf"] .Token.brace-depth-1 {
+    color: #DA70D6;
+}
+
+pre[class*="language-bnf"] .Token.brace-depth-2 {
+    color: #1A9DFF;
+}
+
+pre[class*="language-bnf"] .Token.RuleName {
+    color: #4EC9B0;
+}
+
+pre[class*="language-bnf"] .Token.PRODUCTION_SYMBOL {
+    color: #C1CCCC;
+}
+
+pre[class*="language-bnf"] .Token.STR {
+    color: #CE9178;
+}
+
+pre[class*="language-bnf"] .Token.COMMENT {
+    color: #6A9955;
+}
+
+pre[class*="language-bnf"] .Token.Punctuator {
+    color: #C586C0;
+}
+
+pre[class*="language-bnf"] .Token.Item.ID {
+    color: #C586C0;
+}
+
+pre[class*="language-bnf"] .Token.BuiltinSymbol {
+    color: #88D6FE;
+}
+
+pre[class*="language-bnf"] .Token.RANGLE_BRACE,
+pre[class*="language-bnf"] .Token.LANGLE_BRACE {
+    color: #C1CCCC;
+}

@@ -27,7 +27,7 @@ class ShellParser(Parser):
         is_program_name = True
         new_program_token_type = [TokenType.LF, TokenType.PIPE, TokenType.SEMI, TokenType.AND]
         while self.current_token.type != TokenType.EOF:
-            if self.current_token.type == TokenType.BACK_SLASH:
+            if self.current_token.type == TokenType.BACK_SLASH and self.peek_next_token().type == TokenType.LF:
                 self.eat()
                 self.eat_lf()
                 continue

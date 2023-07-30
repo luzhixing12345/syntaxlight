@@ -14,3 +14,7 @@ lexer:
 cover:
 	coverage run coverage_test.py
 	coverage html
+
+doc:
+	python copy_test.py
+	zood -g

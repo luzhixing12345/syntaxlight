@@ -55,7 +55,7 @@ class TomlLexer(Lexer):
                     return token
 
             if self.current_char.isalpha():
-                return self.get_id(extend_chars=["_"])
+                return self.get_id(extend_chars=["_",'-'])
 
             try:
                 token_type = TokenType(self.current_char)

@@ -204,7 +204,7 @@ int parseline(const char *cmdline, char **argv) {
   int argc;                   /* number of args */
   int bg;                     /* background job? */
   strcpy(buf, cmdline);
-  buf[strlen(buf) - 1] = ' ';   /* replace trailing '{-%EscapeCharacterBlock-337%-}' with space */
+  buf[strlen(buf) - 1] = ' ';   /* replace trailing with space */
   while (*buf && (*buf == ' ')) /* ignore leading spaces */
     buf++;
   /* Build the argv list */

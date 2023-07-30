@@ -1,0 +1,88 @@
+pre[class*="language-lua"] {
+    background: #1f1f1f;
+}
+
+pre[class*="language-lua"] .Token {
+    color: #C1CCCC;
+}
+
+pre[class*="language-lua"] .Token.brace-depth-0 {
+    color: #FFD700;
+}
+
+pre[class*="language-lua"] .Token.brace-depth-1 {
+    color: #DA70D6;
+}
+
+pre[class*="language-lua"] .Token.brace-depth-2 {
+    color: #1A9DFF;
+}
+
+pre[class*="language-lua"] .Token.STR {
+    color: #CE9178;
+}
+
+pre[class*="language-lua"] .Token.STR.Format {
+    color: #88D6FE;
+}
+
+pre[class*="language-lua"] .Token.AttributeType.ID {
+    color: #CE9178;
+}
+
+pre[class*="language-lua"] .Token.Attribute.LANGLE_BRACE,
+pre[class*="language-lua"] .Token.Attribute.RANGLE_BRACE {
+    color: #C1CCCC;
+}
+
+
+pre[class*="language-lua"] .Token.Control {
+    color: #D7BA6E;
+}
+
+pre[class*="language-lua"] .Token.Keyword {
+    color: #C586C0;
+}
+
+pre[class*="language-lua"] .Token.LOCAL {
+    color: #569cd6;
+}
+
+pre[class*="language-lua"] .Token.ID {
+    color: #88D6FE;
+}
+
+pre[class*="language-lua"] .Token.FunctionName.ID,
+pre[class*="language-lua"] .Token.FunctionCall.ID {
+    color: #DCDCAA;
+}
+
+pre[class*="language-lua"] .Token.Field.ID,
+pre[class*="language-lua"] .Token.TableKey {
+    color: #4EC9B0;
+}
+
+pre[class*="language-lua"] .Token.TRUE,
+pre[class*="language-lua"] .Token.FALSE,
+pre[class*="language-lua"] .Token.NIL {
+    color: #569cd6;
+}
+
+pre[class*="language-lua"] .Token.AND,
+pre[class*="language-lua"] .Token.NOT,
+pre[class*="language-lua"] .Token.OR {
+    color: #C1CCCC;
+}
+
+pre[class*="language-lua"] .Token.COLON,
+pre[class*="language-lua"] .Token.DOUBLE_COLON {
+    color: #569cd6;
+}
+
+pre[class*="language-lua"] .Token.COMMENT {
+    color: #6A9955;
+}
+
+pre[class*="language-lua"] .Token.NUMBER {
+    color: #A2CEA8;
+}
