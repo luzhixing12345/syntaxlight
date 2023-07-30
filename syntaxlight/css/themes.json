@@ -25,7 +25,7 @@
                 ".Token.Keyword": "color: #327ED0;"
             },
             "shell": {
-                ".Token.OPTION": "color: #ABABAB;"
+                ".Token.OPTION": "color: #969696;"
             }
         }
     },

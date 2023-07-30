@@ -15,6 +15,8 @@ class ShellTokenType(Enum):
     DONE = "done"
     WHILE = "while"
     BREAK = "break"
+    CD = 'cd'
+    EXPORT = 'export'
 
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
 
@@ -28,6 +30,7 @@ class ShellTokenType(Enum):
 class ShellLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = ShellTokenType):
         super().__init__(text, LanguageTokenType)
+        self.build_long_op_dict(['&&','>>','<<'])
 
     def get_option(self):
         """
@@ -43,20 +46,6 @@ class ShellLexer(Lexer):
                 break
 
         return Token(ShellTokenType.OPTION, result, self.line, self.column - 1)
-
-    def get_path(self):
-        """
-        /proc/xxx
-        /usr/lib/...
-        """
-        result = ""
-        while self.current_char is not None:
-            if self.current_char.isalnum() or self.current_char in ("/", "-", "_", "."):
-                result += self.current_char
-                self.advance()
-            else:
-                break
-        return Token(ShellTokenType.PATH, result, self.line, self.column - 1)
 
     def shell_variant(self):
         """
@@ -84,11 +73,11 @@ class ShellLexer(Lexer):
             if self.current_char.isdigit():
                 return self.get_number(accept_bit=True, accept_hex=True)
 
-            if self.current_char.isalnum() or self.current_char == "_":
-                return self.get_id(extend_chars=["_", "-", "."])
+            if self.current_char.isalnum() or self.current_char in ('_','.','/'):
+                return self.get_id(extend_chars=["_", "-", ".",'/',':','+','-'])
 
-            if self.current_char in ('"', "'"):
-                return self.get_str()
+            if self.current_char == '"':
+                return self.get_string()
 
             if self.current_char == "-":
                 return self.get_option()
@@ -96,19 +85,18 @@ class ShellLexer(Lexer):
             if self.current_char == "#":
                 return self.get_comment()
 
-            if self.current_char in ("/", "."):
-                return self.get_path()
-
             if self.current_char == "$" and self.peek() != '(':
                 return self.shell_variant()
 
-            if self.current_char in ("<", ">"):
-                
+            if self.current_char in ("<", ">") and self.peek() != self.current_char:
                 token = Token(
                     ShellTokenType(self.current_char), self.current_char, self.line, self.column
                 )
                 self.advance()
                 return token
+
+            if self.current_char in self.long_op_dict:
+                return self.get_long_op()
 
             try:
                 token_type = TokenType(self.current_char)

@@ -1,6 +1,6 @@
 
 i = 0
-t = c
+t = shell
 s = vscode
 
 .PHONY: test lexer cover

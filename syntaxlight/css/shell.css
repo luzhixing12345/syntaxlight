@@ -24,12 +24,13 @@ pre[class*="language-shell"] {
 }
 
 .Token.Program,
-.Token.Function {
+.Token.Function,
+.Token.BACK_SLASH {
     color: --function;
 }
 
 
-.Token.STR {
+.Token.STRING {
     color: --string;
 }
 
@@ -45,10 +46,9 @@ pre[class*="language-shell"] {
     color: --define;
 }
 
-
-.Token.GlobalVariant {
+/* .Token.OPTION {
     color: --type;
-}
+} */
 
 .Token.Variant,
 .Token.VARIANT {
@@ -61,4 +61,8 @@ pre[class*="language-shell"] {
 
 .Token.Control {
     color: --control;
+}
+
+.Token.Url {
+    border-bottom: 1px solid --punctuator;
 }

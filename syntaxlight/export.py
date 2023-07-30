@@ -21,7 +21,7 @@ def export_css(languages: List[str], export_dir: str = ".", style: str = "vscode
                 exit(1)
             with open(origin_css_file, "r", encoding="utf-8") as f:
                 css_content = f.read()
-            css_content = css_content.replace('.Token',f'pre[class*="language-{language}"] .Token')
+            
             # 应用扩展, 完善 CSS
             if EXTENSION_NAME in theme:
                 if language in theme[EXTENSION_NAME]:
@@ -34,7 +34,9 @@ def export_css(languages: List[str], export_dir: str = ".", style: str = "vscode
                     continue
 
                 css_content = css_content.replace(type_name, color)
-
+            
+            # 添加对应的作用域
+            css_content = css_content.replace('.Token',f'pre[class*="language-{language}"] .Token')
             with open(f'{export_dir}/{language}.css', "w", encoding="utf-8") as f:
                 f.write(css_content)
     else:
