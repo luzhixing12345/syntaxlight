@@ -9,7 +9,9 @@ class CSSTokenType(Enum):
     COLOR = "COLOR"
     KEY = "KEY"
     CLASS_NAME = "CLASS_NAME"
-    FUNCTION = 'FUNCTION'
+    FUNCTION = "FUNCTION"
+    UNDER = "UNDER"
+    HASH_ID = "HASH_ID"
 
 
 class CSSLexer(Lexer):
@@ -52,20 +54,33 @@ class CSSLexer(Lexer):
                     ],
                 )
 
-            if self.current_char.isalnum() or self.current_char in (".", "_", "-"):
+            # transform: translate(-50%, -50%);
+            if (self.current_char.isalnum() or self.current_char in (".", "_")) or (
+                self.current_char == "-" and not self.peek().isdigit()
+            ):
                 return self.get_id(extend_chars=["_", "-", "."])
 
             if self.current_char == "/" and self.peek() == "*":
                 return self.get_comment("/*", "*/")
 
-            if self.current_char == '#':
-                result = '#'
+            if self.current_char == "#":
+                # color or hash
+                result = "#"
                 self.advance()
                 while self.current_char.isalnum():
                     result += self.current_char
                     self.advance()
-                token = Token(CSSTokenType.COLOR, result, self.line, self.column-1)
+                if self.current_char in ("-", "_"):
+                    while self.current_char in ("-", "_") or self.current_char.isalnum():
+                        result += self.current_char
+                        self.advance()
+                    token = Token(CSSTokenType.HASH_ID, result, self.line, self.column - 1)
+                else:
+                    token = Token(CSSTokenType.COLOR, result, self.line, self.column - 1)
                 return token
+
+            if self.current_char == '"':
+                return self.get_string()
 
             try:
                 token_type = TokenType(self.current_char)

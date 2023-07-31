@@ -38,8 +38,8 @@ class LuaTokenType(Enum):
 
 
 class LuaLexer(Lexer):
-    def __init__(self, text: str, TokenType: TokenType = LuaTokenType):
-        super().__init__(text, TokenType)
+    def __init__(self, text: str, LanguageTokenType: Enum = LuaTokenType):
+        super().__init__(text, LanguageTokenType)
         self.build_long_op_dict(["//", ">>", "<<", "..", "...", "<=", ">=", "==", "~=", "::"])
 
     def get_literal_str(self):

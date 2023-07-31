@@ -175,13 +175,13 @@ class Lexer:
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
         tt_list = list(LanguageTokenType)
-        if "RESERVED_KEYWORD_START" in tt_list and "RESERVED_KEYWORD_END" in tt_list:
+        try:
             start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
             end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
             self.reserved_keywords = {
                 token_type.value: token_type for token_type in tt_list[start_index + 1 : end_index]
             }
-        else:
+        except:
             self.reserved_keywords = {}
         # 不可见字符, 一般情况下直接忽略即可, 这里考虑到为了不破坏原本的代码格式所以进行保留
         # \n \t \v \r \f \b
@@ -365,7 +365,7 @@ class Lexer:
         accept_hex=False,
         accept_bit=False,
         accept_p=False,
-        end_chars: List[str] = None,
+        end_chars: List[str] = [],
     ) -> Token:
         """
          <digit> ::= [0-9]

@@ -4,7 +4,7 @@ syntaxlight 是一个基于 BNF 的语法高亮的 python 库
 
 目前支持 C/Python 等主流编程语言和 json xml 等主流标记语言的文法解析, 支持多种高亮主题以及自定义颜色(默认使用 Vscode 风格)
 
-本文档使用 [zood](https://github.com/luzhixing12345/zood) 构建, 其 Markdown 解析器 [MarkdownParser](https://github.com/luzhixing12345/MarkdownParser) 使用 syntaxlight 完成语法高亮, **即本文全部代码段均由 syntaxlight 高亮显示**
+本文档使用 [zood](https://github.com/luzhixing12345/zood) 构建, 其中代码段均使用 syntaxlight 完成语法高亮, **即本文全部代码段均为高亮解析结果显示**
 
 ## 文档结构
 

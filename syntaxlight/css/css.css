@@ -6,6 +6,10 @@ pre[class*="language-css"] {
     color: --punctuator;
 }
 
+.Token.ID {
+    color: --string;
+}
+
 .Token.brace-depth-0 {
     color: --brace1;
 }
@@ -26,7 +30,8 @@ pre[class*="language-css"] {
     color: --variant;
 }
 
-.Token.CLASS_NAME {
+.Token.CLASS_NAME,
+.Token.HASH_ID {
     color: --function;
 }
 
@@ -39,5 +44,9 @@ pre[class*="language-css"] {
 }
 
 .Token.COLOR {
+    color: --string;
+}
+
+.Token.STRING {
     color: --string;
 }

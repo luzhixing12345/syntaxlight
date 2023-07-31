@@ -1,0 +1,52 @@
+pre[class*="language-css"] {
+    background: #1f1f1f;
+}
+
+pre[class*="language-css"] .Token {
+    color: #C1CCCC;
+}
+
+pre[class*="language-css"] .Token.ID {
+    color: #CE9178;
+}
+
+pre[class*="language-css"] .Token.brace-depth-0 {
+    color: #FFD700;
+}
+
+pre[class*="language-css"] .Token.brace-depth-1 {
+    color: #DA70D6;
+}
+
+pre[class*="language-css"] .Token.brace-depth-2 {
+    color: #1A9DFF;
+}
+
+pre[class*="language-css"] .Token.NUMBER {
+    color: #A2CEA8;
+}
+
+pre[class*="language-css"] .Token.KEY {
+    color: #88D6FE;
+}
+
+pre[class*="language-css"] .Token.CLASS_NAME,
+pre[class*="language-css"] .Token.HASH_ID {
+    color: #DCDCAA;
+}
+
+pre[class*="language-css"] .Token.COMMENT {
+    color: #6A9955;
+}
+
+pre[class*="language-css"] .Token.FUNCTION {
+    color: #DCDCAA;
+}
+
+pre[class*="language-css"] .Token.COLOR {
+    color: #CE9178;
+}
+
+pre[class*="language-css"] .Token.STRING {
+    color: #CE9178;
+}
