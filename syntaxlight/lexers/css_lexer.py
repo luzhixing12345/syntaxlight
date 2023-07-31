@@ -67,11 +67,13 @@ class CSSLexer(Lexer):
                 # color or hash
                 result = "#"
                 self.advance()
-                while self.current_char.isalnum():
+                while self.current_char is not None and self.current_char.isalnum():
                     result += self.current_char
                     self.advance()
                 if self.current_char in ("-", "_"):
-                    while self.current_char in ("-", "_") or self.current_char.isalnum():
+                    while self.current_char is not None and (
+                        self.current_char in ("-", "_") or self.current_char.isalnum()
+                    ):
                         result += self.current_char
                         self.advance()
                     token = Token(CSSTokenType.HASH_ID, result, self.line, self.column - 1)

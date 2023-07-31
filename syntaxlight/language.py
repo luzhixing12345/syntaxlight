@@ -1,6 +1,7 @@
 import os
 from .lexers import *
 from .parsers import *
+import re
 from typing import List, TypedDict
 
 class SyntaxDict(TypedDict):
@@ -24,10 +25,11 @@ def clean_language(language:str):
     
     language = language.lower()
     rename_languages = {
-        'bash': 'shell'
+        r'^bash$': 'shell',
+        r'.*?asm.*?': 'asm'
     }
     for r_language in rename_languages:
-        if language == r_language:
+        if bool(re.match(r_language, language)):
             return rename_languages[r_language]
         
     return language

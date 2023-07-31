@@ -3,11 +3,12 @@ from .lexer import Lexer, Token, TokenType, ErrorCode
 from enum import Enum
 import re
 
+
 class AssemblyTokenType(Enum):
-    ASM_KEYWORD = 'ASM_KEYWORD'
-    REGISTER = 'REGISTER'
-    FUNCTION_CALL = 'FUNCTION_CALL'
-    SECTION = 'SECTION'
+    ASM_KEYWORD = "ASM_KEYWORD"
+    REGISTER = "REGISTER"
+    FUNCTION_CALL = "FUNCTION_CALL"
+    SECTION = "SECTION"
 
 
 class AssemblyLexer(Lexer):
@@ -15,7 +16,6 @@ class AssemblyLexer(Lexer):
         super().__init__(text, LanguageTokenType)
 
     def get_next_token(self) -> Token:
-        
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
                 return self.skip_whitespace()
@@ -25,31 +25,31 @@ class AssemblyLexer(Lexer):
 
             if self.current_char.isdigit():
                 return self.get_number(accept_bit=True, accept_hex=True)
-            
-            if self.current_char.isalnum() or self.current_char in ('_'):
-                return self.get_id(extend_chars=['@','_'])
-            
-            if self.current_char == '.':
-                result = '.'
+
+            if self.current_char.isalnum() or self.current_char in ("_"):
+                return self.get_id(extend_chars=["@", "_"])
+
+            if self.current_char == ".":
+                result = "."
                 self.advance()
-                while self.current_char.isalnum():
+                while self.current_char is not None and self.current_char.isalnum():
                     result += self.current_char
                     self.advance()
 
-                token = Token(AssemblyTokenType.ASM_KEYWORD, result, self.line, self.column-1)
+                token = Token(AssemblyTokenType.ASM_KEYWORD, result, self.line, self.column - 1)
                 return token
 
-            if self.current_char == '%':
-                result = '%'
+            if self.current_char == "%":
+                result = "%"
                 self.advance()
-                while self.current_char.isalnum():
+                while self.current_char is not None and self.current_char.isalnum():
                     result += self.current_char
                     self.advance()
 
-                token = Token(AssemblyTokenType.REGISTER, result, self.line, self.column-1)
+                token = Token(AssemblyTokenType.REGISTER, result, self.line, self.column - 1)
                 return token
-            
-            if self.current_char == '#':
+
+            if self.current_char == "#":
                 return self.get_comment()
 
             try:
@@ -70,5 +70,3 @@ class AssemblyLexer(Lexer):
 
         # End of File
         return Token(type=TokenType.EOF, value="EOF", line=self.line, column=self.column)
-
-
