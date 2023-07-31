@@ -6,3 +6,4 @@ from .xml_parser import XmlParser
 from .shell_parser import ShellParser
 from .bnf_parser import BNFParser
 from .lua_parser import LuaParser
+from .asm_parser import AssemblyParser

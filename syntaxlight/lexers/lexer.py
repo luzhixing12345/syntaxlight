@@ -61,6 +61,7 @@ class TokenType(Enum):
     NUMBER = "NUMBER"  # 整数 | 小数 | 科学计数法
     INT = "INT"  # 整数
     FLOAT = "FLOAT"  # 小数
+    TEXT = 'TEXT' # 未知的字符
     COMMENT = "COMMENT"
     SHL = "<<"
     SHR = ">>"

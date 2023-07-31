@@ -11,8 +11,9 @@
 全部文法高亮:
 - C: 1
 - Lua: 2
-- BNF: 3
-- json: 4
-- shell: 5
-- toml: 6
-- xml: 7
+- asm: 3
+- BNF: 4
+- json: 5
+- shell: 6
+- toml: 7
+- xml: 8

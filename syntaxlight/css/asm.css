@@ -1,0 +1,43 @@
+pre[class*="language-asm"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.brace-depth-0 {
+    color: --brace1;
+}
+
+.Token.brace-depth-1 {
+    color: --brace2;
+}
+
+.Token.brace-depth-2 {
+    color: --brace3;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.REGISTER {
+    color: --type;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.FUNCTION_CALL {
+    color: --function;
+}
+
+.Token.ASM_KEYWORD {
+    color: --define;
+}
+
+.Token.SECTION {
+    color: --variant;
+}

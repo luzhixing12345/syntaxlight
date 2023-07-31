@@ -25,7 +25,6 @@ class ShellTokenType(Enum):
     VARIANT = "variant"
     REDIRECT_TO = ">"
     REDIRECT_FROM = "<"
-    TEXT = 'text' # 未知符号, 可能只是借用 bash
     LINUX_USER_PATH = 'root@kamilu'
     HOST_NAME = 'HostName'
     DIR_PATH = 'DirPath'
@@ -116,7 +115,7 @@ class ShellLexer(Lexer):
                 token_type = TokenType(self.current_char)
             except ValueError:  # pragma: no cover
                 # 考虑一些特殊的情况: test\shell\11.sh
-                token = Token(ShellTokenType.TEXT, self.current_char, self.line, self.column)
+                token = Token(TokenType.TEXT, self.current_char, self.line, self.column)
                 self.advance()
                 return token
             else:

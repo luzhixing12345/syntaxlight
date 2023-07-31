@@ -6,3 +6,4 @@ from .toml_lexer import TomlLexer, TomlTokenType
 from .xml_lexer import XmlLexer, XmlTokenType
 from .shell_lexer import ShellLexer, ShellTokenType
 from .bnf_lexer import BNFLexer, BNFTokenType
+from .asm_lexer import AssemblyLexer, AssemblyTokenType

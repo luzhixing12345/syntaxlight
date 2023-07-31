@@ -6,8 +6,6 @@ syntaxlight 是一个基于 BNF 的语法高亮的 python 库
 
 本文档使用 [zood](https://github.com/luzhixing12345/zood) 构建, 其 Markdown 解析器 [MarkdownParser](https://github.com/luzhixing12345/MarkdownParser) 使用 syntaxlight 完成语法高亮, **即本文全部代码段均由 syntaxlight 高亮显示**
 
-> 本项目仍在开发中, 尚未完成替换, 目前使用的仍然是 [prismjs](https://prismjs.com/)
-
 ## 文档结构
 
 本文档分为两部分
