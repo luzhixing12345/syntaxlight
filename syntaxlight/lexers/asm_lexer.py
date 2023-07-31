@@ -4,8 +4,6 @@ from enum import Enum
 import re
 
 class AssemblyTokenType(Enum):
-    RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
-    RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
     ASM_KEYWORD = 'ASM_KEYWORD'
     REGISTER = 'REGISTER'
     FUNCTION_CALL = 'FUNCTION_CALL'
@@ -57,7 +55,6 @@ class AssemblyLexer(Lexer):
             try:
                 token_type = TokenType(self.current_char)
             except ValueError:  # pragma: no cover
-                # 考虑一些特殊的情况: test\shell\11.sh
                 token = Token(TokenType.TEXT, self.current_char, self.line, self.column)
                 self.advance()
                 return token

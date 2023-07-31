@@ -1,0 +1,43 @@
+pre[class*="language-css"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.brace-depth-0 {
+    color: --brace1;
+}
+
+.Token.brace-depth-1 {
+    color: --brace2;
+}
+
+.Token.brace-depth-2 {
+    color: --brace3;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.KEY {
+    color: --variant;
+}
+
+.Token.CLASS_NAME {
+    color: --function;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.FUNCTION {
+    color: --function;
+}
+
+.Token.COLOR {
+    color: --string;
+}

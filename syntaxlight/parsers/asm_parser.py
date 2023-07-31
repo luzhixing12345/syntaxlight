@@ -1,7 +1,5 @@
 from .parser import Parser
-from ..lexers import TokenType, AssemblyTokenType, Token
-from ..gdt import *
-import re
+from ..lexers import TokenType, AssemblyTokenType
 
 
 class AssemblyParser(Parser):

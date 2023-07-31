@@ -16,7 +16,8 @@ SUPPORTED_SYNTAX = {
     "toml": SyntaxDict(lexer=TomlLexer, parser=TomlParser, suffix=['toml']),
     "xml": SyntaxDict(lexer=XmlLexer, parser=XmlParser, suffix=['xml']),
     "shell": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=['sh']),
-    "asm": SyntaxDict(lexer=AssemblyLexer, parser=AssemblyParser, suffix=['asm'])
+    "asm": SyntaxDict(lexer=AssemblyLexer, parser=AssemblyParser, suffix=['asm']),
+    "css": SyntaxDict(lexer=CSSLexer,parser=CSSParser, suffix=['css'])
 }
 
 def clean_language(language:str):

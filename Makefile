@@ -1,6 +1,6 @@
 
 i = 0
-t = asm
+t = css
 s = vscode
 
 .PHONY: test lexer cover

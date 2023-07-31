@@ -3,6 +3,7 @@ from ..error import ErrorCode, LexerError
 from typing import Dict, List, Tuple
 import re
 
+
 GLOBAL_TOKEN_ID = 0
 
 # class NewTokenType(Enum):
@@ -61,7 +62,7 @@ class TokenType(Enum):
     NUMBER = "NUMBER"  # 整数 | 小数 | 科学计数法
     INT = "INT"  # 整数
     FLOAT = "FLOAT"  # 小数
-    TEXT = 'TEXT' # 未知的字符
+    TEXT = "TEXT"  # 未知的字符
     COMMENT = "COMMENT"
     SHL = "<<"
     SHR = ">>"
@@ -111,7 +112,7 @@ class TTYColor(Enum):
 class Token:
     def __init__(self, type: Enum, value, line=None, column=None):
         self.type: Enum = type
-        self.value:str = value
+        self.value: str = value
         self.line: int = line
         self.column: int = column
         self.ast: None
@@ -143,7 +144,7 @@ class Token:
             lineno=self.line,
             column=self.column,
         )
-    
+
     def add_css(self, CSS: Enum):
         if CSS is not None:
             self.class_list.add(CSS.value)
@@ -174,11 +175,14 @@ class Lexer:
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
         tt_list = list(LanguageTokenType)
-        start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
-        end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
-        self.reserved_keywords = {
-            token_type.value: token_type for token_type in tt_list[start_index + 1 : end_index]
-        }
+        if "RESERVED_KEYWORD_START" in tt_list and "RESERVED_KEYWORD_END" in tt_list:
+            start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
+            end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
+            self.reserved_keywords = {
+                token_type.value: token_type for token_type in tt_list[start_index + 1 : end_index]
+            }
+        else:
+            self.reserved_keywords = {}
         # 不可见字符, 一般情况下直接忽略即可, 这里考虑到为了不破坏原本的代码格式所以进行保留
         # \n \t \v \r \f \b
         self.invisible_characters = [
@@ -355,7 +359,14 @@ class Lexer:
         else:
             return self.text[self.pos + 1 : peek_pos + 1]
 
-    def get_number(self, accept_float = True, accept_hex = False, accept_bit = False, accept_p = False, end_chars: List[str] = []) -> Token:
+    def get_number(
+        self,
+        accept_float=True,
+        accept_hex=False,
+        accept_bit=False,
+        accept_p=False,
+        end_chars: List[str] = None,
+    ) -> Token:
         """
          <digit> ::= [0-9]
         <digits> ::= <digit>*
@@ -368,18 +379,18 @@ class Lexer:
         """
         bit_matching_status = False
         hex_matching_status = False
-        def is_match_char(char:str) -> bool:
-            
+
+        def is_match_char(char: str) -> bool:
             if hex_matching_status:
-                return bool(re.match(r'[0-9a-fA-F]',char))
+                return bool(re.match(r"[0-9a-fA-F]", char))
             if bit_matching_status:
-                return bool(re.match(r'[01]',char))
+                return bool(re.match(r"[01]", char))
             return char.isdigit()
 
         result = ""
 
         if accept_hex:
-            if self.current_char == '0' and self.peek() in ('x', 'X'):
+            if self.current_char == "0" and self.peek() in ("x", "X"):
                 result = self.current_char
                 self.advance()
                 result += self.current_char
@@ -387,15 +398,14 @@ class Lexer:
                 hex_matching_status = True
 
         if accept_bit:
-            if self.current_char == '0' and self.peek() in ('b', 'B'):
+            if self.current_char == "0" and self.peek() in ("b", "B"):
                 result = self.current_char
                 self.advance()
                 result += self.current_char
                 self.advance()
-                # 如果此时已经处于 hex_matching_status 状态了则忽略 
+                # 如果此时已经处于 hex_matching_status 状态了则忽略
                 if not hex_matching_status:
                     bit_matching_status = True
-
 
         # <digits>
         while self.current_char is not None and is_match_char(self.current_char):
@@ -421,9 +431,9 @@ class Lexer:
                 while self.current_char is not None and is_match_char(self.current_char):
                     result += self.current_char
                     self.advance()
-        
+
         if accept_p:
-            if self.current_char in ('P','p'):
+            if self.current_char in ("P", "p"):
                 result += self.current_char
                 self.advance()
                 if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
