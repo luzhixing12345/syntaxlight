@@ -26,6 +26,9 @@
             },
             "shell": {
                 ".Token.OPTION": "color: #969696;"
+            },
+            "makefile": {
+                ".Token.OPTION": "color: #969696;"
             }
         }
     },

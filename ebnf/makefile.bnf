@@ -1,0 +1,27 @@
+
+<makefile> ::= <statement>*
+
+<statement> ::= <declaration>
+              | <mission>
+
+<declaration> ::= <target> <assign_op> <value>* ( "\\" <value>* )* <CRLF>
+
+<mission> ::= <target>+ ":" <prerequisites>? ( <CRLF> "\t" <command>)* <CRLF>
+
+<assign_op> ::= "="
+              | ":="
+
+<target> ::= <variable> ("/" <variable>?)*
+
+<prerequisites> ::= <target>*
+
+<command> ::= <target>*
+            | 
+
+<variable> ::= "$" "{" <target> "}"
+             | "$" "(" <target> ")"
+             | <ID>
+
+<value> ::= <ID>
+          | <STRING>
+

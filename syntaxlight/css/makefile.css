@@ -1,0 +1,48 @@
+pre[class*="language-makefile"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.BraceDepth-0 {
+    color: --brace1;
+}
+
+.Token.BraceDepth-1 {
+    color: --brace2;
+}
+
+.Token.BraceDepth-2 {
+    color: --brace3;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.TAB {
+    tab-size: 4;
+}
+
+.Token.DOLLAR,
+.Token.ID {
+    color: --variant;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.Target {
+    color: --type;
+}
+
+.Token.Mission {
+    color: --function;
+}
+
+.Token.PATH_SLASH {
+    color: --punctuator;
+}

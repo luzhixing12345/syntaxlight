@@ -11,7 +11,7 @@ from ..gdt import CSS
 
 
 DEBUG = False
-# DEBUG = True
+DEBUG = True
 
 
 class Parser:
@@ -355,3 +355,8 @@ class Parser:
 
         self.manual_get_next_token()
         return new_asts
+
+    def punctuator(self):
+        node = Punctuator(self.current_token.value)
+        node.register_token(self.eat())
+        return node

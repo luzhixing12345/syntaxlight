@@ -636,7 +636,10 @@ class Lexer:
         for long_op in self.long_op_dict[self.current_char]:
             if self.peek(len(long_op)) == long_op:
                 result = self.current_char + long_op
-                token_type = TokenType(result)
+                try:
+                    token_type = TokenType(result)
+                except:
+                    token_type = self.LanguageTokenType(result)
                 for _ in range(len(long_op)):
                     self.advance()
                 break
@@ -648,7 +651,32 @@ class Lexer:
     def get_next_token(self) -> Token:
         """
         while self.current_char is not None:
-            # do something
+            if self.current_char == TokenType.SPACE.value:
+                return self.skip_whitespace()
+
+            if self.current_char in self.invisible_characters:
+                return self.skip_invisiable_character()
+            
+            # your code
+
+            try:
+                token_type = TokenType(self.current_char)
+            except ValueError:  # pragma: no cover
+                token = Token(TokenType.TEXT, self.current_char, self.line, self.column)
+                self.advance()
+                return token
+            else:
+                token = Token(
+                    type=token_type,
+                    value=token_type.value,  # e.g. ';', '.', etc
+                    line=self.line,
+                    column=self.column,
+                )
+                self.advance()
+                return token
+
+        # End of File
+        return Token(type=TokenType.EOF, value="EOF", line=self.line, column=self.column)
         """
         raise NotImplementedError
 

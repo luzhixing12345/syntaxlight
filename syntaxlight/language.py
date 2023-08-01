@@ -18,7 +18,8 @@ SUPPORTED_SYNTAX = {
     "xml": SyntaxDict(lexer=XmlLexer, parser=XmlParser, suffix=['xml']),
     "shell": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=['sh']),
     "asm": SyntaxDict(lexer=AssemblyLexer, parser=AssemblyParser, suffix=['asm']),
-    "css": SyntaxDict(lexer=CSSLexer,parser=CSSParser, suffix=['css'])
+    "css": SyntaxDict(lexer=CSSLexer,parser=CSSParser, suffix=['css']),
+    "makefile": SyntaxDict(lexer=MakefileLexer,parser=MakefileParser, suffix=['mk','mak'])
 }
 
 def clean_language(language:str):
