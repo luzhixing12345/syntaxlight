@@ -455,3 +455,106 @@
          | '#'
          | '~'
 ```
+## [7.bnf](https://github.com/luzhixing12345/syntaxlight/tree/main/test/bnf/7.bnf)
+
+```bnf
+<regex> ::= <term>
+          | <term> '|' <regex>
+<term>  ::= <factor>*
+          | <factor>+
+<factor>::= <base> <quantifier>?
+
+<base>  ::= <char>
+          | '\' <char>
+          | '(' <regex> ')'
+<quantifier> ::= '*'
+               | '+'
+               | '?'
+```
+## [8.bnf](https://github.com/luzhixing12345/syntaxlight/tree/main/test/bnf/8.bnf)
+
+```bnf
+<regex> ::= <union>
+
+<union> ::= <concatenation>
+          | <union> '|' <concatenation>
+
+<concatenation> ::= <quantification>
+                  | <concatenation> <quantification>
+
+<quantification> ::= <elementary>
+                    | <elementary> '*'
+                    | <elementary> '+'
+                    | <elementary> '?'
+                    | <elementary> '{' <integer> '}'
+                    | <elementary> '{' <integer> ',' '}'
+                    | <elementary> '{' ',' <integer> '}'
+                    | <elementary> '{' <integer> ',' <integer> '}'
+
+<elementary> ::= <grouping>
+                | <character>
+                | <dot>
+                | <escape>
+                | <backreference>
+                | <lookaround>
+
+<grouping> ::= '(' <regex> ')'
+             | '(?:' <regex> ')'
+             | '(?<' <name> '>' <regex> ')'
+             | '(?' <modifier> ':' <regex> ')'
+             | '(?' <modifier> '<' <name> '>' <regex> ')'
+
+<character> ::= <nondot>
+               | <posix>
+               | <unicode>
+               | <hex>
+               | <oct>
+
+# <nondot> ::= any character except '.', '|', '*', '+', '?', '[', ']', '{', '}', '(', ')', '\', '^', '$', '#'
+
+<posix> ::= '\d'
+          | '\D'
+          | '\s'
+          | '\S'
+          | '\w'
+          | '\W'
+          | '\p{...}'
+          | '\P{...}'
+
+<unicode> ::= '\p{...}'
+             | '\P{...}'
+
+<hex> ::= '\xHH'
+
+<oct> ::= '\0OOO'
+
+<dot> ::= '.'
+
+<escape> ::= '\'
+            | '\n'
+            | '\r'
+            | '\t'
+            | '\f'
+            | '\b'
+            | '\v'
+            | '\cX'
+
+<backreference> ::= '\n'
+
+<lookaround> ::= ("?=" <regex> )
+                 | ("?!" <regex> )
+                 | ("?<=" <regex> )
+                 | ("?<!" <regex> )
+
+<modifier> ::= 'i'
+             | 'm'
+             | 's'
+             | 'x'
+             | 'a'
+             | 'u'
+             | 'U'
+
+# <integer> ::= any non-negative integer
+
+# <name> ::= any valid name
+```

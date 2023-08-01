@@ -1,0 +1,12 @@
+<regex> ::= <term>
+          | <term> '|' <regex>
+<term>  ::= <factor>*
+          | <factor>+
+<factor>::= <base> <quantifier>?
+
+<base>  ::= <char>
+          | '\' <char>
+          | '(' <regex> ')'
+<quantifier> ::= '*'
+               | '+'
+               | '?'

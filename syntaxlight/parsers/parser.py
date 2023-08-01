@@ -24,17 +24,6 @@ class Parser:
         self.skip_space = skip_space
         self.display_warning = display_warning
         self._token_list: List[Token] = []  # lexer 解析后经过 parser 确定类型后的 tokens
-        self.brace_list: List[TokenType] = [
-            TokenType.LPAREN,
-            TokenType.RPAREN,
-            TokenType.LSQUAR_PAREN,
-            TokenType.RSQUAR_PAREN,
-            TokenType.LCURLY_BRACE,
-            TokenType.RCURLY_BRACE,
-            TokenType.LANGLE_BRACE,
-            TokenType.RANGLE_BRACE,
-        ]
-        self.brace_max_depth = 3  # 深度循环轮次
         self.root: AST = None  # 主根节点
         self.sub_roots: List[AST] = []  # 其他根节点, 例如预处理命令
         self._status_stack = []  # 状态栈
@@ -254,32 +243,50 @@ class Parser:
         将一个解析完成的 AST node 输出其 token 流的 HTML 格式
         """
         html_str = ""
-        # 对于 ([{<>}]) 计算括号深度
+        self.brace_matching()
+        for token in self._token_list:
+            html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
+        return html_str
+
+    def brace_matching(self):
+        '''
+        对于 ([{<>}]) 计算括号深度
+        '''
+        brace_max_depth = 3  # 括号深度循环轮次
+        brace_list: List[TokenType] = [
+            TokenType.LPAREN,
+            TokenType.RPAREN,
+            TokenType.LSQUAR_PAREN,
+            TokenType.RSQUAR_PAREN,
+            TokenType.LCURLY_BRACE,
+            TokenType.RCURLY_BRACE,
+            TokenType.LANGLE_BRACE,
+            TokenType.RANGLE_BRACE,
+        ]
+
         brace_depth = 0
         brace_stack: List[TokenType] = []
         for token in self._token_list:
-            # print(self.brace_list)
-            if token.type in self.brace_list:
+            # print(brace_list)
+            if token.type in brace_list:
                 if len(brace_stack) == 0:
                     brace_stack.append(token.type)
-                    token.class_list.add(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                    token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
                     brace_depth += 1
                 else:
                     # 括号匹配
-                    if self.brace_list.index(brace_stack[-1]) + 1 == self.brace_list.index(
+                    if brace_list.index(brace_stack[-1]) + 1 == brace_list.index(
                         token.type
                     ):
                         brace_stack.pop()
                         brace_depth -= 1
-                        token.class_list.add(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                        token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
                     else:
                         # 加入 brace_stack
                         brace_stack.append(token.type)
-                        token.class_list.add(f"brace-depth-{brace_depth%self.brace_max_depth}")
+                        token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
                         brace_depth += 1
 
-            html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
-        return html_str
 
     def parse(self):
         raise NotImplementedError(self.__class__.__name__ + " must override the parse function")

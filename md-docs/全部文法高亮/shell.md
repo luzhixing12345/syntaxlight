@@ -311,3 +311,26 @@ Changes not staged for commit:
 --help                   显示帮助信息并退出.
 --version                显示版本信息并退出.
 ```
+## [14.sh](https://github.com/luzhixing12345/syntaxlight/tree/main/test/shell/14.sh)
+
+```shell
+$ ./re2postfix "a(abc|c|bc)+ab+"
+
+[a]: token_number = [0] token_number = [1]
+[(]: token_number = [1] pipe_number = [0] -> p++
+[a]: token_number = [0] token_number = [1]
+[b]: token_number = [1] token_number = [2]
+[c]: token_number = [2] token_number = [2]
+[|]: token_number = [2] pipe_number = [1]
+[c]: token_number = [0] token_number = [1]
+[|]: token_number = [1] pipe_number = [2]
+[b]: token_number = [0] token_number = [1]
+[c]: token_number = [1] token_number = [2]
+[)]: token_number = [2] pipe_number = [2]
+[+]:
+[a]: token_number = [2] token_number = [2]
+[b]: token_number = [2] token_number = [2]
+[+]:
+
+postfix = aab.c.cbc.||+.a.b+.
+```

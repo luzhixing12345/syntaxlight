@@ -10,15 +10,15 @@ pre[class*="language-toml"] {
     color: --string;
 }
 
-.Token.brace-depth-0 {
+.Token.BraceDepth-0 {
     color: --brace1;
 }
 
-.Token.brace-depth-1 {
+.Token.BraceDepth-1 {
     color: --brace2;
 }
 
-.Token.brace-depth-2 {
+.Token.BraceDepth-2 {
     color: --brace3;
 }
 

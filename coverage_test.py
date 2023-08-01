@@ -48,6 +48,21 @@ class TestUnit(unittest.TestCase):
         for files in TEST_FILES['lua']:
             syntaxlight.parse_file(files)
 
+    def test_07_css(self):
+
+        for files in TEST_FILES['css']:
+            syntaxlight.parse_file(files)
+
+    def test_08_shell(self):
+
+        for files in TEST_FILES['shell']:
+            syntaxlight.parse_file(files)
+
+    def test_09_asm(self):
+
+        for files in TEST_FILES['asm']:
+            syntaxlight.parse_file(files)
+
 
 
 if __name__ == "__main__":

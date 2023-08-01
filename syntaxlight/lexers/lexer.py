@@ -488,15 +488,19 @@ class Lexer:
         self.advance()
 
         while self.current_char is not None and self.current_char != end_character:
-            result += self.current_char
             if self.current_char == "\\":
+                result += self.current_char
                 self.advance()
                 if self.current_char is None:
                     self.error(
                         ErrorCode.UNEXPECTED_TOKEN,
                         Token(TokenType.STRING, result, self.line, self.column - 1),
                     )
-                result += self.current_char
+                # 对于 '\' 和 "\" 直接结束
+                # print(self.current_char)
+                if self.current_char == end_character and self.peek() in (' ','\n'):
+                    break
+            result += self.current_char
             self.advance()
 
         result += end_character
