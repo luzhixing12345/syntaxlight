@@ -498,7 +498,7 @@ class Lexer:
                     )
                 # 对于 '\' 和 "\" 直接结束
                 # print(self.current_char)
-                if self.current_char == end_character and self.peek() in (' ','\n'):
+                if self.current_char == end_character and self.peek() in (" ", "\n"):
                     break
             result += self.current_char
             self.advance()
@@ -616,7 +616,8 @@ class Lexer:
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
             self.error(ErrorCode.UNTERMINATED_COMMENT, token)
 
-        if end_symbol == "\n":
+        # 对于单行注释以 \n 为终止符的, 将最后一个 \n 去掉
+        if end_symbol == "\n" and result[-1] == "\n":
             result = result[:-1]
             token = Token(TokenType.COMMENT, result, self.line, self.column - 1)
         else:
@@ -656,7 +657,7 @@ class Lexer:
 
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
-            
+
             # your code
 
             try:

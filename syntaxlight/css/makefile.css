@@ -26,7 +26,9 @@ pre[class*="language-makefile"] {
     tab-size: 4;
 }
 
-.Token.DOLLAR,
+.Token.DOLLAR {
+    color: --string;
+}
 .Token.ID {
     color: --variant;
 }
@@ -45,4 +47,25 @@ pre[class*="language-makefile"] {
 
 .Token.PATH_SLASH {
     color: --punctuator;
+}
+
+.Token.AUTO_VARIABLE {
+    color: --type;
+}
+
+.Token.Keyword {
+    color: --define;
+}
+
+.Token.Url {
+    color: --string;
+    border-bottom: 1px solid --string;
+}
+
+.Token.AT_SIGN, .Token.MINUS {
+    color: --define;
+}
+
+.Token.STR {
+    color: --string;
 }

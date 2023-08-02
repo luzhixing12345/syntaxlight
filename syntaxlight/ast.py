@@ -218,8 +218,16 @@ class Constant(AST):
         self.node_info += f"\\n{self.constant}"
 
 
+class WrapString(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.strings = None
+    def visit(self, node_visitor: "NodeVisitor" = None):
+        node_visitor.link(self, self.strings)
+        return super().visit(node_visitor)
+
 class String(AST):
-    def __init__(self, string) -> None:
+    def __init__(self, string = None) -> None:
         super().__init__()
         self.string: str = string
         self.is_leaf_ast = True

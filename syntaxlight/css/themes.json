@@ -25,10 +25,10 @@
                 ".Token.Keyword": "color: #327ED0;"
             },
             "shell": {
-                ".Token.OPTION": "color: #969696;"
+                ".Token.OPTION": "color: #b3b2b2;"
             },
             "makefile": {
-                ".Token.OPTION": "color: #969696;"
+                ".Token.OPTION": "color: #b3b2b2;"
             }
         }
     },

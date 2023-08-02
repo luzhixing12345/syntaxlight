@@ -1,7 +1,7 @@
 from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
 from ..error import ParserError, ErrorCode
 from enum import Enum
-from ..ast import AST, Keyword, add_ast_type, Identifier, Punctuator, String
+from ..ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
 from typing import List
 import sys
 import html
@@ -326,6 +326,11 @@ class Parser:
             node.register_token(self.eat(token_type))
         return node
 
+    def string(self):
+        node = WrapString()
+        node.update(strings = self.string_inside_format())
+        return node
+
     def string_inside_format(self, token: Token = None) -> List[String]:
         """
         取出其中格式化字符(如 %d %x \n) 并新建 token
@@ -358,5 +363,10 @@ class Parser:
 
     def punctuator(self):
         node = Punctuator(self.current_token.value)
+        node.register_token(self.eat())
+        return node
+
+    def number(self):
+        node = Number(self.current_token.value)
         node.register_token(self.eat())
         return node
