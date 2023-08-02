@@ -111,7 +111,7 @@ class MakefileParser(Parser):
         node.update(assign_op = self.assign_op())
         self.skip_black_slash()
         
-        while self.current_token.type != TokenType.LF:
+        while self.current_token.type not in (TokenType.LF, TokenType.EOF):
             self.value()
             self.skip_black_slash()
 

@@ -47,7 +47,7 @@ class MakefileLexer(Lexer):
             if self.current_char.isdigit():
                 return self.get_number()
 
-            if self.current_char.isalpha() or self.current_char in ("_", ".", "%"):
+            if self.current_char.isalpha() or self.current_char in ("-", "_", ".", "%"):
                 return self.get_id(extend_chars=["_", "-", ".", "%"])
 
             if self.current_char == "$" and self.peek() in ["@", "%", "<", "?", "^", "+", "*"]:
