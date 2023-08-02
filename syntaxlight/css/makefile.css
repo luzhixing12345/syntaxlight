@@ -37,7 +37,7 @@ pre[class*="language-makefile"] {
     color: --comment;
 }
 
-.Token.Target {
+.Token.Variable {
     color: --type;
 }
 
@@ -66,6 +66,10 @@ pre[class*="language-makefile"] {
     color: --define;
 }
 
-.Token.STR {
+.Token.STRING {
     color: --string;
+}
+
+.Token.Function, .Token.Program {
+    color: --function;
 }

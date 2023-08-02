@@ -8,4 +8,4 @@ from .shell_lexer import ShellLexer, ShellTokenType
 from .bnf_lexer import BNFLexer, BNFTokenType
 from .asm_lexer import AssemblyLexer, AssemblyTokenType
 from .css_lexer import CSSLexer, CSSTokenType
-from .makefile_lexer import MakefileLexer, MakefileTokenType, MakefileTokenSet
+from .makefile_lexer import MakefileLexer, MakefileTokenType

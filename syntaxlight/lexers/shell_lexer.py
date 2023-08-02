@@ -92,7 +92,7 @@ class ShellLexer(Lexer):
             if self.current_char == '"':
                 return self.get_string()
 
-            if self.current_char == "-":
+            if self.current_char == "-" and (self.peek().isalpha() or self.peek() == '-'):
                 return self.get_option()
 
             if self.current_char == "#":

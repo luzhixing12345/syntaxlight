@@ -334,3 +334,9 @@ $ ./re2postfix "a(abc|c|bc)+ab+"
 
 postfix = aab.c.cbc.||+.a.b+.
 ```
+## [15.sh](https://github.com/luzhixing12345/syntaxlight/tree/main/test/shell/15.sh)
+
+```shell
+make GRADEFLAGS=find grade
+# == Test xargs == xargs: OK (2.6s)
+```
