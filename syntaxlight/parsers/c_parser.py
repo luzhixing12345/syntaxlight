@@ -749,12 +749,14 @@ class CParser(Parser):
 
         - static clock_t ticks = 10;                  ID
         - static clock_t *ticks = 10;                 *
+
+        下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
         - static uint64 (*syscalls[])(void)           (
         """
         if self.current_token.type == TokenType.ID and self.peek_next_token().type in (
             TokenType.ID,
             TokenType.MUL,
-            TokenType.LPAREN
+            # TokenType.LPAREN
         ):
             self.current_token.type = CTokenType.TYPEDEF_ID
             GDT.register_id(self.current_token.value, CSS.TYPEDEF)
