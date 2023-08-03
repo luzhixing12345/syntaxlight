@@ -62,35 +62,19 @@ def get_tokens(lexer: Lexer):
     return tokens
 
 
-def get_lexer(code_or_path: str, language: str = None) -> Lexer:
+def get_lexer(text: str, language: str = None) -> Lexer:
     """
     @code_or_path: 代码或者文件的路径
     @lanaguge: 选择的语言, 如果第一个参数为文件路径则不需要传入 language
     """
-    code, language = _preprocess(code_or_path, language)
     if language not in SUPPORTED_SYNTAX:
         print("lexer not support")
         show_help_info()
         exit(1)
-    return SUPPORTED_SYNTAX[language]["lexer"](code)
+    return SUPPORTED_SYNTAX[language]["lexer"](text)
 
 
-def get_parser(code_or_path: str, language: str = None) -> Parser:
-    code, language = _preprocess(code_or_path, language)
-    lexer = get_lexer(code, language)
+def get_parser(text: str, language: str = None) -> Parser:
+    lexer = get_lexer(text, language)
     parser = SUPPORTED_SYNTAX[language]["parser"](lexer)
     return parser
-
-
-def _preprocess(code_or_path: str, language: str = None):
-    if os.path.exists(code_or_path):
-        with open(code_or_path, "r", encoding="utf-8") as f:
-            code = f.read()
-
-        if language is None:
-            language = guess_language(code_or_path)
-    else:
-        code = code_or_path
-
-    language = clean_language(language)
-    return code, language

@@ -744,11 +744,17 @@ class CParser(Parser):
     def _unknown_typedef_id_guess(self):
         """
         @扩展文法
-        对于 static clock_t ticks = 10; 判定双 ID 则将前一个 clock_t 置为 TYPEDEF_ID
+
+        对于未知符号, 判断下一个 token 类型, 更正为 TYPEDEF_ID
+
+        - static clock_t ticks = 10;                  ID
+        - static clock_t *ticks = 10;                 *
+        - static uint64 (*syscalls[])(void)           (
         """
         if self.current_token.type == TokenType.ID and self.peek_next_token().type in (
             TokenType.ID,
             TokenType.MUL,
+            TokenType.LPAREN
         ):
             self.current_token.type = CTokenType.TYPEDEF_ID
             GDT.register_id(self.current_token.value, CSS.TYPEDEF)
@@ -1960,7 +1966,23 @@ class CParser(Parser):
         while self.current_token.type in self.cfirst_set.designator:
             designators.append(self.designator())
         node.update(designators=designators)
-        node.register_token(self.eat(TokenType.ASSIGN))
+
+        # @扩展文法
+        # 此处为 GNU C 扩展, 正常来说赋值应该为
+        # struct x[] = {
+        #    [0] = 1
+        # }
+        # GNU C 扩展了此处可以不使用等号直接赋值
+        # static uint64 (*syscalls[])(void) = {
+        #     [SYS_fork] sys_fork,   [SYS_exit] sys_exit,     [SYS_wait] sys_wait,     [SYS_pipe] sys_pipe,
+        #     [SYS_read] sys_read,   [SYS_kill] sys_kill,     [SYS_exec] sys_exec,     [SYS_fstat] sys_fstat,
+        #     [SYS_chdir] sys_chdir, [SYS_dup] sys_dup,       [SYS_getpid] sys_getpid, [SYS_sbrk] sys_sbrk,
+        #     [SYS_sleep] sys_sleep, [SYS_uptime] sys_uptime, [SYS_open] sys_open,     [SYS_write] sys_write,
+        #     [SYS_mknod] sys_mknod, [SYS_unlink] sys_unlink, [SYS_link] sys_link,     [SYS_mkdir] sys_mkdir,
+        #     [SYS_close] sys_close,
+        # };
+        if self.current_token.type == TokenType.ASSIGN:
+            node.register_token(self.eat(TokenType.ASSIGN))
         return node
 
     def designator(self):
