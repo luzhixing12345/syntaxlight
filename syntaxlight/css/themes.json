@@ -25,7 +25,9 @@
                 ".Token.Keyword": "color: #327ED0;"
             },
             "shell": {
-                ".Token.OPTION": "color: #b3b2b2;"
+                ".Token.OPTION": "color: #b3b2b2;",
+                ".Token.Success": "color: #00c867;",
+                ".Token.Fail": "color: #d00101;"
             },
             "makefile": {
                 ".Token.OPTION": "color: #b3b2b2;"

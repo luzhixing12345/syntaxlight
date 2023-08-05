@@ -12,6 +12,8 @@ class ShellCSS(Enum):
     URL = "Url"
     HOST_NAME = "HostName"
     DIR_PATH = "DirPath"
+    SUCCESS = 'Success'
+    FAIL = 'Fail'
 
 
 class ShellParser(Parser):
@@ -24,7 +26,10 @@ class ShellParser(Parser):
         """
         bash 的文法可变因素太多, 这里直接不使用 BNF 采取匹配的方式
         """
-        is_program_name = True
+        is_program_name = True        
+        success_words = ["ok", "passed", "pass", "success", "yes", "completed", "finished", "done", "good"]
+        fail_words = ["fail", "failed", "error", "warning", "bug", "no", "problem", "issue", "incorrect", "unsuccessful"]
+
         new_program_token_type = [TokenType.LF, TokenType.PIPE, TokenType.SEMI, TokenType.AND]
         while self.current_token.type != TokenType.EOF:
             if self.current_token.type == TokenType.BACK_SLASH and self.peek_next_token().type == TokenType.LF:
@@ -79,6 +84,12 @@ class ShellParser(Parser):
                     self.current_token.add_css(ShellCSS.URL)
                 elif self.is_valid_path(self.current_token.value):
                     self.current_token.type = ShellTokenType.PATH
+                elif re.match(r'\b(' + '|'.join(success_words) + r')\b', self.current_token.value.lower()):
+                    self.current_token.add_css(ShellCSS.SUCCESS)
+                elif re.match(r'\b(' + '|'.join(fail_words) + r')\b', self.current_token.value.lower()):
+                    self.current_token.add_css(ShellCSS.FAIL)
+
+
 
             if is_program_name:
                 if self.current_token.type in (TokenType.ID, ShellTokenType.PATH):

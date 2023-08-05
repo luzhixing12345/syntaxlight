@@ -1280,7 +1280,7 @@ class CParser(Parser):
         type_names = []
         
         '''
-        @扩展文法
+        @特殊处理
         对于强制类型转换 (uint64)trampoline (见 test/c/40.c)
         '''
         while self.current_token.type == TokenType.LPAREN and (
@@ -1292,6 +1292,7 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.RPAREN))
             else:
                 node.register_token(self.eat(TokenType.LPAREN))
+                # 对于未知符号强制类型的情况将其修改为 TYPEDEF_ID
                 self.current_token.type = CTokenType.TYPEDEF_ID
                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
                 type_names.append(self.type_name())
