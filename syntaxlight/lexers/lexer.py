@@ -697,3 +697,6 @@ class TokenSet:
 
     def __contains__(self, item):
         return item in self._token_set
+
+    def __eq__(self, __value: object) -> bool:
+        return self.__contains__(__value)

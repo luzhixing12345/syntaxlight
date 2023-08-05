@@ -741,7 +741,7 @@ class CParser(Parser):
 
         return node
 
-    def _unknown_typedef_id_guess(self):
+    def _unknown_typedef_id_guess(self, next_token_types=[TokenType.ID, TokenType.MUL]):
         """
         @扩展文法
 
@@ -753,10 +753,9 @@ class CParser(Parser):
         下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
         - static uint64 (*syscalls[])(void)           (
         """
-        if self.current_token.type == TokenType.ID and self.peek_next_token().type in (
-            TokenType.ID,
-            TokenType.MUL,
-            # TokenType.LPAREN
+        if (
+            self.current_token.type == TokenType.ID
+            and self.peek_next_token().type in next_token_types
         ):
             self.current_token.type = CTokenType.TYPEDEF_ID
             GDT.register_id(self.current_token.value, CSS.TYPEDEF)
@@ -1272,20 +1271,31 @@ class CParser(Parser):
         """
         <cast-expression> ::= ("(" <type-name> ")")* <unary-expression>
 
-        @修改文法?
+        @修改文法
         个人感觉这里存在问题, 对于 Person* ptr = &(Person) { "Bob", 30, { 50, 60 } }; 这里的 <type-name> 会被优先匹配到, 而不是匹配后面 <primary-expression> => "(" <type-name> ")" "{" <initializer-list> (",")? "}"
 
         所以这里做了一个对于 <initializer-list> 的补充
         """
         node = CastExpression()
         type_names = []
-        while (
-            self.current_token.type == TokenType.LPAREN
-            and self.peek_next_token().type in self.cfirst_set.type_name
+        
+        '''
+        @扩展文法
+        对于强制类型转换 (uint64)trampoline (见 test/c/40.c)
+        '''
+        while self.current_token.type == TokenType.LPAREN and (
+            self.peek_next_token().type in self.cfirst_set.type_name or self._type_cast_check()
         ):
-            node.register_token(self.eat(TokenType.LPAREN))
-            type_names.append(self.type_name())
-            node.register_token(self.eat(TokenType.RPAREN))
+            if self.peek_next_token().type in self.cfirst_set.type_name:
+                node.register_token(self.eat(TokenType.LPAREN))
+                type_names.append(self.type_name())
+                node.register_token(self.eat(TokenType.RPAREN))
+            else:
+                node.register_token(self.eat(TokenType.LPAREN))
+                self.current_token.type = CTokenType.TYPEDEF_ID
+                GDT.register_id(self.current_token.value, CSS.TYPEDEF)
+                type_names.append(self.type_name())
+                node.register_token(self.eat(TokenType.RPAREN))
         node.update(type_names=type_names)
         if self.current_token.type in self.cfirst_set.unary_expression:
             node.update(expr=self.unary_expression())
@@ -1298,6 +1308,26 @@ class CParser(Parser):
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or (")
         return node
+
+    def _type_cast_check(self):
+        '''
+        强制类型转换的情况
+
+        (uint8) <unary-expression>
+        (uint8 *) <unary-expression>
+        (uint8 ****) <unary-expression>
+        '''
+        if self.peek_next_token().type == TokenType.ID:
+            if self.peek_next_token(2).type == TokenType.RPAREN and self.peek_next_token(3).type in self.cfirst_set.unary_expression:
+                return True
+            elif self.peek_next_token(2).type == TokenType.MUL:
+                n = 3
+                while self.peek_next_token(n).type == TokenType.MUL:
+                    n += 1
+                if self.peek_next_token(n).type == TokenType.RPAREN and self.peek_next_token(n+1).type in self.cfirst_set.unary_expression:
+                    return True
+
+        return False
 
     def unary_expression(self):
         """
@@ -1539,7 +1569,7 @@ class CParser(Parser):
         node.update(assignment_expr=self.assignment_expression())
         return node
 
-    def _match_macro_function(self, macro_name:str):
+    def _match_macro_function(self, macro_name: str):
         """
         匹配不符合 C 文法的宏定义函数
 
@@ -1553,7 +1583,7 @@ class CParser(Parser):
 
            struct ipc_namespace *ns = container_of(table->data, struct ipc_namespace, shm_rmid_forced);
         """
-        
+
         assert self.current_token.type == TokenType.LPAREN
         self.eat(TokenType.LPAREN)
         brace_number = 1
@@ -1568,9 +1598,7 @@ class CParser(Parser):
                 brace_number += 1
             self.pp_token()
 
-        self.error(ErrorCode.BRACE_MISS_MATCH, f'in macro define function {macro_name}')
-
-
+        self.error(ErrorCode.BRACE_MISS_MATCH, f"in macro define function {macro_name}")
 
     def expression(self):
         """

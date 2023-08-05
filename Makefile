@@ -1,6 +1,6 @@
 
 i = 0
-t = makefile
+t = c
 s = vscode
 
 .PHONY: test lexer cover

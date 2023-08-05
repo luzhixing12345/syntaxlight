@@ -1,4 +1,4 @@
-from .lexer import Lexer, TokenType, Token
+from .lexer import Lexer, TokenType, Token, TokenSet
 from .c_lexer import CLexer, CTokenType, CTokenSet
 from .lua_lexer import LuaLexer, LuaTokenType, LuaTokenSet
 from .json_lexer import JsonLexer, JsonTokenType
