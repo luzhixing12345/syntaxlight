@@ -26,6 +26,7 @@
             },
             "shell": {
                 ".Token.OPTION": "color: #b3b2b2;",
+                ".Token.HOST_NAME": "color: #00c867;",
                 ".Token.Success": "color: #00c867;",
                 ".Token.Fail": "color: #d00101;"
             },

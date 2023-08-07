@@ -34,7 +34,7 @@ class ShellTokenType(Enum):
 class ShellLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = ShellTokenType):
         super().__init__(text, LanguageTokenType)
-        self.build_long_op_dict(['&&','>>','<<'])
+        self.build_long_op_dict(['&&','>>','<<','==','==='])
 
     def get_option(self):
         """
@@ -75,7 +75,7 @@ class ShellLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
-                return self.get_number(accept_bit=True, accept_hex=True)
+                return self.get_number(accept_bit=True, accept_hex=True, end_chars=['s'])
 
             if self.current_char.isalnum() or self.current_char in ('_','.','/'):
                 token = self.get_id(extend_chars=["_", "-", ".",'/',':','+','-','@','~'])

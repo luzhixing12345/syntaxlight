@@ -361,11 +361,6 @@ class Parser:
         self.manual_get_next_token()
         return new_asts
 
-    def punctuator(self):
-        node = Punctuator(self.current_token.value)
-        node.register_token(self.eat())
-        return node
-
     def number(self):
         node = Number(self.current_token.value)
         node.register_token(self.eat())

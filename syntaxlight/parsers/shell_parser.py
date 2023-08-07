@@ -99,7 +99,7 @@ class ShellParser(Parser):
                 if self.current_token.type in new_program_token_type:
                     is_program_name = True
 
-            if self.peek_next_token().type == TokenType.ASSIGN:
+            if self.peek_next_token().type in (TokenType.ASSIGN, TokenType.EQ):
                 self.current_token.add_css(ShellCSS.VARIANT)
 
             if self.current_token.type == TokenType.STRING:
