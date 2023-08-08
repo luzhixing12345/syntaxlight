@@ -41,8 +41,12 @@ pre[class*="language-c"] {
 .Token._ATOMIC,
 .Token._STATIC_ASSERT,
 .Token._GENERIC,
-.Token.GNU-C-Extension {
+.Token.GNU_C_Assembly {
     color: --type;
+}
+
+.Token.GNU_C_Assembly._ATTRIBUTE {
+    color: --function;
 }
 
 .Token.ID {

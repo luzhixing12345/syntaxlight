@@ -58,3 +58,11 @@ pre[class*="language-riscvasm"] .Token.HeaderName {
     color: #CE9178;
     border-bottom: 1px solid #CE9178;
 }
+
+pre[class*="language-riscvasm"] .Token.STRING.Format {
+    color: #88D6FE;
+}
+
+pre[class*="language-riscvasm"] .Token.STRING.Control {
+    color: --control;
+}

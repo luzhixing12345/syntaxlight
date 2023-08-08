@@ -47,7 +47,6 @@ class C_CSS(Enum):
     ATOMAIC_TYPE_SPECIFIER = "AtomicTypeSpecifier"
     STRUCTURE_CLASS = "StructureClass"
     GOTO_LABEL = "GotoLabel"
-    GNU_C_EXTENSION = "GNU-C-Extension"
 
 
 class TranslationUnit(AST):
@@ -848,7 +847,7 @@ class CParser(Parser):
     def struct_or_union_specifier(self):
         """
         <struct-or-union-specifier> ::= <struct-or-union> <identifier> ("{" {<struct-declaration>}* "}")?
-                                      | <struct-or-union>              "{" {<struct-declaration>}* "}"
+                                      | <struct-or-union>              "{" {<struct-declaration>}* "}" <GNU-attribute>?
         """
         if self.current_token.type not in self.cfirst_set.struct_or_union_specifier:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be struct or union")
@@ -892,6 +891,9 @@ class CParser(Parser):
             if len(struct_declarations) == 0 and node.id is None:
                 self.warning("unnamed struct/union that defines no instances", node)
         add_ast_type(node.id, C_CSS.STRUCTURE_CLASS)
+
+        if self.current_token.type == CTokenType._ATTRIBUTE:
+            node.update(gnu_attribute = self.gnu_c_attribute())
         return node
 
     def struct_or_union(self):
@@ -1030,6 +1032,8 @@ class CParser(Parser):
                               | <direct-declarator> "[" <type-qualifier-list>? "*" "]"
                               | <direct-declarator> "(" <parameter-list> ")"
                               | <direct-declarator> "(" (<identifier-list>)? ")"
+
+        <direct-declarator> <GNU-attribute>?
         """
         node = DirectDeclaractor()
         if self.current_token.type == TokenType.ID:
@@ -1113,6 +1117,9 @@ class CParser(Parser):
             sub_nodes.append(sub_node)
 
         node.update(sub_nodes=sub_nodes)
+
+        if self.current_token.type == CTokenType._ATTRIBUTE:
+            node.update(gnu_attribute = self.gnu_c_attribute())
         return node
 
     def type_qualifier_list(self) -> List[AST]:
@@ -1278,11 +1285,11 @@ class CParser(Parser):
         """
         node = CastExpression()
         type_names = []
-        
-        '''
+
+        """
         @特殊处理
         对于强制类型转换 (uint64)trampoline (见 test/c/40.c)
-        '''
+        """
         while self.current_token.type == TokenType.LPAREN and (
             self.peek_next_token().type in self.cfirst_set.type_name or self._type_cast_check()
         ):
@@ -1311,21 +1318,27 @@ class CParser(Parser):
         return node
 
     def _type_cast_check(self):
-        '''
+        """
         强制类型转换的情况
 
         (uint8) <unary-expression>
         (uint8 *) <unary-expression>
         (uint8 ****) <unary-expression>
-        '''
+        """
         if self.peek_next_token().type == TokenType.ID:
-            if self.peek_next_token(2).type == TokenType.RPAREN and self.peek_next_token(3).type in self.cfirst_set.unary_expression:
+            if (
+                self.peek_next_token(2).type == TokenType.RPAREN
+                and self.peek_next_token(3).type in self.cfirst_set.unary_expression
+            ):
                 return True
             elif self.peek_next_token(2).type == TokenType.MUL:
                 n = 3
                 while self.peek_next_token(n).type == TokenType.MUL:
                     n += 1
-                if self.peek_next_token(n).type == TokenType.RPAREN and self.peek_next_token(n+1).type in self.cfirst_set.unary_expression:
+                if (
+                    self.peek_next_token(n).type == TokenType.RPAREN
+                    and self.peek_next_token(n + 1).type in self.cfirst_set.unary_expression
+                ):
                     return True
 
         return False
@@ -1821,7 +1834,7 @@ class CParser(Parser):
 
         也有可能是 <function-definition>, 如果 <init-declarator-list> 的只有一个元素且没有 <initializer> 且后面跟着的是 <declaration>* <compound-statement>
 
-        <function-definition> ::= <declaration-specifier>* <declarator> <declaration>* <compound-statement>
+        <function-definition> ::= <declaration-specifier>* <declarator>  <GNU-attribute>? <declaration>* <compound-statement>
         """
         node = Declaration()
         if self.current_token.type in self.cfirst_set.static_assert_declaration:
@@ -1869,6 +1882,8 @@ class CParser(Parser):
                 )
         if self.current_token.type == TokenType.SEMI:
             node.register_token(self.eat(TokenType.SEMI))
+        elif self.current_token.type == CTokenType._ATTRIBUTE:
+            node.update(gnu_attribute = self.gnu_c_attribute())
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "miss ;")
 
@@ -2227,7 +2242,7 @@ class CParser(Parser):
         """
         https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html
 
-        <gnu-c-statement-extension> ::= __asm__ <asm-qualifiers> "(" <STRING>+ <OutputOperands >* ")"
+        <gnu-c-statement-extension> ::= (__asm__ | asm ) <asm-qualifiers> "(" <STRING>+ <OutputOperands >* ")"
 
         <asm-qualifiers> ::= volatile
                            | inline
@@ -2236,9 +2251,10 @@ class CParser(Parser):
         <OutputOperands> ::= ":" <STRING>? ( "(" <constant_expression> ")" ) ("," <STRING>? ( "(" <constant_expression> ")" ))*
         """
         node = GNU_C_Assembly()
-        node.update(keyword=self.get_keyword(CTokenType._ASM, css_type=C_CSS.GNU_C_EXTENSION))
+        assert self.current_token.type in self.cfirst_set.gnu_c_statement_extension
+        node.update(keyword=self.get_keyword())
         if self.current_token.type in (CTokenType.VOLATILE, CTokenType.INLINE, CTokenType.GOTO):
-            node.update(asm_qualifier=self.get_keyword(css_type=C_CSS.GNU_C_EXTENSION))
+            node.update(asm_qualifier=self.get_keyword())
         node.register_token(self.eat(TokenType.LPAREN))
 
         while self.current_token.type == TokenType.STRING:
@@ -2579,3 +2595,19 @@ class CParser(Parser):
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, '<> or ""')
         return node
+
+
+    def gnu_c_attribute(self):
+        '''
+        GNU C Extension
+
+        __attribute__ "(" <expression> ")"
+        '''
+        # if self.current_token.type == CTokenType._ATTRIBUTE:
+        node = GNU_C_Assembly()
+        node.register_token(self.eat(CTokenType._ATTRIBUTE))
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(expression = self.expression())
+        node.register_token(self.eat(TokenType.RPAREN))
+        return node
+        

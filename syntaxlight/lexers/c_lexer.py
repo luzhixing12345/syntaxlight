@@ -65,6 +65,7 @@ class CTokenType(Enum):
     _THREAD_LOCAL = "_Thread_local"  # C23 => THREAD_LOCAL
 
     # GNU C extension
+    ASM = 'asm'
     _ASM = "__asm__"
     _ATTRIBUTE = "__attribute__"
 
@@ -318,7 +319,7 @@ class CTokenSet:
         self.jump_statement = TokenSet(
             CTokenType.GOTO, CTokenType.CONTINUE, CTokenType.BREAK, CTokenType.RETURN
         )
-        self.gnu_c_statement_extension = TokenSet(CTokenType._ASM)
+        self.gnu_c_statement_extension = TokenSet(CTokenType._ASM, CTokenType.ASM)
         self.statement = TokenSet(
             self.labeled_statement,
             self.expression_statement,
