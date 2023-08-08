@@ -35,6 +35,7 @@ class RISCVAssmemblyParser(Parser):
         self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True
     ):
         super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
+        # https://zhuanlan.zhihu.com/p/295439950
         integer_registers = [
             "zero",
             "ra",
@@ -115,25 +116,28 @@ class RISCVAssmemblyParser(Parser):
         section_id = []
 
         while self.current_token.type != TokenType.EOF:
-            if self.current_token.type == TokenType.LANGLE_BRACE:
-                if self.peek_next_token().type == TokenType.ID:
-                    self.eat()
-                    self.current_token.type = X86AssemblyTokenType.FUNCTION_CALL
-
             if self.current_token.type == TokenType.ID:
                 if self.peek_next_token().type == TokenType.COLON:
-                    self.current_token.type = X86AssemblyTokenType.SECTION
+                    self.current_token.type = RISCVAssemblyTokenType.SECTION
                     section_id.append(self.current_token.value)
+                
                 elif bool(re.match(self.register_pattern, self.current_token.value)):
                     self.current_token.type = RISCVAssemblyTokenType.REGISTER
+
                 elif len(self._token_list) >= 2:
                     if self._token_list[-2].type == RISCVAssemblyTokenType.ASM_KEYWORD:
                         self.current_token.type = RISCVAssemblyTokenType.SECTION
                         section_id.append(self.current_token.value)
+                
+                if self.current_token.type != RISCVAssemblyTokenType.REGISTER:
+                    if bool(re.search(r'\d+', self.current_token.value)):
+                        self.current_token.type = TokenType.NUMBER
 
             if self.current_token.type == TokenType.STRING:
                 if self._token_list[-2].type == RISCVAssemblyTokenType.INCLUDE:
                     self.current_token.add_css(RISCVAssemblyTokenType.HEADER_NAME)
+                else:
+                    self.string_inside_format()
 
             self.eat()
 

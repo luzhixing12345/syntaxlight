@@ -58,3 +58,11 @@ pre[class*="language-riscvasm"] {
     color: --string;
     border-bottom: 1px solid --string;
 }
+
+.Token.STRING.Format {
+    color: --format;
+}
+
+.Token.STRING.Control {
+    color: --control;
+}
