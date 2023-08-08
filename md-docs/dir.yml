@@ -9,13 +9,14 @@
 全部文法高亮:
 - C: 1
 - Lua: 2
-- asm: 3
-- BNF: 4
-- json: 5
-- shell: 6
-- toml: 7
-- xml: 8
-- css: 9
+- x86asm: 3
+- riscvasm: 4
+- BNF: 5
+- json: 6
+- shell: 7
+- toml: 8
+- xml: 9
+- css: 10
 开发文档:
 - BNF: 1
 - 参考文档: 2

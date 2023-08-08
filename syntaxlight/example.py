@@ -16,7 +16,6 @@ def example_display(
     html_template_file = os.path.join(syntaxlight_path, "template.html")
     index_css_file = os.path.join(syntaxlight_path, "css", "index.css")
     css_files = [index_css_file]
-    
 
     example_html_file = os.path.join(example_folder_name, "index.html")
 

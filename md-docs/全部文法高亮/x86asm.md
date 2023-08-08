@@ -1,8 +1,8 @@
 
-# asm
-## [1.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/1.asm)
+# x86asm
+## [1.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/1.asm)
 
-```asm
+```x86asm
 0x000000000040145c <+0>:     sub    $0x18,%rsp
 0x0000000000401460 <+4>:     mov    %rsi,%rdx                        # rdx = rsp
 0x0000000000401463 <+7>:     lea    0x4(%rsi),%rcx                   # rcx = rsp + 4
@@ -21,9 +21,9 @@
 0x0000000000401499 <+61>:    add    $0x18,%rsp
 0x000000000040149d <+65>:    ret
 ```
-## [2.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/2.asm)
+## [2.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/2.asm)
 
-```asm
+```x86asm
  0x0000000000400f0a <+14>:    cmpl   $0x1,(%rsp)             # 第一个输入的整数(number[0])应该为 1
  0x0000000000400f0e <+18>:    je     0x400f30 <phase_2+52>
  0x0000000000400f10 <+20>:    call   0x40143a <explode_bomb>
@@ -45,9 +45,9 @@
  0x0000000000400f41 <+69>:    pop    %rbp
  0x0000000000400f42 <+70>:    ret
 ```
-## [3.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/3.asm)
+## [3.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/3.asm)
 
-```asm
+```x86asm
 0x0000000000400f60 <+29>:    cmp    $0x1,%eax               # 获取的值应该大于1
 0x0000000000400f63 <+32>:    jg     0x400f6a <phase_3+39>
 0x0000000000400f65 <+34>:    call   0x40143a <explode_bomb>
@@ -79,9 +79,9 @@
 0x0000000000400fc9 <+134>:   add    $0x18,%rsp
 0x0000000000400fcd <+138>:   ret
 ```
-## [4.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/4.asm)
+## [4.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/4.asm)
 
-```asm
+```x86asm
 # Execution begins at address 0
         .pos 0
         irmovq stack, %rsp      # Set up stack pointer
@@ -120,9 +120,9 @@ test:
 stack:
 
 ```
-## [5.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/5.asm)
+## [5.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/5.asm)
 
-```asm
+```x86asm
 # Execution begins at address 0
         .pos 0
         irmovq stack, %rsp      # Set up stack pointer
@@ -163,9 +163,9 @@ return:
 stack:
 
 ```
-## [6.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/6.asm)
+## [6.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/6.asm)
 
-```asm
+```x86asm
 # Execution begins at address 0
         .pos 0
         irmovq stack, %rsp      # Set up stack pointer
@@ -211,9 +211,9 @@ loop:
 stack:
 
 ```
-## [7.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/7.asm)
+## [7.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/7.asm)
 
-```asm
+```x86asm
 0x000000000040100c <+0>:     sub    $0x18,%rsp
 0x0000000000401010 <+4>:     lea    0xc(%rsp),%rcx                 # number[1]
 0x0000000000401015 <+9>:     lea    0x8(%rsp),%rdx                 # number[0]
@@ -237,9 +237,9 @@ stack:
 0x000000000040105d <+81>:    add    $0x18,%rsp
 0x0000000000401061 <+85>:    ret
 ```
-## [8.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/asm/8.asm)
+## [8.asm](https://github.com/luzhixing12345/syntaxlight/tree/main/test/x86asm/8.asm)
 
-```asm
+```x86asm
 .section .data
     num1:   .quad 10    # 第一个整数,可以更改为其他值
     num2:   .quad 20    # 第二个整数,可以更改为其他值

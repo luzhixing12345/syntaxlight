@@ -1,9 +1,13 @@
-pre[class*="language-asm"] {
+pre[class*="language-x86asm"] {
     background: --background;
 }
 
 .Token {
     color: --punctuator;
+}
+
+.Token.ID {
+    color: --function;
 }
 
 .Token.BraceDepth-0 {
@@ -39,5 +43,9 @@ pre[class*="language-asm"] {
 }
 
 .Token.SECTION {
+    color: --variant;
+}
+
+.Token.DOLLAR {
     color: --variant;
 }

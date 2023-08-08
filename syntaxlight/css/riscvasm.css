@@ -1,0 +1,60 @@
+pre[class*="language-riscvasm"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.ID {
+    color: --function;
+}
+
+.Token.BraceDepth-0 {
+    color: --brace1;
+}
+
+.Token.BraceDepth-1 {
+    color: --brace2;
+}
+
+.Token.BraceDepth-2 {
+    color: --brace3;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.FUNCTION_CALL {
+    color: --function;
+}
+
+.Token.ASM_KEYWORD {
+    color: --define;
+}
+
+.Token.SECTION {
+    color: --variant;
+}
+
+.Token.STRING {
+    color: --string;
+}
+
+.Token.HASH, .Token.INCLUDE {
+    color: --define;
+}
+
+.Token.REGISTER {
+    color: --type;
+}
+
+.Token.HeaderName {
+    color: --string;
+    border-bottom: 1px solid --string;
+}

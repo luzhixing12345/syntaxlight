@@ -4,36 +4,39 @@ from .parsers import *
 import re
 from typing import List, TypedDict
 
+
 class SyntaxDict(TypedDict):
     lexer: Lexer
     parser: Parser
     suffix: List[str]
 
+
 SUPPORTED_SYNTAX = {
-    "json": SyntaxDict(lexer=JsonLexer, parser=JsonParser, suffix=['json']),
+    "json": SyntaxDict(lexer=JsonLexer, parser=JsonParser, suffix=["json"]),
     "c": SyntaxDict(lexer=CLexer, parser=CParser, suffix=["c", "h"]),
-    "lua": SyntaxDict(lexer=LuaLexer, parser=LuaParser, suffix=['lua']),
-    "bnf": SyntaxDict(lexer=BNFLexer, parser=BNFParser, suffix=['bnf']),
-    "toml": SyntaxDict(lexer=TomlLexer, parser=TomlParser, suffix=['toml']),
-    "xml": SyntaxDict(lexer=XmlLexer, parser=XmlParser, suffix=['xml']),
-    "shell": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=['sh']),
-    "asm": SyntaxDict(lexer=AssemblyLexer, parser=AssemblyParser, suffix=['asm']),
-    "css": SyntaxDict(lexer=CSSLexer,parser=CSSParser, suffix=['css']),
-    "makefile": SyntaxDict(lexer=MakefileLexer,parser=MakefileParser, suffix=['mk','mak'])
+    "lua": SyntaxDict(lexer=LuaLexer, parser=LuaParser, suffix=["lua"]),
+    "bnf": SyntaxDict(lexer=BNFLexer, parser=BNFParser, suffix=["bnf"]),
+    "toml": SyntaxDict(lexer=TomlLexer, parser=TomlParser, suffix=["toml"]),
+    "xml": SyntaxDict(lexer=XmlLexer, parser=XmlParser, suffix=["xml"]),
+    "shell": SyntaxDict(lexer=ShellLexer, parser=ShellParser, suffix=["sh"]),
+    "x86asm": SyntaxDict(lexer=X86AssemblyLexer, parser=X86AssemblyParser, suffix=["asm"]),
+    "riscvasm": SyntaxDict(lexer=RISCVAssemblyLexer, parser=RISCVAssmemblyParser, suffix=["S"]),
+    "css": SyntaxDict(lexer=CSSLexer, parser=CSSParser, suffix=["css"]),
+    "makefile": SyntaxDict(lexer=MakefileLexer, parser=MakefileParser, suffix=["mk", "mak"]),
 }
 
-def clean_language(language:str):
-    
+
+def clean_language(language: str):
     language = language.lower()
     rename_languages = {
-        r'^bash$': 'shell',
-        r'.*?asm.*?': 'asm'
+        r"^bash$": "shell",
     }
     for r_language in rename_languages:
         if bool(re.match(r_language, language)):
             return rename_languages[r_language]
-        
+
     return language
+
 
 def guess_language(file_path: str) -> str:
     """
@@ -51,11 +54,13 @@ def guess_language(file_path: str) -> str:
     show_help_info()
     exit(1)
 
+
 def show_help_info():
     print(f"supported language:")
     for language in SUPPORTED_SYNTAX:
         print(f"{language:>10}:", SUPPORTED_SYNTAX[language]["suffix"])
     exit(1)
+
 
 def is_language_support(language: str):
     """
