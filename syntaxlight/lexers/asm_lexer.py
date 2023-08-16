@@ -51,6 +51,9 @@ class X86AssemblyLexer(Lexer):
 
             if self.current_char == "#":
                 return self.get_comment()
+            
+            if self.current_char == '/' and self.peek() == '*':
+                return self.get_comment('/*','*/')
 
             try:
                 token_type = TokenType(self.current_char)
@@ -128,6 +131,9 @@ class RISCVAssemblyLexer(Lexer):
                     return token
                 else:
                     return self.get_comment()
+                
+            if self.current_char == '/' and self.peek() == '*':
+                return self.get_comment('/*','*/')
 
             if self.current_char == '"':
                 return self.get_string()

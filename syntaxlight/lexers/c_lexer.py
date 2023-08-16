@@ -245,7 +245,7 @@ class CTokenSet:
         self.specifier_qualifier_list = TokenSet(self.type_qualifier, self.type_specifier)
         self.struct_declarator = TokenSet(self.declarator, TokenType.COLON)
         self.struct_declarator_list = TokenSet(self.struct_declarator)
-        self.struct_declaration = TokenSet(self.specifier_qualifier_list, self.struct_declarator)
+        self.struct_declaration = TokenSet(self.specifier_qualifier_list, self.struct_declarator, TokenType.VARARGS)
         self.direct_declaractor = TokenSet(TokenType.ID, TokenType.LPAREN)
 
         self.generic_selection = TokenSet(CTokenType._GENERIC)
@@ -332,7 +332,7 @@ class CTokenSet:
         self.external_declaration = TokenSet(
             self.function_definition, self.declaration, self.group_part, self.statement
         )
-        self.block_item = TokenSet(self.declaration, self.statement, self.group)
+        self.block_item = TokenSet(self.declaration, self.statement, TokenType.VARARGS)
         self.init_declarator_list = TokenSet(self.declarator)
         self.identifier_list = TokenSet(TokenType.ID)
         self.if_group = TokenSet(CTokenType.IF_P, CTokenType.IFDEF, CTokenType.IFNDEF)

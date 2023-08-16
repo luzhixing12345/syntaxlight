@@ -907,15 +907,21 @@ class CParser(Parser):
         """
         <struct-declaration> ::= <specifier-qualifier-list> <struct-declarator-list>? ";"
                                | <static_assert-declaration>
+                               | "..."
+        
+        @扩展文法
+        支持 ... 省略
         """
         node = StructDeclaration()
         if self.current_token.type in self.cfirst_set.static_assert_declaration:
             node.update(static_assert=self.static_assert_declaration())
-            return node
-        node.update(specifier_qualifiers=self.specifier_qualifier_list())
-        if self.current_token.type in self.cfirst_set.struct_declarator_list:
-            node.update(declarators=self.struct_declarator_list())
-        node.register_token(self.eat(TokenType.SEMI))
+        elif self.current_token.type == TokenType.VARARGS:
+            node.register_token(self.eat(TokenType.VARARGS))
+        else:
+            node.update(specifier_qualifiers=self.specifier_qualifier_list())
+            if self.current_token.type in self.cfirst_set.struct_declarator_list:
+                node.update(declarators=self.struct_declarator_list())
+            node.register_token(self.eat(TokenType.SEMI))
         return node
 
     def specifier_qualifier_list(self) -> List[AST]:
@@ -2054,6 +2060,10 @@ class CParser(Parser):
 
         <block-item> ::= <declaration>
                        | <statement>
+                       | "..."
+
+        @扩展文法
+        支持 ... 省略
         """
         node = CompoundStatement()
         node.register_token(self.eat(TokenType.LCURLY_BRACE))
@@ -2064,6 +2074,9 @@ class CParser(Parser):
                 sub_nodes.append(self.declaration())
             elif self.current_token.type in self.cfirst_set.statement:
                 sub_nodes.append(self.statement())
+            else:
+                # ...
+                self.eat(token_type=TokenType.VARARGS)
             self._unknown_typedef_id_guess()
         node.update(sub_nodes=sub_nodes)
         node.register_token(self.eat(TokenType.RCURLY_BRACE))
@@ -2436,11 +2449,8 @@ class CParser(Parser):
         """
         self.eat(TokenType.HASH)
         node = ElseGroup()
-        if self.current_token.type == CTokenType.ELSE:
-            self.current_token.type == CTokenType.ELSE_P
-            node.update(keyword=self.get_keyword(CTokenType.ELSE_P, css_type=CSS.PREPROCESS))
-        else:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be else")
+        node.update(keyword=self.get_keyword(CTokenType.ELSE_P, css_type=CSS.PREPROCESS))
+        
         self.eat_lf()
         self._end_preprocessing()
         return node

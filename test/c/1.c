@@ -1,20 +1,26 @@
-void my_function() __attribute__((noreturn));
-int my_printf(const char *format, ...) __attribute__((format(printf, 1, 2)));
+#ifdef CONFIG_SLUB_CPU_PARTIAL
+#define slub_percpu_partial(c)		((c)->partial)
 
-int my_variable __attribute__((aligned(16)));
-struct packed_struct {
-    int a;
-    char b;
-} __attribute__((packed));
+#define slub_set_percpu_partial(c, p)		\
+({						\
+	slub_percpu_partial(c) = (p)->next;	\
+})
 
-typedef int my_int __attribute__((aligned(4)));
+#define slub_percpu_partial_read_once(c)     READ_ONCE(slub_percpu_partial(c))
+#else
+#define slub_percpu_partial(c)			NULL
 
-typedef int my_int __attribute__((aligned(4)));
+#define slub_set_percpu_partial(c, p)
 
-static inline uint64
-r_fp()
-{
-  uint64 x;
-  asm volatile("mv %0, s0" : "=r" (x) );
-  return x;
+#define slub_percpu_partial_read_once(c)	NULL
+#endif // CONFIG_SLUB_CPU_PARTIAL
+
+if (x) {
+    ...
 }
+
+struct free_area {
+    ...
+    struct list_head free_list[MIGRATE_TYPES];
+    unsigned long nr_free;
+};

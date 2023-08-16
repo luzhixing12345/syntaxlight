@@ -580,9 +580,9 @@ class Lexer:
 
     def get_comment(self, start_symbol="#", end_symbol="\n"):
         """
-        跳过注释部分, 单行注释不包括最后的换行
+        跳过注释部分, 多个注释的情况需要分多个 get_comment 函数处理
 
-        多个注释的情况分多个 get_comment 函数处理
+        单行注释不包含结尾的 \n
 
         python 风格: ("#", "\n")
              C 风格: ("//", "\n"), ("/*", "*/")

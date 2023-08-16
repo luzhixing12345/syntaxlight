@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "syntaxlight"
-version = "0.1.9"
+version = "0.1.10"
 description = "syntax highlight based on EBNF"
 authors = ["luzhixing12345 <luzhixing12345@163.com>"]
 license = "MIT"
