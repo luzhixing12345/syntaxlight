@@ -8,7 +8,7 @@ import sys
 
 
 def parse(
-    text: str, language=None, file_path=None, show_error_context=True, save_ast_tree=False
+    text: str, language=None, file_path=None, show_error_context=True, save_ast_tree=False, show_error_trace = False
 ) -> str:
     if len(text) == 0:
         return ""
@@ -22,13 +22,19 @@ def parse(
         sys.stderr.write(e.message)
         if show_error_context:
             sys.stderr.write(e.context)
+        
+        if show_error_trace:
+            sys.stderr.write('\nbacktrace:\n')
+            for trace in e.error_trace:
+                sys.stderr.write(trace + '\n')
+            sys.stderr.write('-'*20 + '\n')
     else:
         display_ast(parser.root, parser.sub_roots, save_ast_tree=save_ast_tree)
         # print(parser.node)
         return parser.to_html()
 
 
-def parse_file(file_path: str, language=None, show_error_context=True, save_ast_tree=False) -> str:
+def parse_file(file_path: str, language=None, show_error_context=True, save_ast_tree=False, show_error_trace = False) -> str:
     if not os.path.exists(file_path):
         print(f"{file_path} file not exsist")
 
@@ -46,6 +52,7 @@ def parse_file(file_path: str, language=None, show_error_context=True, save_ast_
         file_path=file_path,
         show_error_context=show_error_context,
         save_ast_tree=save_ast_tree,
+        show_error_trace = show_error_trace
     )
 
 

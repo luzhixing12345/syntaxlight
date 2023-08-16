@@ -36,7 +36,7 @@ class Parser:
         message: str = "",
         token: Token = None,
     ):
-        self._log_trace()
+        error_trace = self.error_func_trace()
         if token is None:
             token = self.current_token
 
@@ -52,6 +52,7 @@ class Parser:
             context=self.lexer.get_error_token_context(token),
             file_path=self.lexer.file_path,
             message=message,
+            error_trace = error_trace
         )
 
     def warning(self, message=None, ast: AST = None):
@@ -68,24 +69,25 @@ class Parser:
         )
         # sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
-    def _log_trace(self):
+    def error_func_trace(self) -> List[str]:
         """
         查看 python 函数调用栈
         """
-        if DEBUG:
-            # 前4后2不重要
-            stack_trace = traceback.extract_stack()[4:-2]
-            function_length = 0
-            line_length = 0
-            for stack in stack_trace:
-                _, line_number, function_name, _ = stack
-                function_length = max(function_length, len(function_name))
-                line_length = max(line_length, len(str(line_number)))
-            for stack in stack_trace:
-                _, line_number, function_name, line_of_code = stack
-                print(
-                    f"[{function_name:>{function_length}}][{line_number:<{line_length}}]: {line_of_code.strip()}"
-                )
+        error_trace = []
+        # 前4后2不重要
+        stack_trace = traceback.extract_stack()[4:-2]
+        function_length = 0
+        line_length = 0
+        for stack in stack_trace:
+            _, line_number, function_name, _ = stack
+            function_length = max(function_length, len(function_name))
+            line_length = max(line_length, len(str(line_number)))
+        for stack in stack_trace:
+            _, line_number, function_name, line_of_code = stack
+            error_trace.append(
+                f"[{function_name:>{function_length}}][{line_number:<{line_length}}]: {line_of_code.strip()}"
+            )
+        return error_trace
 
     def eat(self, token_type: Enum = None) -> List[Token]:
         """
@@ -207,7 +209,7 @@ class Parser:
         self.eat(TokenType.LF)
         self.skip_crlf()
 
-    def peek_next_token(self, n = 1) -> Token:
+    def peek_next_token(self, n=1) -> Token:
         """
         查看下一个 token 的类型
         """
@@ -249,9 +251,9 @@ class Parser:
         return html_str
 
     def brace_matching(self):
-        '''
+        """
         对于 ([{<>}]) 计算括号深度
-        '''
+        """
         brace_max_depth = 3  # 括号深度循环轮次
         brace_list: List[TokenType] = [
             TokenType.LPAREN,
@@ -275,9 +277,7 @@ class Parser:
                     brace_depth += 1
                 else:
                     # 括号匹配
-                    if brace_list.index(brace_stack[-1]) + 1 == brace_list.index(
-                        token.type
-                    ):
+                    if brace_list.index(brace_stack[-1]) + 1 == brace_list.index(token.type):
                         brace_stack.pop()
                         brace_depth -= 1
                         token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
@@ -286,7 +286,6 @@ class Parser:
                         brace_stack.append(token.type)
                         token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
                         brace_depth += 1
-
 
     def parse(self):
         raise NotImplementedError(self.__class__.__name__ + " must override the parse function")
@@ -328,7 +327,7 @@ class Parser:
 
     def string(self):
         node = WrapString()
-        node.update(strings = self.string_inside_format())
+        node.update(strings=self.string_inside_format())
         return node
 
     def string_inside_format(self, token: Token = None) -> List[String]:

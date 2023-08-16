@@ -27,11 +27,13 @@ class Error(Exception):
         message: str = None,
         context: str = None,
         file_path: str = None,
+        error_trace = None
     ):
         self.error_code = error_code
         self.token = token
         # add exception class name before the message
         self.context = context
+        self.error_trace = error_trace
 
         if self.token is not None:
             if file_path is not None:
@@ -67,10 +69,11 @@ class ParserError(Error):
         context: str = None,
         file_path: str = None,
         message: str = None,
+        error_trace = None
     ):
         if error_code is not None:
             if error_code == ErrorCode.UNEXPECTED_TOKEN:
                 message = error_code.value + f" {token.type.name}: " + message
             else:
                 message = error_code.value + ": " + message
-        super().__init__(error_code, token, message, context, file_path)
+        super().__init__(error_code, token, message, context, file_path, error_trace)
