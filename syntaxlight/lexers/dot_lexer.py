@@ -74,5 +74,5 @@ class DotTokenSet:
         self.edgeop = TokenSet(TokenType.POINT, DotTokenType.UNDIRECT_POINT)
         self.attr_stmt = TokenSet(DotTokenType.GRAPH, DotTokenType.NODE, DotTokenType.EDGE)
         self.node_stmt = TokenSet(TokenType.ID)
-        self.stmt = TokenSet(TokenType.ID, self.attr_stmt)
+        self.stmt = TokenSet(TokenType.ID, self.attr_stmt, self.subgraph)
         self.stmt_list = TokenSet(self.stmt)

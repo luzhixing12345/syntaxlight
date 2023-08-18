@@ -3,7 +3,7 @@ from .parser import Parser
 from ..lexers import TokenType, DotTokenType, Token, DotTokenSet
 from ..gdt import *
 from ..error import ErrorCode
-from ..ast import AST
+from ..ast import AST, add_ast_type
 
 
 class Graph(AST):
@@ -14,6 +14,8 @@ class Graph(AST):
 class Stmt(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.key = None
+        self.value = None
 
 
 class AttrStmt(AST):
@@ -23,6 +25,8 @@ class AttrStmt(AST):
 class Attribute(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.keys = None
+        self.values = None
 
 class EdgeStmt(AST):
     def __init__(self) -> None:
@@ -47,6 +51,11 @@ class NodeStmt(AST):
 class Port(AST):
     def __init__(self) -> None:
         super().__init__()
+
+
+class DotCSS(Enum):
+    ATTRIBUTE_KEY = 'AttributeKey'
+    ATTRIBUTE_VALUE = 'AttributeValue'
 
 class DotParser(Parser):
     def __init__(
@@ -113,10 +122,11 @@ class DotParser(Parser):
         if self.current_token.type == TokenType.ID:
             # <ID> '=' <ID>
             if self.peek_next_token().type == TokenType.ASSIGN:
-                node.update(id1=self.identifier())
+                node.update(key=self.identifier())
                 node.register_token(self.eat(TokenType.ASSIGN))
-                node.update(id2=self.identifier())
-
+                node.update(value=self.identifier())
+                add_ast_type(node.key, DotCSS.ATTRIBUTE_KEY)
+                add_ast_type(node.value, DotCSS.ATTRIBUTE_VALUE)
             # node_stmt 和 edge_stmt 有重叠部分, 需要判断
 
             # <stmt> ::= <node_stmt>
@@ -172,7 +182,7 @@ class DotParser(Parser):
 
     def a_list(self):
         """
-        <a_list> ::= <ID> '=' (<ID>|<STRING>|<NUMBER>) (';' | ',')? <a_list>?
+        <a_list> ::= <ID> '=' <ID> (';' | ',')? <a_list>?
         """
         node = Attribute()
         keys = []
@@ -186,6 +196,8 @@ class DotParser(Parser):
         
         node.update(keys = keys)
         node.update(values = values)
+        add_ast_type(node.keys, DotCSS.ATTRIBUTE_KEY)
+        add_ast_type(node.values, DotCSS.ATTRIBUTE_VALUE)
         return node
 
 
@@ -200,7 +212,7 @@ class DotParser(Parser):
             # SubGraph
             node.update(subgraph = sub_node)
         node.update(edgeRHS = self.edgeRHS())
-        if self.current_token.type == TokenType.LCURLY_BRACE:
+        if self.current_token.type == TokenType.LSQUAR_PAREN:
             node.update(attr_list = self.attr_list())
         return node
 
@@ -250,7 +262,9 @@ class DotParser(Parser):
         node = Port()
         node.register_token(self.eat(TokenType.COLON))
         node.update(id = self.identifier())
-        # FIXME
+        if self.current_token.type == TokenType.COLON:
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(compass_pt = self.identifier())
         return node
 
 

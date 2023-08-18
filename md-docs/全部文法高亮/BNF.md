@@ -558,3 +558,28 @@
 
 # <name> ::= any valid name
 ```
+## [9.bnf](https://github.com/luzhixing12345/syntaxlight/tree/main/test/bnf/9.bnf)
+
+```bnf
+
+# https://graphviz.org/doc/info/lang.html
+
+<graph> ::= strict? (graph | digraph) <ID>? '{' <stmt_list>? '}'
+<stmt_list> ::= <stmt> (';' <stmt>)* ';'?
+<stmt> ::= <node_stmt>
+         | <edge_stmt>
+         | <attr_stmt>
+         | <ID> '=' <ID>
+         | <subgraph>
+<attr_stmt> ::= ( graph | node | edge) <attr_list>
+<attr_list> ::= '[' <a_list>? ']' <attr_list>?
+<a_list> ::= <ID> '=' <ID> (';' | ',')? <a_list>?
+<edge_stmt> ::= (<node_id> | <subgraph>) <edgeRHS> <attr_list>?
+<edgeRHS> ::= <edgeop> (<node_id> | <subgraph>) <edgeRHS>?
+<node_stmt> ::= <node_id> <attr_list>?
+<node_id> ::= <ID> <port>?
+<port> ::= ':' <ID> (':' <compass_pt>)?
+         | ':' <compass_pt>
+<subgraph> ::= (subgraph <ID>? )? '{' <stmt_list> '}'
+<compass_pt> ::= (n | ne | e | se | s | sw | w | nw | c | _)
+```

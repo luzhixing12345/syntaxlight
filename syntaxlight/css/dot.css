@@ -1,0 +1,48 @@
+pre[class*="language-dot"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.Keyword {
+    color: --type;
+}
+
+.Token.ID {
+    color: --function;
+}
+
+.Token.BraceDepth-0 {
+    color: --brace1;
+}
+
+.Token.BraceDepth-1 {
+    color: --brace2;
+}
+
+.Token.BraceDepth-2 {
+    color: --brace3;
+}
+
+.Token.AttributeKey {
+    color: --struct;
+}
+
+.Token.AttributeValue {
+    color: --variant;
+}
+
+
+.Token.STRING {
+    color: --string;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.NodeId {
+    color: --variant;
+}

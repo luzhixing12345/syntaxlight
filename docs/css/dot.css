@@ -1,0 +1,48 @@
+pre[class*="language-dot"] {
+    background: #1f1f1f;
+}
+
+pre[class*="language-dot"] .Token {
+    color: #C1CCCC;
+}
+
+pre[class*="language-dot"] .Token.Keyword {
+    color: #569cd6;
+}
+
+pre[class*="language-dot"] .Token.ID {
+    color: #DCDCAA;
+}
+
+pre[class*="language-dot"] .Token.BraceDepth-0 {
+    color: #FFD700;
+}
+
+pre[class*="language-dot"] .Token.BraceDepth-1 {
+    color: #DA70D6;
+}
+
+pre[class*="language-dot"] .Token.BraceDepth-2 {
+    color: #1A9DFF;
+}
+
+pre[class*="language-dot"] .Token.AttributeKey {
+    color: #4EC9B0;
+}
+
+pre[class*="language-dot"] .Token.AttributeValue {
+    color: #88D6FE;
+}
+
+
+pre[class*="language-dot"] .Token.STRING {
+    color: #CE9178;
+}
+
+pre[class*="language-dot"] .Token.NUMBER {
+    color: #A2CEA8;
+}
+
+pre[class*="language-dot"] .Token.NodeId {
+    color: #88D6FE;
+}
