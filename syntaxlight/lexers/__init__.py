@@ -14,3 +14,4 @@ from .asm_lexer import (
 )
 from .css_lexer import CSSLexer, CSSTokenType
 from .makefile_lexer import MakefileLexer, MakefileTokenType
+from .dot_lexer import DotLexer, DotTokenType, DotTokenSet

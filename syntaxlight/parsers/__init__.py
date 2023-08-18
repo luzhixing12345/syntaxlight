@@ -9,3 +9,4 @@ from .lua_parser import LuaParser
 from .asm_parser import X86AssemblyParser, RISCVAssmemblyParser
 from .css_parser import CSSParser
 from .makefile_parser import MakefileParser
+from .dot_parser import DotParser
