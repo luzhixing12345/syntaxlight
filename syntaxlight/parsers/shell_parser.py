@@ -27,8 +27,8 @@ class ShellParser(Parser):
         bash 的文法可变因素太多, 这里直接不使用 BNF 采取匹配的方式
         """
         is_program_name = True        
-        success_words = ["ok", "passed", "pass", "success", "yes", "completed", "finished", "done", "good"]
-        fail_words = ["fail", "failed", "error", "warning", "bug", "no", "problem", "issue", "incorrect", "unsuccessful"]
+        # success_words = ["ok", "passed", "pass", "success", "yes", "completed", "finished", "done", "good"]
+        # fail_words = ["fail", "failed", "error", "warning", "bug", "no", "problem", "issue", "incorrect", "unsuccessful"]
 
         new_program_token_type = [TokenType.LF, TokenType.PIPE, TokenType.SEMI, TokenType.AND]
         while self.current_token.type != TokenType.EOF:
@@ -84,10 +84,10 @@ class ShellParser(Parser):
                     self.current_token.add_css(ShellCSS.URL)
                 elif self.is_valid_path(self.current_token.value):
                     self.current_token.type = ShellTokenType.PATH
-                elif re.match(r'\b(' + '|'.join(success_words) + r')\b', self.current_token.value.lower()):
-                    self.current_token.add_css(ShellCSS.SUCCESS)
-                elif re.match(r'\b(' + '|'.join(fail_words) + r')\b', self.current_token.value.lower()):
-                    self.current_token.add_css(ShellCSS.FAIL)
+                # elif re.match(r'\b(' + '|'.join(success_words) + r')\b', self.current_token.value.lower()):
+                #     self.current_token.add_css(ShellCSS.SUCCESS)
+                # elif re.match(r'\b(' + '|'.join(fail_words) + r')\b', self.current_token.value.lower()):
+                #     self.current_token.add_css(ShellCSS.FAIL)
 
 
 

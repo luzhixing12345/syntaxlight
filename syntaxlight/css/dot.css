@@ -46,3 +46,7 @@ pre[class*="language-dot"] {
 .Token.NodeId {
     color: --variant;
 }
+
+.Token.COMMENT {
+    color: --comment;
+}
