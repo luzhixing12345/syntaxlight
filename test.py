@@ -38,5 +38,6 @@ for language, files in TEST_FILES.items():
                     print(token)
             break
         syntaxlight.example_display(files[INDEX], STYLE,save_ast_tree=True, show_error_trace=True)
+        print("    http://127.0.0.1:5655/syntaxlight_example/index.html")
     else:
         syntaxlight.example_display(files, STYLE)

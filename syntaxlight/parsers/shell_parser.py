@@ -12,8 +12,8 @@ class ShellCSS(Enum):
     URL = "Url"
     HOST_NAME = "HostName"
     DIR_PATH = "DirPath"
-    SUCCESS = 'Success'
-    FAIL = 'Fail'
+    SUCCESS = "Success"
+    FAIL = "Fail"
 
 
 class ShellParser(Parser):
@@ -26,13 +26,16 @@ class ShellParser(Parser):
         """
         bash 的文法可变因素太多, 这里直接不使用 BNF 采取匹配的方式
         """
-        is_program_name = True        
+        is_program_name = True
         # success_words = ["ok", "passed", "pass", "success", "yes", "completed", "finished", "done", "good"]
         # fail_words = ["fail", "failed", "error", "warning", "bug", "no", "problem", "issue", "incorrect", "unsuccessful"]
 
         new_program_token_type = [TokenType.LF, TokenType.PIPE, TokenType.SEMI, TokenType.AND]
         while self.current_token.type != TokenType.EOF:
-            if self.current_token.type == TokenType.BACK_SLASH and self.peek_next_token().type == TokenType.LF:
+            if (
+                self.current_token.type == TokenType.BACK_SLASH
+                and self.peek_next_token().type == TokenType.LF
+            ):
                 self.eat()
                 self.eat_lf()
                 continue
@@ -72,6 +75,9 @@ class ShellParser(Parser):
                 is_program_name = True
 
             if self.current_token.type == TokenType.ID:
+                if self.peek_next_token().type in (TokenType.ASSIGN, TokenType.EQ):
+                    self.current_token.add_css(ShellCSS.VARIANT)
+
                 if self.peek_next_token().type == TokenType.LPAREN:
                     # function
                     self.current_token.add_css(ShellCSS.FUNCTION)
@@ -89,18 +95,16 @@ class ShellParser(Parser):
                 # elif re.match(r'\b(' + '|'.join(fail_words) + r')\b', self.current_token.value.lower()):
                 #     self.current_token.add_css(ShellCSS.FAIL)
 
-
-
             if is_program_name:
-                if self.current_token.type in (TokenType.ID, ShellTokenType.PATH):
+                if self.current_token.type in (
+                    TokenType.ID,
+                    ShellTokenType.PATH,
+                ) and not self.is_chinese(self.current_token.value):
                     is_program_name = False
                     self.current_token.add_css(ShellCSS.PROGRAM)
             else:
                 if self.current_token.type in new_program_token_type:
                     is_program_name = True
-
-            if self.peek_next_token().type in (TokenType.ASSIGN, TokenType.EQ):
-                self.current_token.add_css(ShellCSS.VARIANT)
 
             if self.current_token.type == TokenType.STRING:
                 self.string_inside_format(self.current_token)
@@ -122,3 +126,7 @@ class ShellParser(Parser):
             or re.match(windows_path_pattern, path) is not None
             or re.match(any_path_pattern, path) is not None
         )
+
+    def is_chinese(self, text):
+        pattern = re.compile(r"[\u4e00-\u9fa5]+")
+        return pattern.search(text) is not None
