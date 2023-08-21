@@ -23,7 +23,8 @@ SUPPORTED_SYNTAX = {
     "riscvasm": SyntaxDict(lexer=RISCVAssemblyLexer, parser=RISCVAssmemblyParser, suffix=["S"]),
     "css": SyntaxDict(lexer=CSSLexer, parser=CSSParser, suffix=["css"]),
     "makefile": SyntaxDict(lexer=MakefileLexer, parser=MakefileParser, suffix=["mk", "mak"]),
-    "dot": SyntaxDict(lexer=DotLexer, parser=DotParser, suffix=['dot','gv'])
+    "dot": SyntaxDict(lexer=DotLexer, parser=DotParser, suffix=['dot','gv']),
+    "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=['yml','yaml'])
 }
 
 

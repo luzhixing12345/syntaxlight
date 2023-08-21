@@ -1,0 +1,17 @@
+apiVersion: v2
+name: myapp
+description: A Helm chart for my app
+version: 0.1.0
+dependencies:
+  - name: redis
+    version: 6.0.0
+    repository: https://charts.bitnami.com/bitnami
+values:
+  replicaCount: 3
+  image:
+    repository: myapp
+    tag: latest
+  resources:
+    limits:
+      cpu: 1
+      memory: 512Mi

@@ -1,0 +1,20 @@
+name: CI/CD
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v2
+    - name: Build and Test
+      run: |
+        npm install
+        npm run build
+    - name: Deploy
+      uses: some/deployment-action@v1
+      with:
+        server: production
+        token: ${{ secrets.DEPLOY_TOKEN }}

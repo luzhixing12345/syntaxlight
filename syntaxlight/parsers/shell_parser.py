@@ -99,7 +99,7 @@ class ShellParser(Parser):
                 if self.current_token.type in (
                     TokenType.ID,
                     ShellTokenType.PATH,
-                ) and not self.is_chinese(self.current_token.value):
+                ) and not self.has_chinese_word(self.current_token.value):
                     is_program_name = False
                     self.current_token.add_css(ShellCSS.PROGRAM)
             else:
@@ -127,6 +127,6 @@ class ShellParser(Parser):
             or re.match(any_path_pattern, path) is not None
         )
 
-    def is_chinese(self, text):
+    def has_chinese_word(self, text):
         pattern = re.compile(r"[\u4e00-\u9fa5]+")
         return pattern.search(text) is not None

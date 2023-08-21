@@ -1,0 +1,70 @@
+# 文档1:标量和键值对
+string_example: "This is a string"
+number_example: 42
+boolean_example: true
+
+object_example:
+  key1: value1
+  key2: value2
+
+# 文档2:列表和嵌套结构
+list_example:
+  - item1
+  - item2
+  - sub_list:
+      - sub_item1
+      - sub_item2
+
+# 文档3:锚点和别名
+anchor_example: &example_anchor
+  key1: value1
+  key2: value2
+
+alias_example: *example_anchor
+
+# 文档4:多行字符串和折叠块
+multiline_string: |
+  This is a multiline
+  string with preserved line breaks.
+
+folded_block: >
+  This is a folded block
+  with folded line breaks.
+
+# 文档5:标签和属性
+tagged_example: !!str "This is a tagged string"
+
+property_example: &property_anchor
+  <<: *example_anchor
+  property: value
+
+# 文档6:流式序列和流式映射
+flow_sequence: [item1, item2, item3]
+flow_mapping: {key1: value1, key2: value2}
+
+# 文档7:引用、换行注释和块注释
+reference_example: *property_anchor
+
+key_with_comment: value  # 这是一个行内注释
+
+block_comment: |
+  This is a block comment
+  spanning multiple lines.
+
+# 文档8:特殊符号和转义字符
+special_symbols: ':-{},[]?*&!|#<>%@`'
+
+escaped_characters: "This string contains\nnewlines and\ttabs."
+
+# 文档9:时间戳和空值
+timestamp_example: 2023-08-21T12:34:56Z
+null_example: null
+
+# 文档10:嵌套文档
+nested_document:
+  sub_document:
+    key1: value1
+    key2: value2
+
+...
+# 可以继续添加更多文档

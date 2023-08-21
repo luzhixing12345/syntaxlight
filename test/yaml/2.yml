@@ -1,0 +1,10 @@
+vars:
+   service1:
+       config: &service_config
+           env: prod
+           retries: 3
+           version: 4.8
+   service2:
+       config: *service_config
+   service3:
+       config: *service_config

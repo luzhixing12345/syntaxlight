@@ -1,0 +1,86 @@
+pre[class*="language-yaml"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.String {
+    color: --string;
+}
+
+.Token.BraceDepth-0 {
+    color: --brace1;
+}
+
+.Token.BraceDepth-1 {
+    color: --brace2;
+}
+
+.Token.BraceDepth-2 {
+    color: --brace3;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.ID {
+    color: --string;
+}
+
+.Token.Key {
+    color: --type;
+}
+
+.Token.PIPE {
+    color: --define;
+}
+
+.Token.DOLLAR {
+    color: --variant;
+}
+
+.Token.STR {
+    color: --string;
+}
+
+.Token.Url {
+    border-bottom: 1px solid --string;
+}
+
+.Token.TRUE,
+.Token.FALSE,
+.Token.STRING,
+.Token.INT,
+.Token.BOOL,
+.Token.INHERIT,
+.Token.NULL,
+.Token.BANG {
+    color: --type;
+}
+
+.Token.STAR, .Token.AMPERSAND, .Token.MAP {
+    color: --define;
+}
+
+.Token.Anchor {
+    color: --struct;
+}
+
+.Token.Alias {
+    color: --variant;
+}
+
+.Token.TIME {
+    color: --number;
+}
+
+.Token.Env-var {
+    color: --variant;
+}

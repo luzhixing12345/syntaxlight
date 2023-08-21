@@ -1,0 +1,10 @@
+server:
+  port: 8080
+  hostname: example.com
+
+database:
+  host: db.example.com
+  port: 3306
+  username: user
+  password: pass
+  dbname: mydb

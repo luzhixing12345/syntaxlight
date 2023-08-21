@@ -1,0 +1,13 @@
+---
+# A sample yaml file
+company: !!str spacelift
+domain:
+ - !!str devops
+ - !!str devsecops
+tutorial:
+   - name: !!str yaml
+   - type: !!str awesome
+   - rank: !!int 1
+   - born: !!int 2001
+author: !!str omkarbirade
+published: !!bool true

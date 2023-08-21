@@ -567,7 +567,15 @@ class Lexer:
 
         # 忽略关键字的大小写
         if ignore_case:
-            token_type = self.reserved_keywords.get(result.upper())
+            token_type = next(
+                (
+                    self.reserved_keywords[item]
+                    for item in self.reserved_keywords
+                    if item.lower() == result.lower()
+                ),
+                None,
+            )
+            # token_type = self.reserved_keywords.get(result.upper())
         else:
             token_type = self.reserved_keywords.get(result)
 
