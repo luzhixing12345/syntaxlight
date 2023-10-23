@@ -45,10 +45,22 @@ pre[class*="language-python"] {
 .Token.ELSE,
 .Token.FOR,
 .Token.WHILE,
-.Token.ELIF {
+.Token.ELIF,
+.Token.RETURN,
+.Token.BREAK, .Token.IN {
     color: --define;
 }
 
-.Token.CLASS,.Token.DEF {
+.Token.NONE,
+.Token.TRUE,
+.Token.FALSE,
+.Token.RAISE,
+.Token.AND,
+.Token.OR {
+    color: --type;
+}
+
+.Token.CLASS,
+.Token.DEF {
     color: --type;
 }
