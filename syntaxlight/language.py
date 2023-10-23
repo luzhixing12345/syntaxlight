@@ -24,7 +24,8 @@ SUPPORTED_SYNTAX = {
     "css": SyntaxDict(lexer=CSSLexer, parser=CSSParser, suffix=["css"]),
     "makefile": SyntaxDict(lexer=MakefileLexer, parser=MakefileParser, suffix=["mk", "mak"]),
     "dot": SyntaxDict(lexer=DotLexer, parser=DotParser, suffix=['dot','gv']),
-    "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=['yml','yaml'])
+    "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=['yml','yaml']),
+    "python": SyntaxDict(lexer=PythonLexer, parser=PythonParser, suffix=["py"])
 }
 
 

@@ -1,6 +1,6 @@
 
 i = 0
-t = yaml
+t = python
 s = vscode
 
 .PHONY: test lexer cover
