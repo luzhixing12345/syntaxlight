@@ -37,14 +37,21 @@ class PythonTokenType(Enum):
     WHILE = "while"
     WITH = "with"
     YIELD = "yield"
+    
+
+    INT = 'int'
+    BOOL = 'bool'
+    SUPER = 'super'
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
+
+    
 
 
 class PythonLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = PythonTokenType):
         super().__init__(text, LanguageTokenType)
         self.build_long_op_dict(
-            ["+=", "-=", "*=", "@=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", "**=", "//="]
+            ["+=", "-=", "*=", "@=", "/=", "%=", "&=", "|=", "^=",">=","<=", "<<=", ">>=", "**=", "//=", "->"]
         )
 
     def get_next_token(self) -> Token:

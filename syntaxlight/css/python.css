@@ -47,7 +47,7 @@ pre[class*="language-python"] {
 .Token.WHILE,
 .Token.ELIF,
 .Token.RETURN,
-.Token.BREAK, .Token.IN {
+.Token.BREAK, .Token.IN, .Token.FROM, .Token.IMPORT {
     color: --define;
 }
 
@@ -63,4 +63,16 @@ pre[class*="language-python"] {
 .Token.CLASS,
 .Token.DEF {
     color: --type;
+}
+
+.Token.ClassName, .Token.ClassInstantiation {
+    color: --struct;
+}
+
+.Token.FunctionName, .Token.FunctionCall {
+    color: --function;
+}
+
+.Token.INT, .Token.BOOL, .Token.SUPER {
+    color: --struct;
 }
