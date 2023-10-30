@@ -1,5 +1,6 @@
 from .parser import Parser
 from ..lexers import TokenType, PythonTokenType
+import re
 
 from ..gdt import CSS
 
@@ -23,10 +24,24 @@ class PythonParser(Parser):
                 self.eat()
                 self.current_token.add_css(CSS.FUNCTION_NAME)
 
+            elif self.current_token.type == PythonTokenType.FROM:
+                self.eat()
+                while self.current_token.type == TokenType.DOT:
+                    self.eat()
+                if self.current_token.type == TokenType.ID:
+                    self.current_token.add_css(CSS.IMPORT_LIBNAME)
+
+            elif self.current_token.type == PythonTokenType.IMPORT:
+                self.eat()
+                self.current_token.add_css(CSS.IMPORT_LIBNAME)
+
             elif self.current_token.type == TokenType.ID:
                 if self.peek_next_token().type == TokenType.LPAREN:
                     if self.current_token.value[0].isupper():
-                        self.current_token.add_css(CSS.CLASS_INSTANTIATION)
+                        if bool(re.match(r"^[A-Z0-9_]+$", self.current_token.value)):
+                            self.current_token.add_css(CSS.ENUM_ID)
+                        else:
+                            self.current_token.add_css(CSS.CLASS_INSTANTIATION)
                     else:
                         self.current_token.add_css(CSS.FUNCTION_CALL)
 

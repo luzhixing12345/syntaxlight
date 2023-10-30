@@ -47,7 +47,20 @@ pre[class*="language-python"] {
 .Token.WHILE,
 .Token.ELIF,
 .Token.RETURN,
-.Token.BREAK, .Token.IN, .Token.FROM, .Token.IMPORT {
+.Token.BREAK,
+.Token.IN,
+.Token.FROM,
+.Token.IMPORT,
+.Token.CONTINUE,
+.Token.TRY,
+.Token.EXCEPT,
+.Token.AS,
+.Token.PASS,
+.Token.DEL,
+.Token.FINALLY,
+.Token.ASSERT,
+.Token.WITH,
+.Token.YIELD {
     color: --define;
 }
 
@@ -55,7 +68,11 @@ pre[class*="language-python"] {
 .Token.TRUE,
 .Token.FALSE,
 .Token.RAISE,
+.Token.NOT,
 .Token.AND,
+.Token.GLOBAL,
+.Token.LAMBDA,
+.Token.NONLOCAL,
 .Token.OR {
     color: --type;
 }
@@ -65,14 +82,23 @@ pre[class*="language-python"] {
     color: --type;
 }
 
-.Token.ClassName, .Token.ClassInstantiation {
+.Token.ClassName,
+.Token.ClassInstantiation,
+.Token.ImportLibName {
     color: --struct;
 }
 
-.Token.FunctionName, .Token.FunctionCall {
+.Token.FunctionName,
+.Token.FunctionCall {
     color: --function;
 }
 
-.Token.INT, .Token.BOOL, .Token.SUPER {
+.Token.INT,
+.Token.BOOL,
+.Token.SUPER {
     color: --struct;
+}
+
+.Token.EnumID {
+    color: --enum;
 }

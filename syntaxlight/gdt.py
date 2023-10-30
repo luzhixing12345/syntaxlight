@@ -8,9 +8,11 @@ class CSS(Enum):
     FUNCTION_ARG_NAME = "FunctionArgName"  # 函数参数名
     FUNCTION_ARG_TYPE = "FunctionArgType"  # 函数参数类型
     FUNCTION_RETURN_TYPE = "FunctionReturnType"  # 函数返回值
-    FUNCTION_CALL = "FunctionCall"
-    CLASS_NAME = 'ClassName'
-    CLASS_INSTANTIATION = "ClassInstantiation"
+    FUNCTION_CALL = "FunctionCall" # 函数调用
+    CLASS_NAME = 'ClassName' # 类名
+    CLASS_INSTANTIATION = "ClassInstantiation" # 类实例化
+    IMPORT_LIBNAME = 'ImportLibName' # 引用库名
+    IMPORT_LIBFUNCTION = "ImportLibFunction" # 引用库函数名
     TYPEDEF = "Typedefine"  # 自定义类型 / 未知类型
     PREPROCESS = "Preprocess"  # 预处理命令
     MACRO_DEFINE = "MacroDefine"  # 宏定义变量
