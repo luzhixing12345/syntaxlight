@@ -229,6 +229,12 @@ class Parser:
         self.current_token = current_token
         return next_token
 
+    def look_back_token(self, n = 1) -> Token:
+        '''
+        查看前面以匹配的 token 类型
+        '''
+        return self._token_list[-n]
+
     def _register_token(self, token=None):
         """
         将一个 token 注册到 token_list 当中

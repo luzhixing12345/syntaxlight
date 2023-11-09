@@ -82,6 +82,7 @@ class RISCVAssemblyTokenType(Enum):
     ASM_KEYWORD = "ASM_KEYWORD"
     REGISTER = "REGISTER"
     SECTION = "SECTION"
+    ADDRESS = 'ADDRESS'
     HEADER_NAME = "HeaderName"
 
 

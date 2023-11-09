@@ -14,6 +14,10 @@ class ShellCSS(Enum):
     DIR_PATH = "DirPath"
     SUCCESS = "Success"
     FAIL = "Fail"
+    # TREE_NORMAL = "TreeNormal"  # 常规文件
+    # TREE_EXE = "TreeExe"  # 可执行文件
+    # TREE_IGNORE = "TreeIgnore"  # 类似 .o 的中间文件
+    # TREE_DIR = "TreeDir"  # 目录
 
 
 class ShellParser(Parser):
@@ -94,6 +98,23 @@ class ShellParser(Parser):
                 #     self.current_token.add_css(ShellCSS.SUCCESS)
                 # elif re.match(r'\b(' + '|'.join(fail_words) + r')\b', self.current_token.value.lower()):
                 #     self.current_token.add_css(ShellCSS.FAIL)
+
+                # 对于 tree 结果的特殊优化
+                # elif len(self._token_list) >= 4 and (
+                #     self.look_back_token(1).value == " "
+                #     and self.look_back_token(2).value == "─"
+                #     and self.look_back_token(3).value == "─"
+                #     and self.look_back_token(4).value in ("├", "└")
+                # ):
+                #     # 没有后缀
+                #     if self.current_token.value.find(".") == -1:
+                #         ignored_files = ["makefile"]
+                #         if self.current_token.value.lower() in ignored_files:
+                #             self.current_token.add_css(ShellCSS.TREE_NORMAL)
+                #         else:
+                #             self.current_token.add_css(ShellCSS.TREE_EXE)
+                #     else:
+                #         self.current_token.add_css(ShellCSS.TREE_NORMAL)
 
             if is_program_name:
                 if self.current_token.type in (

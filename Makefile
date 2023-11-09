@@ -1,6 +1,6 @@
 
 i = 0
-t = python
+t = riscvasm
 s = vscode
 
 .PHONY: test lexer cover

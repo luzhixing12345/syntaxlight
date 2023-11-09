@@ -69,3 +69,15 @@ pre[class*="language-shell"] {
 .Token.DIR_PATH {
     color: --type;
 }
+
+/* .Token.TreeNormal {
+    color: --operator;
+}
+
+.Token.TreeExe {
+    color: lime;
+}
+
+.Token.TreeIgnore {
+    color: --punctuator;
+} */

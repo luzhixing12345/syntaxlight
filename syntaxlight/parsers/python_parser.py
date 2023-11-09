@@ -38,11 +38,10 @@ class PythonParser(Parser):
             elif self.current_token.type == TokenType.ID:
                 if self.peek_next_token().type == TokenType.LPAREN:
                     if self.current_token.value[0].isupper():
-                        if bool(re.match(r"^[A-Z0-9_]+$", self.current_token.value)):
-                            self.current_token.add_css(CSS.ENUM_ID)
-                        else:
-                            self.current_token.add_css(CSS.CLASS_INSTANTIATION)
+                        self.current_token.add_css(CSS.CLASS_INSTANTIATION)
                     else:
                         self.current_token.add_css(CSS.FUNCTION_CALL)
+                elif bool(re.match(r"^[A-Z0-9_]+$", self.current_token.value)):
+                    self.current_token.add_css(CSS.ENUM_ID)
 
             self.eat()

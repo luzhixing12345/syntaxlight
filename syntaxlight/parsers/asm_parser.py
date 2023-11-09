@@ -118,9 +118,13 @@ class RISCVAssmemblyParser(Parser):
         while self.current_token.type != TokenType.EOF:
             if self.current_token.type == TokenType.ID:
                 if self.peek_next_token().type == TokenType.COLON:
-                    self.current_token.type = RISCVAssemblyTokenType.SECTION
-                    section_id.append(self.current_token.value)
-                
+                    # 单独的地址
+                    if len(self.current_token.value) == 1:
+                        self.current_token.type = RISCVAssemblyTokenType.ADDRESS
+                    else:
+                        self.current_token.type = RISCVAssemblyTokenType.SECTION
+                        section_id.append(self.current_token.value)
+
                 elif bool(re.match(self.register_pattern, self.current_token.value)):
                     self.current_token.type = RISCVAssemblyTokenType.REGISTER
 
@@ -128,9 +132,9 @@ class RISCVAssmemblyParser(Parser):
                     if self._token_list[-2].type == RISCVAssemblyTokenType.ASM_KEYWORD:
                         self.current_token.type = RISCVAssemblyTokenType.SECTION
                         section_id.append(self.current_token.value)
-                
+
                 if self.current_token.type != RISCVAssemblyTokenType.REGISTER:
-                    if bool(re.search(r'\d+', self.current_token.value)):
+                    if bool(re.search(r"\d+", self.current_token.value)):
                         self.current_token.type = TokenType.NUMBER
 
             if self.current_token.type == TokenType.STRING:
@@ -138,6 +142,10 @@ class RISCVAssmemblyParser(Parser):
                     self.current_token.add_css(RISCVAssemblyTokenType.HEADER_NAME)
                 else:
                     self.string_inside_format()
+
+            if self.current_token.type == TokenType.NUMBER:
+                if self.peek_next_token().type == TokenType.COLON:
+                    self.current_token.type = RISCVAssemblyTokenType.ADDRESS
 
             self.eat()
 
