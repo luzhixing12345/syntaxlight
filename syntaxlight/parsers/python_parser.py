@@ -56,7 +56,6 @@ class PythonParser(Parser):
                 self.skip_invisible_characters = False
                 self.skip_space = False
                 typehint_token = self.peek_next_token(2)
-                print(typehint_token.value)
                 if typehint_token.type == TokenType.ID and typehint_token.value[0].isupper():
                     self.eat()
                     while self.current_token.type not in (TokenType.EOF, TokenType.ASSIGN, TokenType.RPAREN, TokenType.COMMA):
