@@ -43,5 +43,27 @@ class PythonParser(Parser):
                         self.current_token.add_css(CSS.FUNCTION_CALL)
                 elif bool(re.match(r"^[A-Z0-9_]+$", self.current_token.value)):
                     self.current_token.add_css(CSS.ENUM_ID)
+                    if len(self._token_list) >= 2:
+                        if self._token_list[-1].type == TokenType.DOT:
+                            base_class = self._token_list[-2]
+                            if base_class.type == TokenType.ID:
+                                if base_class.value == "self":
+                                    self.current_token.class_list.pop()
+                                elif base_class.value[0].isupper():
+                                    base_class.add_css(CSS.CLASS_INSTANTIATION)
+
+            elif self.current_token.type == TokenType.COLON:
+                self.skip_invisible_characters = False
+                self.skip_space = False
+                typehint_token = self.peek_next_token(2)
+                print(typehint_token.value)
+                if typehint_token.type == TokenType.ID and typehint_token.value[0].isupper():
+                    self.eat()
+                    while self.current_token.type not in (TokenType.EOF, TokenType.ASSIGN, TokenType.RPAREN, TokenType.COMMA):
+                        if self.current_token.type == TokenType.ID:
+                            self.current_token.add_css(CSS.CLASS_INSTANTIATION)
+                        self.eat()
+                self.skip_invisible_characters = True
+                self.skip_space = True
 
             self.eat()

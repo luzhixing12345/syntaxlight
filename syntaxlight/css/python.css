@@ -65,6 +65,7 @@ pre[class*="language-python"] {
 }
 
 .Token.NONE,
+.Token.IS,
 .Token.TRUE,
 .Token.FALSE,
 .Token.RAISE,
@@ -94,6 +95,7 @@ pre[class*="language-python"] {
 }
 
 .Token.INT,
+.Token.STRR,
 .Token.BOOL,
 .Token.SUPER {
     color: --struct;

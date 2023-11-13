@@ -15,7 +15,7 @@ class PythonTokenType(Enum):
     ELIF = "elif"
     ELSE = "else"
     EXCEPT = "except"
-    FLASE = "False"
+    FALSE = "False"
     FINALLY = "finally"
     FOR = "for"
     FROM = "from"
@@ -40,6 +40,7 @@ class PythonTokenType(Enum):
     
 
     INT = 'int'
+    STRR = 'str'
     BOOL = 'bool'
     SUPER = 'super'
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
