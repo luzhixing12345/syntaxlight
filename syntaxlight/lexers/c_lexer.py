@@ -237,7 +237,7 @@ class CTokenSet:
             TokenType.MUL, TokenType.ID, TokenType.LPAREN  # => CTokenType.POINTER
         )
         self.function_definition = TokenSet(self.declaration_specifier, self.declarator)
-        self.declaration = TokenSet(self.declaration_specifier)
+        self.declaration = TokenSet(self.declaration_specifier, CTokenType._ATTRIBUTE)
         self.group_part = TokenSet(TokenType.HASH)
         self.group = TokenSet(self.group_part)
 

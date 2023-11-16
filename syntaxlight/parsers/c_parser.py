@@ -133,11 +133,15 @@ class Declaration(AST):
         self.declaration_specifiers: List[AST] = None
         self.init_declarator_list: List[InitDeclarator] = None
         self.static_assert = None
+        self.extern_C: CompoundStatement = None
+        self.gnu_attribute = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.declaration_specifiers)
         node_visitor.link(self, self.init_declarator_list)
         node_visitor.link(self, self.static_assert)
+        node_visitor.link(self, self.extern_C)
+        node_visitor.link(self, self.gnu_attribute)
         return super().visit(node_visitor)
 
 
@@ -734,9 +738,7 @@ class CParser(Parser):
         elif self.current_token.type in self.cfirst_set.alignment_specifier:
             node = self.alignment_specifier()
         else:
-            self.error(
-                ErrorCode.UNEXPECTED_TOKEN, "should be StorageType or BaseType or QualifyType"
-            )
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be StorageType or BaseType or QualifyType")
 
         return node
 
@@ -752,10 +754,7 @@ class CParser(Parser):
         下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
         - static uint64 (*syscalls[])(void)           (
         """
-        if (
-            self.current_token.type == TokenType.ID
-            and self.peek_next_token().type in next_token_types
-        ):
+        if self.current_token.type == TokenType.ID and self.peek_next_token().type in next_token_types:
             self.current_token.type = CTokenType.TYPEDEF_ID
             GDT.register_id(self.current_token.value, CSS.TYPEDEF)
 
@@ -893,7 +892,7 @@ class CParser(Parser):
         add_ast_type(node.id, C_CSS.STRUCTURE_CLASS)
 
         if self.current_token.type == CTokenType._ATTRIBUTE:
-            node.update(gnu_attribute = self.gnu_c_attribute())
+            node.update(gnu_attribute=self.gnu_c_attribute())
         return node
 
     def struct_or_union(self):
@@ -908,7 +907,7 @@ class CParser(Parser):
         <struct-declaration> ::= <specifier-qualifier-list> <struct-declarator-list>? ";"
                                | <static_assert-declaration>
                                | "..."
-        
+
         @扩展文法
         支持 ... 省略
         """
@@ -986,7 +985,7 @@ class CParser(Parser):
 
     def declarator(self):
         """
-        <declarator> ::= {<pointer>}? <direct-declarator>
+        <declarator> ::= <pointer>? <direct-declarator>
         """
         node = Declarator()
         if self.current_token.type == TokenType.MUL:
@@ -1007,10 +1006,7 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be * as pointer")
 
         type_qualifiers = []
-        while (
-            self.current_token.type == TokenType.MUL
-            or self.current_token.type in self.cfirst_set.type_qualifier
-        ):
+        while self.current_token.type == TokenType.MUL or self.current_token.type in self.cfirst_set.type_qualifier:
             if self.current_token.type == TokenType.MUL:
                 self.current_token.type = CTokenType.POINTER
                 node.register_token(self.eat(CTokenType.POINTER))
@@ -1048,10 +1044,7 @@ class CParser(Parser):
             if node.id.id in GDT and GDT[node.id.id] == CSS.MACRO_DEFINE:
                 delete_ast_type(node.id, CSS.MACRO_DEFINE)
                 GDT.delete_id(node.id.id)
-        elif (
-            self.current_token.type == TokenType.LPAREN
-            and self.peek_next_token().type in self.cfirst_set.declarator
-        ):
+        elif self.current_token.type == TokenType.LPAREN and self.peek_next_token().type in self.cfirst_set.declarator:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(declarator=self.declarator())
             node.register_token(self.eat(TokenType.RPAREN))
@@ -1059,6 +1052,8 @@ class CParser(Parser):
         elif self.current_token.type in self.cfirst_set.direct_abstract_declarator:
             node = self.direct_abstract_declarator()
             return node
+        elif self.current_token.type == TokenType.RPAREN:
+            return None
         else:
             node = DirectAbstractDeclaractor()
             return node
@@ -1071,9 +1066,7 @@ class CParser(Parser):
                 sub_node.register_token(self.eat(TokenType.LSQUAR_PAREN))
 
                 if self.current_token.type == CTokenType.STATIC:
-                    sub_node.update(
-                        static_head=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE)
-                    )
+                    sub_node.update(static_head=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE))
 
                 if self.current_token.type in self.cfirst_set.type_qualifier:
                     sub_node.update(type_qualifiers=self.type_qualifier_list())
@@ -1081,9 +1074,7 @@ class CParser(Parser):
                 if self.current_token.type == CTokenType.STATIC:
                     if sub_node.static_head is not None:
                         self.error(ErrorCode.UNEXPECTED_TOKEN, "multi static")
-                    sub_node.update(
-                        static_foot=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE)
-                    )
+                    sub_node.update(static_foot=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE))
 
                 if self.current_token.type == TokenType.MUL:
                     self.current_token.type = CTokenType.STAR
@@ -1103,10 +1094,11 @@ class CParser(Parser):
                 else:
                     # 函数指针 "(" <declarator> ")"
                     add_ast_type(node, CSS.FUNCTION_POINTER)
-                    _node = node
-                    while _node.declarator is not None:
-                        _node = _node.declarator.direct_declarator
-                    GDT.register_id(_node.id.id, CSS.FUNCTION_POINTER)
+                    fp_node: DirectDeclaractor = node
+                    while fp_node is not None and fp_node.declarator is not None:
+                        fp_node = fp_node.declarator.direct_declarator
+                    if fp_node is not None:
+                        GDT.register_id(fp_node.id.id, CSS.FUNCTION_POINTER)
 
                 node.register_token(self.eat(TokenType.LPAREN))
                 self._unknown_typedef_id_guess()
@@ -1125,7 +1117,7 @@ class CParser(Parser):
         node.update(sub_nodes=sub_nodes)
 
         if self.current_token.type == CTokenType._ATTRIBUTE:
-            node.update(gnu_attribute = self.gnu_c_attribute())
+            node.update(gnu_attribute=self.gnu_c_attribute())
         return node
 
     def type_qualifier_list(self) -> List[AST]:
@@ -1268,17 +1260,13 @@ class CParser(Parser):
         """
         <additive-expression> ::= <multiplicative-expression> (("+"|"-") <multiplicative-expression>)*
         """
-        return self._binary_expression(
-            [TokenType.PLUS, TokenType.MINUS], self.multiplicative_expression
-        )
+        return self._binary_expression([TokenType.PLUS, TokenType.MINUS], self.multiplicative_expression)
 
     def multiplicative_expression(self):
         """
         <multiplicative-expression> ::= <cast-expression> (("*"|"/"|"%") <cast-expression>)*
         """
-        return self._binary_expression(
-            [TokenType.MUL, TokenType.DIV, TokenType.MOD], self.cast_expression
-        )
+        return self._binary_expression([TokenType.MUL, TokenType.DIV, TokenType.MOD], self.cast_expression)
 
     def cast_expression(self):
         """
@@ -1407,9 +1395,7 @@ class CParser(Parser):
                     self.error(ErrorCode.UNEXPECTED_TOKEN, "should be type name or expression")
 
             else:
-                self.error(
-                    ErrorCode.UNEXPECTED_TOKEN, "sizeof should follow with unary expr or typename"
-                )
+                self.error(ErrorCode.UNEXPECTED_TOKEN, "sizeof should follow with unary expr or typename")
         elif self.current_token.type == CTokenType._ALIGNOF:
             node.update(keyword=self.get_keyword(CTokenType._ALIGNOF))
             node.register_token(self.eat(TokenType.LPAREN))
@@ -1444,8 +1430,7 @@ class CParser(Parser):
             self.current_token.type != TokenType.LPAREN
             and self.current_token.type in self.cfirst_set.primary_expression
         ) or (
-            self.current_token.type == TokenType.LPAREN
-            and self.peek_next_token().type in self.cfirst_set.expression
+            self.current_token.type == TokenType.LPAREN and self.peek_next_token().type in self.cfirst_set.expression
         ):
             node.update(primary_expr=self.primary_expression())
         else:
@@ -1640,9 +1625,7 @@ class CParser(Parser):
         # <conditional-expression> => <cast-expression> => ("(" <type-name> ")")* <unary-expression>
         # 无法 LL1 判断, 需要额外处理
         if self.current_token.type not in self.cfirst_set.assignment_expression:
-            self.error(
-                ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or conditional expression"
-            )
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or conditional expression")
 
         node = AssignmentExpression()
         expr = self.conditional_expression()
@@ -1698,8 +1681,8 @@ class CParser(Parser):
 
     def parameter_declaration(self):
         """
-        <parameter-declaration> ::= {<declaration-specifier>}+ <declarator>
-                                  | {<declaration-specifier>}+ (<abstract-declarator>)?
+        <parameter-declaration> ::= <declaration-specifier>+ <declarator>
+                                  | <declaration-specifier>+ <abstract-declarator>?
         """
         node = ParameterDeclaration()
         self._unknown_typedef_id_guess()
@@ -1766,18 +1749,14 @@ class CParser(Parser):
                     continue
 
                 if self.current_token.type == CTokenType.STATIC:
-                    sub_node.update(
-                        static_head=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE)
-                    )
+                    sub_node.update(static_head=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE))
                 if self.current_token.type in self.cfirst_set.type_qualifier:
                     sub_node.update(type_qualifiers=self.type_qualifier_list())
 
                 if self.current_token.type == CTokenType.STATIC:
                     if sub_node.static_head is not None:
                         self.error(ErrorCode.UNEXPECTED_TOKEN, "multi static")
-                    sub_node.update(
-                        static_foot=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE)
-                    )
+                    sub_node.update(static_foot=self.get_keyword(CTokenType.STATIC, C_CSS.STORAGE_TYPE))
 
                 if self.current_token.type in self.cfirst_set.assignment_expression:
                     sub_node.update(assignment_expr=self.assignment_expression())
@@ -1837,6 +1816,7 @@ class CParser(Parser):
         """
         <declaration> ::= <declaration-specifier>+ (<init-declarator-list>)? ";"
                         | <static-assert-declaration>
+                        | extern "C" <com>
 
         也有可能是 <function-definition>, 如果 <init-declarator-list> 的只有一个元素且没有 <initializer> 且后面跟着的是 <declaration>* <compound-statement>
 
@@ -1846,6 +1826,17 @@ class CParser(Parser):
         if self.current_token.type in self.cfirst_set.static_assert_declaration:
             node.update(static_assert=self.static_assert_declaration())
             return node
+
+        if self.current_token.type == CTokenType.EXTERN:
+            next_token = self.peek_next_token()
+            if next_token is not None and next_token.type == TokenType.STRING and next_token.value == '"C"':
+                self.eat(CTokenType.EXTERN)
+                self.eat(TokenType.STRING)
+                node.update(extern_c=self.compound_statement())
+                return node
+            
+        if self.current_token.type == CTokenType._ATTRIBUTE:
+            node.update(gnu_attribute=self.gnu_c_attribute())
 
         declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
         self._unknown_typedef_id_guess()
@@ -1864,32 +1855,23 @@ class CParser(Parser):
                     add_ast_type(declaration_specifiers, CSS.FUNCTION_RETURN_TYPE)
                 # @扩展文法
                 # 对于 typedef 重命名的符号, 加入 GDT 中
-                if (
-                    type(node.declaration_specifiers[0]) == Keyword
-                    and node.declaration_specifiers[0].name == "typedef"
-                ):
+                if type(node.declaration_specifiers[0]) == Keyword and node.declaration_specifiers[0].name == "typedef":
                     for init_declarator in node.init_declarator_list:
                         add_ast_type(init_declarator.declarator.direct_declarator.id, CSS.TYPEDEF)
-                        GDT.register_id(
-                            init_declarator.declarator.direct_declarator.id.id, CSS.TYPEDEF
-                        )
+                        GDT.register_id(init_declarator.declarator.direct_declarator.id.id, CSS.TYPEDEF)
 
                 return node
             elif self._is_C_function(init_declarator_list) and (
                 self.current_token.type in self.cfirst_set.compound_statement
                 or self.current_token.type in self.cfirst_set.declaration
             ):
-                return self._build_C_function_definition(
-                    declaration_specifiers, init_declarator_list[0]
-                )
+                return self._build_C_function_definition(declaration_specifiers, init_declarator_list[0])
             else:
-                self.error(
-                    ErrorCode.UNEXPECTED_TOKEN, "miss not declaration or function definition"
-                )
+                self.error(ErrorCode.UNEXPECTED_TOKEN, "miss not declaration or function definition")
         if self.current_token.type == TokenType.SEMI:
             node.register_token(self.eat(TokenType.SEMI))
         elif self.current_token.type == CTokenType._ATTRIBUTE:
-            node.update(gnu_attribute = self.gnu_c_attribute())
+            node.update(gnu_attribute=self.gnu_c_attribute())
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "miss ;")
 
@@ -1979,9 +1961,7 @@ class CParser(Parser):
 
             node.register_token(self.eat(TokenType.RCURLY_BRACE))
         else:
-            self.error(
-                ErrorCode.UNEXPECTED_TOKEN, "should be initializer list or assignment expression"
-            )
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be initializer list or assignment expression")
         return node
 
     def initializer_list(self) -> List[AST]:
@@ -2092,17 +2072,11 @@ class CParser(Parser):
                       | <jump-statement>
                       | <gnu-c-statement-extension>
         """
-        if (
-            self.current_token.type == TokenType.ID
-            and self.peek_next_token().type == TokenType.COLON
-        ):
+        if self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.COLON:
             # goto id;
             # id: ...
             return self.labeled_statement()
-        elif (
-            self.current_token.type != TokenType.ID
-            and self.current_token.type in self.cfirst_set.labeled_statement
-        ):
+        elif self.current_token.type != TokenType.ID and self.current_token.type in self.cfirst_set.labeled_statement:
             return self.labeled_statement()
         elif self.current_token.type in self.cfirst_set.expression_statement:
             return self.expression_statement()
@@ -2450,7 +2424,7 @@ class CParser(Parser):
         self.eat(TokenType.HASH)
         node = ElseGroup()
         node.update(keyword=self.get_keyword(CTokenType.ELSE_P, css_type=CSS.PREPROCESS))
-        
+
         self.eat_lf()
         self._end_preprocessing()
         return node
@@ -2606,18 +2580,16 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, '<> or ""')
         return node
 
-
     def gnu_c_attribute(self):
-        '''
+        """
         GNU C Extension
 
         __attribute__ "(" <expression> ")"
-        '''
+        """
         # if self.current_token.type == CTokenType._ATTRIBUTE:
         node = GNU_C_Assembly()
         node.register_token(self.eat(CTokenType._ATTRIBUTE))
         node.register_token(self.eat(TokenType.LPAREN))
-        node.update(expression = self.expression())
+        node.update(expression=self.expression())
         node.register_token(self.eat(TokenType.RPAREN))
         return node
-        

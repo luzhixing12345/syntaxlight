@@ -47,10 +47,10 @@ class PythonParser(Parser):
                         if self._token_list[-1].type == TokenType.DOT:
                             base_class = self._token_list[-2]
                             if base_class.type == TokenType.ID:
-                                if base_class.value == "self":
-                                    self.current_token.class_list.pop()
-                                elif base_class.value[0].isupper():
+                                if base_class.value[0].isupper():
                                     base_class.add_css(CSS.CLASS_INSTANTIATION)
+                                else:
+                                    self.current_token.class_list.pop()
 
             elif self.current_token.type == TokenType.COLON:
                 self.skip_invisible_characters = False
@@ -58,7 +58,7 @@ class PythonParser(Parser):
                 typehint_token = self.peek_next_token(2)
                 if typehint_token.type == TokenType.ID and typehint_token.value[0].isupper():
                     self.eat()
-                    while self.current_token.type not in (TokenType.EOF, TokenType.ASSIGN, TokenType.RPAREN, TokenType.COMMA):
+                    while self.current_token.type not in (TokenType.EOF, TokenType.ASSIGN, TokenType.RPAREN, TokenType.COMMA, TokenType.LF):
                         if self.current_token.type == TokenType.ID:
                             self.current_token.add_css(CSS.CLASS_INSTANTIATION)
                         self.eat()
