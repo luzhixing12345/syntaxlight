@@ -19,7 +19,9 @@ class X86AssemblyParser(Parser):
                     self.current_token.type = X86AssemblyTokenType.FUNCTION_CALL
 
             if self.current_token.type == TokenType.ID:
-                if self.peek_next_token().type == TokenType.COLON:
+                if len(self.current_token.value) <= 2:
+                    self.current_token.type = TokenType.NUMBER
+                elif self.peek_next_token().type == TokenType.COLON:
                     self.current_token.type = X86AssemblyTokenType.SECTION
                     section_id.append(self.current_token.value)
 

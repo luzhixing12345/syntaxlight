@@ -24,10 +24,17 @@ class X86AssemblyLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
-                return self.get_number(accept_bit=True, accept_hex=True)
+                result = ''
+                while self.current_char is not None:
+                    if bool(re.match(r'^[0-9a-fA-FxX]$', self.current_char)):
+                        result += self.current_char
+                        self.advance()
+                    else:
+                        break
+                return Token(TokenType.NUMBER, result, self.line ,self.column-1)
 
             if self.current_char.isalnum() or self.current_char in ("_"):
-                return self.get_id(extend_chars=["@", "_"])
+                return self.get_id(extend_chars=["@", "_",'.'])
 
             if self.current_char == ".":
                 result = "."
