@@ -118,6 +118,7 @@ class Parser:
             if self.current_token.type == TokenType.EOF:
                 current_value = "EOF"
             if expected_value in self.lexer.invisible_characters:
+                
                 expected_value = token_type.name
             self.error(
                 error_code=ErrorCode.UNEXPECTED_TOKEN,

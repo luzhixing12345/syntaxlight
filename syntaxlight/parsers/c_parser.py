@@ -619,7 +619,7 @@ class ControlLine(AST):
         self.keyword = None
         self.id: Identifier = None
         self.header_name = None
-        self.paramters: List[Identifier] = None
+        self.parameters: List[Identifier] = None
         self.parameterization = None
         self.pp_tokens = None
         self.group = None
@@ -628,7 +628,7 @@ class ControlLine(AST):
         node_visitor.link(self, self.keyword)
         node_visitor.link(self, self.id)
         node_visitor.link(self, self.header_name)
-        node_visitor.link(self, self.paramters)
+        node_visitor.link(self, self.parameters)
         node_visitor.link(self, self.parameterization)
         node_visitor.link(self, self.pp_tokens)
         node_visitor.link(self, self.group)
@@ -1816,7 +1816,7 @@ class CParser(Parser):
         """
         <declaration> ::= <declaration-specifier>+ (<init-declarator-list>)? ";"
                         | <static-assert-declaration>
-                        | extern "C" <com>
+                        | extern "C" <compound-statement>
 
         也有可能是 <function-definition>, 如果 <init-declarator-list> 的只有一个元素且没有 <initializer> 且后面跟着的是 <declaration>* <compound-statement>
 
@@ -1834,7 +1834,7 @@ class CParser(Parser):
                 self.eat(TokenType.STRING)
                 node.update(extern_c=self.compound_statement())
                 return node
-            
+
         if self.current_token.type == CTokenType._ATTRIBUTE:
             node.update(gnu_attribute=self.gnu_c_attribute())
 
@@ -2475,16 +2475,15 @@ class CParser(Parser):
             self.skip_invisible_characters = True
             self.skip_space = True
             if self.current_token.type == TokenType.LPAREN:
-                # paramters 或 parameterization 被定义了说明是函数
+                # parameters 或 parameterization 被定义了说明是函数
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.identifier_list:
-                    node.update(paramters=self.identifier_list())
-                if self.current_token.type == TokenType.COMMA:
-                    node.register_token(self.eat())
+                    node.update(parameters = self.identifier_list())
                 if self.current_token.type == TokenType.VARARGS:
                     node.update(parameterization=self.get_keyword(TokenType.VARARGS))
                 node.register_token(self.eat(TokenType.RPAREN))
 
+            # define 后面可能有若干个
             pp_tokens = []
             while self.current_token.type not in (TokenType.EOF, TokenType.LF):
                 if self.current_token.type == TokenType.BACK_SLASH:
@@ -2495,17 +2494,22 @@ class CParser(Parser):
         elif self.current_token.type == CTokenType.UNDEF:
             node.update(keyword=self.get_keyword(css_type=CSS.PREPROCESS))
             node.update(id=self.identifier())
-        elif self.current_token.type in (CTokenType.LINE, CTokenType.ERROR, CTokenType.PRAGMA):
+        elif self.current_token.type in (CTokenType.LINE, CTokenType.ERROR):
             node.update(keyword=self.get_keyword(css_type=CSS.PREPROCESS))
             node.update(id=self.identifier())
 
+        elif self.current_token.type == CTokenType.PRAGMA:
+            node.update(keyword=self.get_keyword(css_type=CSS.PREPROCESS))
+            if self.current_token.type in self.cfirst_set.expression:
+                self.expression()
+
         if node.id is not None:
-            if node.paramters is not None:
-                # paramters 被定义了说明是函数
+            if node.parameters is not None:
+                # parameters 被定义了说明是函数
                 # TODO: parameterization
                 add_ast_type(node.id, CSS.MACRO_FUNCTION)
                 arguments = []
-                for i_node in node.paramters:
+                for i_node in node.parameters:
                     arguments.append(FuncArgument(name=i_node.id, type=None))
                 GDT.register_function(node.id.id, arguments, (), CSS.MACRO_FUNCTION)
             else:
