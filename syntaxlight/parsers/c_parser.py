@@ -2235,7 +2235,7 @@ class CParser(Parser):
                            | inline
                            | goto
 
-        <OutputOperands> ::= ":" <STRING>? ( "(" <constant_expression> ")" ) ("," <STRING>? ( "(" <constant_expression> ")" ))*
+        <OutputOperands> ::= ":" <STRING>? ( "(" <constant_expression> ")" )? ("," <STRING>? ( "(" <constant_expression> ")" )?)*
         """
         node = GNU_C_Assembly()
         assert self.current_token.type in self.cfirst_set.gnu_c_statement_extension
@@ -2255,14 +2255,14 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.LPAREN))
                 self.constant_expression()
                 node.register_token(self.eat(TokenType.RPAREN))
-                while self.current_token.type == TokenType.COMMA:
-                    node.register_token(self.eat())
-                    if self.current_token.type == TokenType.STRING:
-                        node.register_token(self.eat(TokenType.STRING))
-                    if self.current_token.type == TokenType.LPAREN:
-                        node.register_token(self.eat(TokenType.LPAREN))
-                        self.constant_expression()
-                        node.register_token(self.eat(TokenType.RPAREN))
+            while self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat())
+                if self.current_token.type == TokenType.STRING:
+                    node.register_token(self.eat(TokenType.STRING))
+                if self.current_token.type == TokenType.LPAREN:
+                    node.register_token(self.eat(TokenType.LPAREN))
+                    self.constant_expression()
+                    node.register_token(self.eat(TokenType.RPAREN))
 
         node.register_token(self.eat(TokenType.RPAREN))
 

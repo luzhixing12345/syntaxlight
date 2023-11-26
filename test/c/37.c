@@ -33,3 +33,12 @@ __asm__ volatile ( "rdtsc\n\t"    // Returns the time in EDX:EAX.
         : "rdx");
 
 printf("msr: %llx\n", msr);
+
+void print() {
+    asm("movq $13, %%rdx \n\t"
+        "movq %0, %%rcx \n\t"
+        "movq $0, %%rbx \n\t"
+        "movq $4, %%rax \n\t"
+        "int $0x80 \n\t" ::"r"(str)
+        : "rdx", "rcx", "rbx");
+}
