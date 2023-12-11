@@ -15,9 +15,7 @@ DEBUG = True
 
 
 class Parser:
-    def __init__(
-        self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True
-    ):
+    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True):
         self.lexer: Lexer = lexer
         # set current token to the first token taken from the input
         self.skip_invisible_characters = skip_invisible_characters
@@ -52,7 +50,7 @@ class Parser:
             context=self.lexer.get_error_token_context(token),
             file_path=self.lexer.file_path,
             message=message,
-            error_trace = error_trace
+            error_trace=error_trace,
         )
 
     def warning(self, message=None, ast: AST = None):
@@ -64,9 +62,7 @@ class Parser:
 
         warning_color = TTYColor.MAGENTA
 
-        sys.stderr.write(
-            self.lexer.ttyinfo("warning: ", warning_color, underline=False) + message + "\n"
-        )
+        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color, underline=False) + message + "\n")
         # sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
     def error_func_trace(self) -> List[str]:
@@ -118,7 +114,6 @@ class Parser:
             if self.current_token.type == TokenType.EOF:
                 current_value = "EOF"
             if expected_value in self.lexer.invisible_characters:
-                
                 expected_value = token_type.name
             self.error(
                 error_code=ErrorCode.UNEXPECTED_TOKEN,
@@ -230,10 +225,10 @@ class Parser:
         self.current_token = current_token
         return next_token
 
-    def look_back_token(self, n = 1) -> Token:
-        '''
+    def look_back_token(self, n=1) -> Token:
+        """
         查看前面以匹配的 token 类型
-        '''
+        """
         return self._token_list[-n]
 
     def _register_token(self, token=None):
@@ -280,18 +275,18 @@ class Parser:
             if token.type in brace_list:
                 if len(brace_stack) == 0:
                     brace_stack.append(token.type)
-                    token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
+                    token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
                     brace_depth += 1
                 else:
                     # 括号匹配
                     if brace_list.index(brace_stack[-1]) + 1 == brace_list.index(token.type):
                         brace_stack.pop()
                         brace_depth -= 1
-                        token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
+                        token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
                     else:
                         # 加入 brace_stack
                         brace_stack.append(token.type)
-                        token.class_list.add(f"BraceDepth-{brace_depth%brace_max_depth}")
+                        token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
                         brace_depth += 1
 
     def parse(self):

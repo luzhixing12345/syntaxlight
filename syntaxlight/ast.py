@@ -25,16 +25,16 @@ class AST(object):
 
         # 默认 update 的时候只会为一级 AST 添加当前类名, 启用此选项后会递归地将类名传递给其下的每一个叶节点
         # 默认不开启以减少对子类的影响
-        self.update_subnode = False  
+        self.update_subnode = False
 
     def register_token(self, tokens: List[Token], extra_class_name: str = None):
         """
         将 token 注册到 AST 树中以更新 token 的属性
         """
         for token in tokens:
-            token.class_list.add(self.class_name)
+            token.class_list.append(self.class_name)
             if extra_class_name:
-                token.class_list.add(extra_class_name)
+                token.class_list.append(extra_class_name)
             self._tokens.append(token)
             token.ast = self
 
@@ -47,7 +47,7 @@ class AST(object):
             # update 的时候将子元素的 token 也添加当前 AST 的 class
             if isinstance(node, AST):
                 for token in node._tokens:
-                    token.class_list.add(self.class_name)
+                    token.class_list.append(self.class_name)
             if self.update_subnode:
                 self._update_sub_ast(node, self.class_name)
 
@@ -64,7 +64,7 @@ class AST(object):
         if node.is_leaf_ast:
             node.class_name = class_name
             for token in node._tokens:
-                token.class_list.add(class_name)
+                token.class_list.append(class_name)
             return
         else:
             for _, attribute_value in vars(node).items():
@@ -202,6 +202,7 @@ class Identifier(AST):
     def formatter(self, depth: int = 0):
         return self.id
 
+
 class Punctuator(AST):
     def __init__(self) -> None:
         super().__init__()
@@ -222,12 +223,14 @@ class WrapString(AST):
     def __init__(self) -> None:
         super().__init__()
         self.strings = None
+
     def visit(self, node_visitor: "NodeVisitor" = None):
         node_visitor.link(self, self.strings)
         return super().visit(node_visitor)
 
+
 class String(AST):
-    def __init__(self, string = None) -> None:
+    def __init__(self, string=None) -> None:
         super().__init__()
         self.string: str = string
         self.is_leaf_ast = True
@@ -445,7 +448,7 @@ def add_ast_type(node: AST, css_type: Enum):
     if node.is_leaf_ast:
         node.class_name = css_type.value
         for token in node._tokens:
-            token.class_list.add(css_type.value)
+            token.class_list.append(css_type.value)
             # print(token, f"[{class_name}]")
         return
     else:

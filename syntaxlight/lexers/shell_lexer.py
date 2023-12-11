@@ -92,8 +92,10 @@ class ShellLexer(Lexer):
             if self.current_char == '"':
                 return self.get_string()
 
-            if self.current_char == "-" and (self.peek().isalpha() or self.peek() == '-'):
-                return self.get_option()
+            if self.current_char == "-":
+                next_char = self.peek()
+                if next_char is not None and (next_char.isalpha() or next_char == '-'):
+                    return self.get_option()
 
             if self.current_char == "#":
                 return self.get_comment()

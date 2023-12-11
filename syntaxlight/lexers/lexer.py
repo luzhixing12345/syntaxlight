@@ -116,8 +116,7 @@ class Token:
         self.line: int = line
         self.column: int = column
         self.ast: None
-        self.class_list = set()  # parser 语法分析阶段赋给 token
-        self.class_list.add("Token")
+        self.class_list = ["Token"]  # parser 语法分析阶段赋给 token
         global GLOBAL_TOKEN_ID
         self._id = GLOBAL_TOKEN_ID
         GLOBAL_TOKEN_ID += 1
@@ -147,7 +146,7 @@ class Token:
 
     def add_css(self, CSS: Enum):
         if CSS is not None:
-            self.class_list.add(CSS.value)
+            self.class_list.append(CSS.value)
 
     def __repr__(self):
         return self.__str__()
