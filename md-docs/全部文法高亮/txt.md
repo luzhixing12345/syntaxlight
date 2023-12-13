@@ -93,15 +93,48 @@ r24 =   0 |r25 =   0 |r26 =   0 |r27 =   0 |r28 =   0 |r29 =   0 |r30 =   0 |r31
 ## [3.txt](https://github.com/luzhixing12345/syntaxlight/tree/main/test/txt/3.txt)
 
 ```txt
-Unit     Instruction     start   end     theoretical/running
-Integer  LOAD F6 34 R2       1     4     4/4
-         LOAD F2 45 R3       5     8     4/4
+----------------------------------------------------------------------
+[instruction status]
 
-Mult1    MUL F0 F2 F4        6    20     13/15
+    Op     dest j   k   | Issue  Exec  Write  Commit
+    Load   F6   34  R2  |     1     2     3     4
+    Load   F2   45  R3  |     2     3     4     5
+    Mul    F0   F2  F4  |     3    14    15    16
+    Sub    F8   F6  F2  |     4     6     7    17
+    Div    F10  F0  F6  |     5    55    56    57
+    Add    F6   F8  F2  |     6     9    10    58
 
-Mult2
-Add      SUB F8 F6 F2        7    12     5/6
-         ADD F6 F8 F2       13    22     5/10
 
-Divide   DIV F10 F0 F6       8    62     43/55
+[reorder buffer]
+
+        Entry Busy Instruction         Stat    Dest  value
+head ->     1   No LOAD F6 34 R2       COMMIT  F6    234
+            2   No LOAD F2 45 R3       COMMIT  F2    345
+            3   No MUL F0 F2 F4        COMMIT  F0    0
+            4   No SUB F8 F6 F2        COMMIT  F8    234
+            5   No DIV F10 F0 F6       COMMIT  F10   0.0
+tail ->     6   No ADD F6 F8 F2        COMMIT  F6    345
+
+[reservation station]
+
+    Time   Name    | Busy  Op    Vj    Vk    Qj  Qk  A   Dest
+           Load1   |   No
+           Load2   |   No
+           Load3   |   No
+           Add1    |   No
+           Add2    |   No
+           Mult1   |   No
+           Mult2   |   No
+
+
+[register result status]
+
+             F0  F2  F4  F6  F8  F10
+   Cycle 58
+```
+## [4.txt](https://github.com/luzhixing12345/syntaxlight/tree/main/test/txt/4.txt)
+
+```txt
+
+[123(123<)]
 ```

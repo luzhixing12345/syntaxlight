@@ -1,66 +1,18 @@
-from syntaxlight.ast import Identifier
+
 from .parser import Parser
-from ..lexers import TokenType, DotTokenType, Token, DotTokenSet
+from ..lexers import TokenType, DotTokenType, DotTokenSet
 from ..gdt import *
 from ..error import ErrorCode
-from ..ast import AST, add_ast_type
-
-
-class Graph(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
-
-class Stmt(AST):
-    def __init__(self) -> None:
-        super().__init__()
-        self.key = None
-        self.value = None
-
-
-class AttrStmt(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
-class Attribute(AST):
-    def __init__(self) -> None:
-        super().__init__()
-        self.keys = None
-        self.values = None
-
-class EdgeStmt(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
-class NodeId(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
-class SubGraph(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
-class EdgeRHS(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
-class NodeStmt(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
-class Port(AST):
-    def __init__(self) -> None:
-        super().__init__()
-
+from ..asts.ast import add_ast_type, Identifier
+from ..asts.dot_ast import *
 
 class DotCSS(Enum):
-    ATTRIBUTE_KEY = 'AttributeKey'
-    ATTRIBUTE_VALUE = 'AttributeValue'
+    ATTRIBUTE_KEY = "AttributeKey"
+    ATTRIBUTE_VALUE = "AttributeValue"
+
 
 class DotParser(Parser):
-    def __init__(
-        self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True
-    ):
+    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True):
         super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
         self.first_set = DotTokenSet()
 
@@ -193,13 +145,12 @@ class DotParser(Parser):
             values.append(self.identifier())
             if self.current_token.type in (TokenType.SEMI, TokenType.COMMA):
                 node.register_token(self.eat())
-        
-        node.update(keys = keys)
-        node.update(values = values)
+
+        node.update(keys=keys)
+        node.update(values=values)
         add_ast_type(node.keys, DotCSS.ATTRIBUTE_KEY)
         add_ast_type(node.values, DotCSS.ATTRIBUTE_VALUE)
         return node
-
 
     def edge_stmt(self, sub_node):
         """
@@ -207,13 +158,13 @@ class DotParser(Parser):
         """
         node = EdgeStmt()
         if isinstance(sub_node, NodeId):
-            node.update(node_id = sub_node)
+            node.update(node_id=sub_node)
         else:
             # SubGraph
-            node.update(subgraph = sub_node)
-        node.update(edgeRHS = self.edgeRHS())
+            node.update(subgraph=sub_node)
+        node.update(edgeRHS=self.edgeRHS())
         if self.current_token.type == TokenType.LSQUAR_PAREN:
-            node.update(attr_list = self.attr_list())
+            node.update(attr_list=self.attr_list())
         return node
 
     def edgeRHS(self):
@@ -227,21 +178,20 @@ class DotParser(Parser):
             node = EdgeRHS()
             node.register_token(self.eat())
             if self.current_token.type == TokenType.ID:
-                node.update(node_id = self.node_id())
+                node.update(node_id=self.node_id())
             else:
-                node.update(subgraph = self.subgraph())
+                node.update(subgraph=self.subgraph())
             result.append(node)
         return result
-
 
     def node_stmt(self, sub_node):
         """
         <node_stmt> ::= <node_id> <attr_list>?
         """
         node = NodeStmt()
-        node.update(node_id = sub_node)
+        node.update(node_id=sub_node)
         if self.current_token.type == TokenType.LSQUAR_PAREN:
-            node.update(attr_list = self.attr_list())
+            node.update(attr_list=self.attr_list())
         return node
 
     def node_id(self):
@@ -249,9 +199,9 @@ class DotParser(Parser):
         <node_id> ::= <ID> <port>?
         """
         node = NodeId()
-        node.update(id = self.identifier())
+        node.update(id=self.identifier())
         if self.current_token.type == TokenType.COLON:
-            node.update(port = self.port())
+            node.update(port=self.port())
         return node
 
     def port(self):
@@ -261,12 +211,11 @@ class DotParser(Parser):
         """
         node = Port()
         node.register_token(self.eat(TokenType.COLON))
-        node.update(id = self.identifier())
+        node.update(id=self.identifier())
         if self.current_token.type == TokenType.COLON:
             node.register_token(self.eat(TokenType.COLON))
-            node.update(compass_pt = self.identifier())
+            node.update(compass_pt=self.identifier())
         return node
-
 
     def subgraph(self):
         """
@@ -274,14 +223,13 @@ class DotParser(Parser):
         """
         node = SubGraph()
         if self.current_token.type == DotTokenType.SUBGRAPH:
-            node.update(keyword = self.get_keyword())
+            node.update(keyword=self.get_keyword())
             if self.current_token.type == TokenType.ID:
-                node.update(id = self.identifier())
+                node.update(id=self.identifier())
         node.register_token(self.eat(token_type=TokenType.LCURLY_BRACE))
-        node.update(stmt_list = self.stmt_list())
+        node.update(stmt_list=self.stmt_list())
         node.register_token(self.eat(token_type=TokenType.RCURLY_BRACE))
         return node
-
 
     def compass_pt(self):
         """

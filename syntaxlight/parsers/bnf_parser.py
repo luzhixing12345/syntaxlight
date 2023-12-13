@@ -1,8 +1,9 @@
 from .parser import Parser
 from ..lexers import TokenType
 from ..error import ErrorCode
-from ..ast import String, AST, Identifier, Expression, NodeVisitor, Punctuator, add_ast_type
+from ..asts.ast import String, AST, Identifier, Expression, NodeVisitor, Punctuator, add_ast_type
 from enum import Enum
+
 
 class BNF_CSS(Enum):
     BUILTIN_SYMBOL = "BuiltinSymbol"
@@ -77,9 +78,7 @@ class Item(AST):
 
 
 class BNFParser(Parser):
-    def __init__(
-        self, lexer, skip_invisible_characters=False, skip_space=True, display_warning=True
-    ):
+    def __init__(self, lexer, skip_invisible_characters=False, skip_space=True, display_warning=True):
         super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
         self.punctuator_first_set = [TokenType.PLUS, TokenType.MUL, TokenType.QUSTION]
         self.term_first_set = [
@@ -193,14 +192,6 @@ class BNFParser(Parser):
 
         if self.current_token.type in self.punctuator_first_set:
             node.update(op=self.punctuator())
-        return node
-
-    def punctuator(self):
-        """
-        <punctuator> ::= '+' | '*' | '?'
-        """
-        node = Punctuator(self.current_token.value)
-        node.register_token(self.eat())
         return node
 
     def string(self):

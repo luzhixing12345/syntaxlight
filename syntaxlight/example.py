@@ -10,7 +10,6 @@ def example_display(
     style="vscode",
     save_ast_tree=False,
     language= None,
-    show_error_trace = False
 ):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
     syntaxlight_path = os.path.dirname(__file__)
@@ -32,7 +31,7 @@ def example_display(
         if language is None:
             language = guess_language(fp)
             all_languages.append(language)
-        html = parse_file(fp, language, save_ast_tree=save_ast_tree, show_error_trace=show_error_trace)
+        html = parse_file(fp, language, save_ast_tree=save_ast_tree)
         if html is None:
             continue
         code_html += f'<p>{fp}</p><pre class="language-{language}"><code>{html}</code></pre>'

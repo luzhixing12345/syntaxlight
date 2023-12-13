@@ -1,7 +1,7 @@
 from .parser import Parser
 from ..lexers import TokenType, JsonTokenType
 from ..error import ErrorCode
-from ..ast import Object, Array, Pair, String, Number, Keyword, UnaryOp
+from ..asts.ast import Object, Array, Pair, String, Number, Keyword, UnaryOp
 
 
 class JsonParser(Parser):

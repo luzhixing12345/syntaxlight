@@ -1,8 +1,8 @@
-from syntaxlight.ast import NodeVisitor
+
 from .parser import Parser
 from ..lexers import TokenType, TomlTokenType, Token
 from ..error import ErrorCode
-from ..ast import (
+from ..asts.ast import (
     AST,
     NodeVisitor,
     Object,

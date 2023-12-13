@@ -1,7 +1,7 @@
 from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
 from ..error import ParserError, ErrorCode
 from enum import Enum
-from ..ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
+from ..asts.ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
 from typing import List
 import sys
 import html
@@ -257,14 +257,16 @@ class Parser:
         对于 ([{<>}]) 计算括号深度
         """
         brace_max_depth = 3  # 括号深度循环轮次
-        brace_list: List[TokenType] = [
+        left_brace_list: List[TokenType] = [
             TokenType.LPAREN,
-            TokenType.RPAREN,
             TokenType.LSQUAR_PAREN,
-            TokenType.RSQUAR_PAREN,
             TokenType.LCURLY_BRACE,
-            TokenType.RCURLY_BRACE,
             TokenType.LANGLE_BRACE,
+        ]
+        right_brace_list: List[TokenType] = [
+            TokenType.RPAREN,
+            TokenType.RSQUAR_PAREN,
+            TokenType.RCURLY_BRACE,
             TokenType.RANGLE_BRACE,
         ]
 
@@ -272,22 +274,34 @@ class Parser:
         brace_stack: List[TokenType] = []
         for token in self._token_list:
             # print(brace_list)
-            if token.type in brace_list:
+            if token.type in left_brace_list:
+                # 左括号直接加入到 stack 当中
+                brace_stack.append(token.type)
+                token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
+                brace_depth += 1
+            elif token.type in right_brace_list:
                 if len(brace_stack) == 0:
-                    brace_stack.append(token.type)
-                    token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
-                    brace_depth += 1
+                    # 栈为空且当前符号为右括号, 直接置 0
+                    token.class_list.append(f"BraceDepth-0")
                 else:
-                    # 括号匹配
-                    if brace_list.index(brace_stack[-1]) + 1 == brace_list.index(token.type):
+                    if left_brace_list.index(brace_stack[-1]) == right_brace_list.index(token.type):
+                        # 如果左右括号类型匹配
                         brace_stack.pop()
                         brace_depth -= 1
                         token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
                     else:
-                        # 加入 brace_stack
-                        brace_stack.append(token.type)
-                        token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
-                        brace_depth += 1
+                        # 如果括号类型不匹配, 不断弹出栈内元素直到可以匹配
+                        while True:
+                            brace_stack.pop()
+                            brace_depth -= 1
+                            if len(brace_stack) == 0:
+                                break
+                            if left_brace_list.index(brace_stack[-1]) == right_brace_list.index(token.type):
+                                brace_stack.pop()
+                                brace_depth -= 1
+                                token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
+                                break
+                            
 
     def parse(self):
         raise NotImplementedError(self.__class__.__name__ + " must override the parse function")
@@ -319,9 +333,16 @@ class Parser:
     def punctuator(self, token_type: Enum = None) -> Punctuator:
         """
         获取运算符
+        
+        对于 <> 修正为 TokenType.LT 和 TokenType.GT
         """
         node = Punctuator(self.current_token.value)
+            
         if token_type is None:
+            if self.current_token.type == TokenType.LANGLE_BRACE:
+                self.current_token.type = TokenType.LT
+            elif self.current_token.type == TokenType.RANGLE_BRACE:
+                self.current_token.type = TokenType.GT
             node.register_token(self.eat())
         else:
             node.register_token(self.eat(token_type))

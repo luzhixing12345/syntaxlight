@@ -3,7 +3,7 @@ from .lexers import *
 from .parsers import *
 from .error import Error
 from .language import guess_language, SUPPORTED_SYNTAX, show_help_info, clean_language
-from .ast import display_ast
+from .asts.ast import display_ast
 import sys
 
 
