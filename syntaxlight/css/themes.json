@@ -25,13 +25,7 @@
                 ".Token.Keyword": "color: #327ED0;"
             },
             "shell": {
-                ".Token.OPTION": "color: #b3b2b2;",
-                ".Token.HOST_NAME": "color: #00c867;",
-                ".Token.Success": "color: #00c867;",
-                ".Token.Fail": "color: #d00101;"
-            },
-            "makefile": {
-                ".Token.OPTION": "color: #b3b2b2;"
+                ".Token.HOST_NAME": "color: #00c867;"
             }
         }
     },
@@ -54,7 +48,7 @@
         "--punctuator": "#ABB2BF",
         "--operator": "#F92672",
         "extension": {
-            "xml":{
+            "xml": {
                 ".Token.Tag": "color: --variant;",
                 ".Token.Prolog": "color: --variant;",
                 ".Token.Attribute.NAME": "color: --number;"
@@ -83,14 +77,19 @@
             "json": {
                 ".Token.Pair.Key": "color: --type; font-style: italic;"
             },
-            "toml":{
+            "toml": {
                 ".Token.TableArrayHeader.Path": "color: --struct;",
-                ".Token.TableHeader.Path": "color: --struct;"                
+                ".Token.TableHeader.Path": "color: --struct;"
             },
             "c": {
                 ".Token.Typedefine": "border-bottom: 1px solid --struct;",
                 ".Token.StorageType": "color: --define"
             }
         }
+    },
+    "others": {
+        "--success": "#16c60c",
+        "--fail": "#e74856",
+        "--option": "#b3b2b2"
     }
 }

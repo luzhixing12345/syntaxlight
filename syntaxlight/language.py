@@ -25,7 +25,8 @@ SUPPORTED_SYNTAX = {
     "makefile": SyntaxDict(lexer=MakefileLexer, parser=MakefileParser, suffix=["mk", "mak"]),
     "dot": SyntaxDict(lexer=DotLexer, parser=DotParser, suffix=['dot','gv']),
     "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=['yml','yaml']),
-    "python": SyntaxDict(lexer=PythonLexer, parser=PythonParser, suffix=["py"])
+    "python": SyntaxDict(lexer=PythonLexer, parser=PythonParser, suffix=["py"]),
+    "txt": SyntaxDict(lexer=TxtLexer, parser=TxtParser, suffix=['txt'])
 }
 
 

@@ -16,7 +16,6 @@
     color: #88D6FE; /* @--format type */
     color: #9EB2BF; /* @--punctuator . ; :  */
     color: #d4d4d4; /* @--operator +-*=  */
-    color: #10bd01;
 }
 
 .one-dark-pro {
@@ -57,4 +56,10 @@
     color: #AE81FF; /* @--format type */
     color: #F8F8F2; /* @--punctuator . ; :  */
     color: #F92672; /* @--operator +-*=  */
+}
+
+.others {
+    color: #16c60c; /* @--success 成功 */
+    color: #e74856; /* @--fail 失败 */
+    color: #b3b2b2; /* @--option 参数选项  */
 }

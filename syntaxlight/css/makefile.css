@@ -73,3 +73,7 @@ pre[class*="language-makefile"] {
 .Token.Function, .Token.Program {
     color: --function;
 }
+
+.Token.OPTION {
+    color: --option;
+}

@@ -17,3 +17,4 @@ from .makefile_lexer import MakefileLexer, MakefileTokenType
 from .dot_lexer import DotLexer, DotTokenType, DotTokenSet
 from .yaml_lexer import YamlLexer, YamlTokenType
 from .python_lexer import PythonLexer, PythonTokenType
+from .txt_lexer import TxtLexer, TxtTokenType

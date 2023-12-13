@@ -12,3 +12,4 @@ from .makefile_parser import MakefileParser
 from .dot_parser import DotParser
 from .yaml_parser import YamlParser
 from .python_parser import PythonParser
+from .txt_parser import TxtParser

@@ -2,6 +2,7 @@ from .lexer import Lexer, Token, TokenType, ErrorCode
 from enum import Enum
 import re
 
+
 class ShellTokenType(Enum):
     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
     IF = "if"
@@ -15,8 +16,8 @@ class ShellTokenType(Enum):
     DONE = "done"
     WHILE = "while"
     BREAK = "break"
-    CD = 'cd'
-    EXPORT = 'export'
+    CD = "cd"
+    EXPORT = "export"
 
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
 
@@ -25,16 +26,16 @@ class ShellTokenType(Enum):
     VARIANT = "variant"
     REDIRECT_TO = ">"
     REDIRECT_FROM = "<"
-    LINUX_USER_PATH = 'root@kamilu'
-    HOST_NAME = 'HostName'
-    DIR_PATH = 'DirPath'
-    TAG = 'Tag'
+    LINUX_USER_PATH = "root@kamilu"
+    HOST_NAME = "HostName"
+    DIR_PATH = "DirPath"
+    TAG = "Tag"
 
 
 class ShellLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = ShellTokenType):
         super().__init__(text, LanguageTokenType)
-        self.build_long_op_dict(['&&','>>','<<','==','==='])
+        self.build_long_op_dict(["&&", ">>", "<<", "==", "==="])
 
     def get_option(self):
         """
@@ -75,12 +76,12 @@ class ShellLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
-                return self.get_number(accept_bit=True, accept_hex=True, end_chars=['s','M','G','K'])
+                return self.get_number(accept_bit=True, accept_hex=True, end_chars=["s", "M", "G", "K"])
 
-            if self.current_char.isalnum() or self.current_char in ('_','.','/'):
-                token = self.get_id(extend_chars=["_", "-", ".",'/',':','+','-','@','~'])
-                if bool(re.match(r'^\w+@[\w.-]+:[~\w/]+', token.value)):
-                    if self.current_char in ('#', '$'):
+            if self.current_char.isalnum() or self.current_char in ("_", ".", "/"):
+                token = self.get_id(extend_chars=["_", "-", ".", "/", ":", "+", "-", "@", "~"])
+                if bool(re.match(r"^\w+@[\w.-]+:[~\w/]+", token.value)):
+                    if self.current_char in ("#", "$"):
                         token.value += self.current_char
                         token.column += 1
                         self.advance()
@@ -94,19 +95,17 @@ class ShellLexer(Lexer):
 
             if self.current_char == "-":
                 next_char = self.peek()
-                if next_char is not None and (next_char.isalpha() or next_char == '-'):
+                if next_char is not None and (next_char.isalpha() or next_char == "-"):
                     return self.get_option()
 
             if self.current_char == "#":
                 return self.get_comment()
 
-            if self.current_char == "$" and self.peek() != '(':
+            if self.current_char == "$" and self.peek() != "(":
                 return self.shell_variant()
 
             if self.current_char in ("<", ">") and self.peek() != self.current_char:
-                token = Token(
-                    ShellTokenType(self.current_char), self.current_char, self.line, self.column
-                )
+                token = Token(ShellTokenType(self.current_char), self.current_char, self.line, self.column)
                 self.advance()
                 return token
 

@@ -10,7 +10,7 @@ class MakefileTokenType(Enum):
     IFNEQ = "ifneq"
     IFDEF = "ifdef"
     IFNDEF = "ifndef"
-    ELSE = 'else'
+    ELSE = "else"
     ENDIF = "endif"
     EXPORT = "export"
     UNEXPORT = "unexport"
@@ -20,7 +20,7 @@ class MakefileTokenType(Enum):
     REDIRECT_TO = ">"
     REDIRECT_FROM = "<"
     AUTO_VARIABLE = "AUTO_VARIABLE"
-    OPTION = 'OPTION'
+    OPTION = "OPTION"
 
 
 class MakefileLexer(Lexer):
@@ -57,8 +57,8 @@ class MakefileLexer(Lexer):
             if self.current_char == TokenType.HASH.value:
                 # match comment
                 return self.get_comment()
-            
-            if self.current_char == "-" and (self.peek().isalpha() or self.peek() == '-'):
+
+            if self.current_char == "-" and (self.peek().isalpha() or self.peek() == "-"):
                 return self.get_option()
 
             if self.current_char in self.long_op_dict:
@@ -68,7 +68,7 @@ class MakefileLexer(Lexer):
                 return self.get_number()
 
             if self.current_char.isalpha() or self.current_char in ("-", "_", ".", "%"):
-                return self.get_id(extend_chars=["_", "-", ".", "%",'/'])
+                return self.get_id(extend_chars=["_", "-", ".", "%", "/"])
 
             if self.current_char == "$" and self.peek() in ["@", "%", "<", "?", "^", "+", "*"]:
                 result = "$"

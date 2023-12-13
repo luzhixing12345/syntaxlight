@@ -1,0 +1,35 @@
+pre[class*="language-txt"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.ID {
+    color: --punctuator;
+}
+
+.Token.BraceDepth-0 {
+    color: --brace1;
+}
+
+.Token.BraceDepth-1 {
+    color: --brace2;
+}
+
+.Token.BraceDepth-2 {
+    color: --brace3;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.YES, .Token.OK {
+    color: --success;
+}
+
+.Token.NO, .Token.FAIL {
+    color: --fail;
+}

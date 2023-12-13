@@ -1,13 +1,16 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Union, NewType
 import json
 from .language import clean_language
 
 def export_css(languages: List[str], export_dir: str = ".", style: str = "vscode"):
     syntaxlight_path = os.path.dirname(__file__)
     json_file_path = os.path.join(syntaxlight_path, "css", "themes.json")
+    
+    ExtensionType = NewType('ExtensionType', Dict[str, Dict[str, str]])
+    themes: Dict[str, Dict[str, Union[str, ExtensionType]]] = None
     with open(json_file_path, "r", encoding="utf-8") as f:
-        themes: Dict[str, Dict[str, str]] = json.load(f)
+        themes = json.load(f)
 
     EXTENSION_NAME = "extension"
 
@@ -33,6 +36,9 @@ def export_css(languages: List[str], export_dir: str = ".", style: str = "vscode
                 if type_name == EXTENSION_NAME:
                     continue
 
+                css_content = css_content.replace(type_name, color)
+            
+            for type_name, color in themes['others'].items():
                 css_content = css_content.replace(type_name, color)
             
             # 添加对应的作用域

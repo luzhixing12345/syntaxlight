@@ -41,9 +41,9 @@ pre[class*="language-shell"] {
     color: --define;
 }
 
-/* .Token.OPTION {
-    color: --type;
-} */
+.Token.OPTION {
+    color: --option;
+}
 
 .Token.Variant,
 .Token.VARIANT {
