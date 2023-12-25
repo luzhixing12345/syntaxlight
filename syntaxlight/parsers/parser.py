@@ -2,7 +2,7 @@ from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
 from ..error import ParserError, ErrorCode
 from enum import Enum
 from ..asts.ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
-from typing import List
+from typing import List, Callable
 import sys
 import html
 import traceback
@@ -301,7 +301,6 @@ class Parser:
                                 brace_depth -= 1
                                 token.class_list.append(f"BraceDepth-{brace_depth%brace_max_depth}")
                                 break
-                            
 
     def parse(self):
         raise NotImplementedError(self.__class__.__name__ + " must override the parse function")
@@ -322,22 +321,22 @@ class Parser:
             add_ast_type(keyword, css_type)
         return keyword
 
-    def identifier(self) -> Identifier:
+    def identifier(self, token_type = TokenType.ID) -> Identifier:
         """
         ID
         """
         node = Identifier(self.current_token.value)
-        node.register_token(self.eat(TokenType.ID))
+        node.register_token(self.eat(token_type))
         return node
 
     def punctuator(self, token_type: Enum = None) -> Punctuator:
         """
         获取运算符
-        
+
         对于 <> 修正为 TokenType.LT 和 TokenType.GT
         """
         node = Punctuator(self.current_token.value)
-            
+
         if token_type is None:
             if self.current_token.type == TokenType.LANGLE_BRACE:
                 self.current_token.type = TokenType.LT
@@ -387,3 +386,13 @@ class Parser:
         node = Number(self.current_token.value)
         node.register_token(self.eat())
         return node
+
+    def list_items(self, func: Callable, delimiter=TokenType.COMMA):
+        """
+        对于 <terminal> (<delimiter> <terminal>)* 的快速匹配
+        """
+        nodes = [func()]
+        while self.current_token.type == delimiter:
+            self.eat()
+            nodes.append(func())
+        return nodes

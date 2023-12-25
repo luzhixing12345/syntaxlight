@@ -197,3 +197,468 @@ supply1  strong1  pull1  weak1  highz1
 <range> ::= [ <constant_expression> : <constant_expression> ]
 
 <list_of_assignments> ::= <assignment> <,<assignment>>*
+
+# 3. Primitive Instances
+
+<gate_declaration>
+	::= <GATETYPE> <drive_strength>? <delay>?  <gate_instance> <,<gate_instance>>* ;
+
+<GATETYPE> is one of the following keywords:
+	and  nand  or  nor xor  xnor buf  bufif0 bufif1  not  notif0 notif1  pulldown pullup
+	nmos  rnmos pmos rpmos cmos rcmos   tran rtran  tranif0  rtranif0  tranif1 rtranif1
+
+<delay> ::= '#' <number>
+	      | '#' <identifier>
+	      | '#' ( <mintypmax_expression> <,<mintypmax_expression>>? <,<mintypmax_expression>>?)
+
+<gate_instance>
+	::= <name_of_gate_instance>? ( <terminal> <,<terminal>>* )
+
+<name_of_gate_instance>
+	::= <IDENTIFIER><range>?
+
+<UDP_instantiation>
+	::= <name_of_UDP> <drive_strength>? <delay>?
+	<UDP_instance> <,<UDP_instance>>* ;
+
+<name_of_UDP>
+	::= <IDENTIFIER>
+
+<UDP_instance>
+	::= <name_of_UDP_instance>? ( <terminal> <,<terminal>>* )
+
+<name_of_UDP_instance>
+	::= <IDENTIFIER><range>?
+
+<terminal>
+	::= <expression>
+	||= <IDENTIFIER>
+
+# 4. Module Instantiations
+
+<module_instantiation>
+	::= <name_of_module> <parameter_value_assignment>?
+		<module_instance> <,<module_instance>>* ;
+
+<name_of_module>
+	::= <IDENTIFIER>
+
+<parameter_value_assignment>
+	::= # ( <expression> <,<expression>>* )
+
+<module_instance>
+	::= <name_of_instance> ( <list_of_module_connections>? )
+
+<name_of_instance>
+	::= <IDENTIFIER><range>?
+
+<list_of_module_connections>
+	::= <module_port_connection> <,<module_port_connection>>*
+	||= <named_port_connection> <,<named_port_connection>>*
+
+<module_port_connection>
+	::= <expression>
+	||= <NULL>
+
+<NULL>
+	::= nothing - this form covers the case of an empty item in a list - for example:
+	      (a, b, , d)
+
+<named_port_connection>
+	::= .< IDENTIFIER> ( <expression> )
+
+
+# 5. Behavioral Statements
+
+<initial_statement>
+	::= initial <statement>
+
+<always_statement>
+	::= always <statement>
+
+<statement_or_null>
+	::= <statement>
+	||= ;
+
+<statement>
+	::=<blocking_assignment> ;
+	||= <non_blocking_assignment> ;
+	||= if ( <expression> ) <statement_or_null>
+	||= if ( <expression> ) <statement_or_null> else <statement_or_null>
+	||= case ( <expression> ) <case_item>+ endcase
+	||= casez ( <expression> ) <case_item>+ endcase
+	||= casex ( <expression> ) <case_item>+ endcase
+	||= forever <statement>
+	||= repeat ( <expression> ) <statement>
+	||= while ( <expression> ) <statement>
+	||= for ( <assignment> ; <expression> ; <assignment> ) <statement>
+	||= <delay_or_event_control> <statement_or_null>
+	||= wait ( <expression> ) <statement_or_null>
+	||= -> <name_of_event> ;
+	||= <seq_block>
+	||= <par_block>
+	||= <task_enable>
+	||= <system_task_enable>
+	||= disable <name_of_task> ;
+	||= disable <name_of_block> ;
+	||= assign <assignment> ;
+	||= deassign <lvalue> ;
+	||= force <assignment> ;
+	||= release <lvalue> ;
+
+<assignment>
+	::= <lvalue> = <expression>
+
+<blocking_assignment>
+	::= <lvalue> = <expression>
+	||= <lvalue> = <delay_or_event_control> <expression> ;
+
+<non_blocking_assignment>
+	::= <lvalue> <= <expression>
+	||= <lvalue> = <delay_or_event_control> <expression> ;
+
+<delay_or_event_control>
+	::= <delay_control>
+	||= <event_control>
+	||= repeat ( <expression> ) <event_control>
+
+<case_item>
+	::= <expression> <,<expression>>* : <statement_or_null>
+	||= default : <statement_or_null>
+	||= default <statement_or_null>
+
+<seq_block>
+	::= begin <statement>* end
+	||= begin : <name_of_block> <block_declaration>* <statement>* end
+
+<par_block>
+	::= fork <statement>* join
+	||= fork : <name_of_block> <block_declaration>* <statement>* join
+
+<name_of_block>
+	::= <IDENTIFIER>
+
+<block_declaration>
+	::= <parameter_declaration>
+	||= <reg_declaration>
+	||= <integer_declaration>
+	||= <real_declaration>
+	||= <time_declaration>
+	||= <event_declaration>
+
+<task_enable>
+	::= <name_of_task>
+	||= <name_of_task> ( <expression> <,<expression>>* ) ;
+
+<system_task_enable>
+	::= <name_of_system_task> ;
+	||= <name_of_system_task> ( <expression> <,<expression>>* ) ;
+
+<name_of_system_task>
+	::= $<system_identifier> (Note: the $ may not be followed by a space.)
+
+<SYSTEM_IDENTIFIER>
+	An <IDENTIFIER> assigned to an existing system task or function
+
+<delay_control>
+	::= # <number>
+	||= # <identifier>
+	||= # ( <mintypmax_expression> )
+
+<event_control>
+	::= @ <identifier>
+	||= @ ( <event_expression> )
+
+<event_expression>
+	::= <expression>
+	||= posedge <scalar_event_expression>
+	||= negedge <scalar_event_expression>
+	||= <event_expression> or <event_expression>
+
+
+6. Specify Section
+
+<specify_block>
+	::= specify <specify_item>* endspecify
+
+<specify_item>
+	::= <specparam_declaration>
+	||= <path_declaration>
+	||= <level_sensitive_path_declaration>
+	||= <edge_sensitive_path_declaration>
+	||= <system_timing_check>
+	||= <sdpd>
+
+<specparam_declaration>
+	::= specparam <list_of_param_assignments> ;
+
+<list_of_param_assignments>
+	::=<param_assignment><,<param_assignment>>*
+
+<param_assignment>
+	::=<<identifier>=<constant_expression>>
+
+<path_declaration>
+	::= <path_description> = <path_delay_value> ;
+
+<path_description>
+	::= ( <specify_input_terminal_descriptor> => <specify_output_terminal_descriptor> )
+	||= ( <list_of_path_inputs> *> <list_of_path_outputs> )
+
+<list_of_path_inputs>
+	::= <specify_input_terminal_descriptor> <,<specify_input_terminal_descriptor>>*
+
+<list_of_path_outputs>
+	::=  <specify_output_terminal_descriptor> <,<specify_output_terminal_descriptor>>*
+
+<specify_input_terminal_descriptor>
+	::= <input_identifier>
+	||= <input_identifier> [ <constant_expression> ]
+	||= <input_identifier> [ <constant_expression> : <constant_expression> ]
+
+<specify_output_terminal_descriptor>
+	::= <output_identifier>
+	||= <output_identifier> [ <constant_expression> ]
+	||= <output_identifier> [ <constant_expression> : <constant_expression> ]
+
+<input_identifier>
+	::= the <IDENTIFIER> of a module input or inout terminal
+
+<output_identifier>
+	::= the <IDENTIFIER> of a module output or inout terminal.
+
+<path_delay_value>
+	::= <path_delay_expression>
+	||= ( <path_delay_expression>, <path_delay_expression> )
+	||= ( <path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>)
+	||= ( <path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>, <path_delay_expression> )
+	||= ( <path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>, <path_delay_expression>,
+		<path_delay_expression>, <path_delay_expression> )
+
+<path_delay_expression>
+	::= <mintypmax_expression>
+
+<system_timing_check>
+	::= $setup( <timing_check_event>, <timing_check_event>,
+		<timing_check_limit>
+		<,<notify_register>>? ) ;
+	||= $hold( <timing_check_event>, <timing_check_event>,
+		<timing_check_limit>
+		<,<notify_register>>? ) ;
+	||= $period( <controlled_timing_check_event>, <timing_check_limit>
+		<,<notify_register>>? ) ;
+	||= $width( <controlled_timing_check_event>, <timing_check_limit>
+		<,<constant_expression>,<notify_register>>? ) ;
+	||= $skew( <timing_check_event>, <timing_check_event>,
+		<timing_check_limit>
+		<,<notify_register>>? ) ;
+	||= $recovery( <controlled_timing_check_event>,
+		<timing_check_event>,
+		<timing_check_limit> <,<notify_register>>? ) ;
+	||= $setuphold( <timing_check_event>, <timing_check_event>,
+		<timing_check_limit>, <timing_check_limit> <,<notify_register>>? ) ;
+
+<timing_check_event>
+	::= <timing_check_event_control>? <specify_terminal_descriptor>
+		<&&& <timing_check_condition>>?
+
+<specify_terminal_descriptor>
+	::= <specify_input_terminal_descriptor>
+	||=<specify_output_terminal_descriptor>
+
+<controlled_timing_check_event>
+	::= <timing_check_event_control> <specify_terminal_descriptor>
+		<&&&  <timing_check_condition>>?
+
+<timing_check_event_control>
+	::= posedge
+	||= negedge
+	||= <edge_control_specifier>
+
+<edge_control_specifier>
+	::= edge  [ <edge_descriptor><,<edge_descriptor>>*]
+
+<edge_descriptor>
+	::= 01
+	||= 10
+	||= 0x
+	||= x1
+	||= 1x
+	||= x0
+
+<timing_check_condition>
+	::= <scalar_timing_check_condition>
+	||= ( <scalar_timing_check_condition> )
+
+<scalar_timing_check_condition>
+	::= <scalar_expression>
+	||= ~<scalar_expression>
+	||= <scalar_expression> == <scalar_constant>
+	||= <scalar_expression> === <scalar_constant>
+	||= <scalar_expression> != <scalar_constant>
+	||= <scalar_expression> !== <scalar_constant>
+
+<scalar_expression>
+	A scalar expression is a one bit net or a bit-select of an expanded vector net.
+
+<timing_check_limit>
+	::= <expression>
+
+<scalar_constant>
+	::= 1'b0
+	||= 1'b1
+	||= 1'B0
+	||= 1'B1
+	||= 'b0
+	||= 'b1
+	||= 'B0
+	||= 'B1
+	||= 1
+	||= 0
+
+<notify_register>
+	::= <identifier>
+
+<level_sensitive_path_declaration>
+	::= if (<conditional_port_expression>)
+		(<specify_input_terminal_descriptor> <polarity_operator>? =>
+		<specify_output_terminal_descriptor>) = <path_delay_value>;
+	||= if (<conditional_port_expression>)
+		(<list_of_path_inputs> <polarity_operator>? *>
+		<list_of_path_outputs>) = <path_delay_value>;
+	(Note: The following two symbols are literal symbols, not syntax description conventions:)
+		*>	=>
+
+<conditional_port_expression>
+	::= <port_reference>
+	||= <UNARY_OPERATOR><port_reference>
+	||= <port_reference><BINARY_OPERATOR><port_reference>
+
+<polarity_operator>
+	::= +
+	||= -
+
+<edge_sensitive_path_declaration>
+	::= <if (<expression>)>? (<edge_identifier>?
+		<specify_input_terminal_descriptor> =>
+		(<specify_output_terminal_descriptor> <polarity_operator>?
+		: <data_source_expression>)) = <path_delay_value>;
+	||= <if (<expression>)>? (<edge_identifier>?
+		<specify_input_terminal_descriptor> *>
+		(<list_of_path_outputs> <polarity_operator>?
+		: <data_source_expression>)) =<path_delay_value>;
+
+<data_source_expression>
+	Any expression, including constants and lists. Its width must be one bit or
+	equal to the  destination's width. If the destination is a list, the data
+	source must be as wide as the sum of  the bits of the members.'
+
+<edge_identifier>
+	::= posedge
+	||= negedge
+
+<sdpd>
+	::=if(<sdpd_conditional_expression>)<path_description>=<path_delay_value>;
+
+<sdpd_conditional_expresssion>
+	::=<expression><BINARY_OPERATOR><expression>
+	||=<UNARY_OPERATOR><expression>
+
+
+7. Expressions
+
+<lvalue>
+	::= <identifier>
+	||= <identifier> [ <expression> ]
+	||= <identifier> [ <constant_expression> : <constant_expression> ]
+	||= <concatenation>
+
+<constant_expression>
+	::=<expression>
+
+<mintypmax_expression>
+	::= <expression>
+	||= <expression> : <expression> : <expression>
+
+<expression>
+	::= <primary>
+	||= <UNARY_OPERATOR> <primary>
+	||= <expression> <BINARY_OPERATOR> <expression>
+	||= <expression> <QUESTION_MARK> <expression> : <expression>
+	||= <STRING>
+
+
+<UNARY_OPERATOR> is one of the following tokens:
+	+  -  !  ~  &  ~&  |  ^|  ^  ~^
+
+<BINARY_OPERATOR> is one of the following tokens:
+	+  -  *  /  %  ==  !=  ===  !==  &&  ||  <  <=  >  >=  &  |  ^  ^~  >>  <<
+
+<QUESTION_MARK> is ? (a literal question mark).
+
+<STRING> is text enclosed in "" and contained on one line.
+
+<primary>
+	::= <number>
+	||= <identifier>
+	||= <identifier> [ <expression> ]
+	||= <identifier> [ <constant_expression> : <constant_expression> ]
+	||= <concatenation>
+	||= <multiple_concatenation>
+	||= <function_call>
+	||= ( <mintypmax_expression> )
+
+<number>
+	::= <DECIMAL_NUMBER>
+	||= <UNSIGNED_NUMBER>? <BASE> <UNSIGNED_NUMBER>
+	||= <DECIMAL_NUMBER>.<UNSIGNED_NUMBER>
+	||= <DECIMAL_NUMBER><.<UNSIGNED_NUMBER>>?
+		E<DECIMAL_NUMBER>
+	||= <DECIMAL_NUMBER><.<UNSIGNED_NUMBER>>?
+		e<DECIMAL_NUMBER>
+	(Note: embedded spaces are illegal in Verilog numbers, but embedded underscore
+	characters can be used for spacing in any type of number.)
+
+<DECIMAL_NUMBER>
+	::= A number containing a set of any of the following characters, optionally preceded by + or -
+	 	0123456789_
+
+<UNSIGNED_NUMBER>
+	::= A number containing a set of any of the following characters:
+	        0123456789_
+
+<NUMBER>
+	Numbers can be specified in decimal, hexadecimal, octal or binary, and may
+	optionally start with a + or -.  The <BASE> token controls what number digits
+	are legal.  <BASE> must be one of d, h, o, or b, for the bases decimal,
+	hexadecimal, octal, and binary respectively. A number can contain any set of
+	the following characters that is consistent with <BASE>:
+	0123456789abcdefABCDEFxXzZ?
+
+<BASE> is one of the following tokens:
+	'b   'B   'o   'O   'd   'D   'h   'H
+
+<concatenation>
+	::= { <expression> <,<expression>>* }
+
+<multiple_concatenation>
+	::= { <expression> { <expression> <,<expression>>* } }
+
+<function_call>
+	::= <name_of_function> ( <expression> <,<expression>>* )
+	||= <name_of_system_function> ( <expression> <,<expression>>* )
+	||= <name_of_system_function>
+
+<name_of_function>
+	::= <identifier>
+
+<name_of_system_function>
+	::= $<SYSTEM_IDENTIFIER>
+	(Note: the $ may not be followed by a space.)

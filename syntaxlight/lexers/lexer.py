@@ -25,8 +25,8 @@ class TokenType(Enum):
     RSQUAR_PAREN = "]"
     LCURLY_BRACE = "{"
     RCURLY_BRACE = "}"
-    LANGLE_BRACE = "<"  # => LT
-    RANGLE_BRACE = ">"  # => GT
+    LANGLE_BRACE = "<"  # 左尖括号, 如果想表达小于应转换为 LT 
+    RANGLE_BRACE = ">"  # 右尖括号, 如果想表达大于应转换为 GT
     UNDERLINE = "_"
     SEMI = ";"
     DOT = "."
@@ -72,8 +72,8 @@ class TokenType(Enum):
     NORE = "~="
     STRICT_NE = "!=="
     DOUBLE_DIV = "//"
-    LT = "LT"  # => LANGLE_BRACE
-    GT = "GT"  # => RANGLE_BRACE
+    LT = "LT"  # 小于, 由 LANGLE_BRACE 转换而来
+    GT = "GT"  # 大于, 由 RANGLE_BRACE 转换而来
     LE = "<="
     GE = ">="
     MUL_ASSIGN = "*="

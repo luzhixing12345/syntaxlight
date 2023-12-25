@@ -92,12 +92,219 @@ class Function(AST):
         self.name = None
         self.stmt = None
         self.end_keyword = None
-        
+
+
 class Parameter(AST):
     def __init__(self) -> None:
         super().__init__()
 
 
 class ParameterAssign(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.key = None
+        self.value = None
+
+
+class Declaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.range = None
+        self.list_of_variables = None
+
+class NetDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.charge_strength = None
+        self.expandrange = None
+        self.delay = None
+        self.list_of_variables = None
+
+class EventDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.event_names = None
+
+
+class GateDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.drive_strength = None
+        self.delay = None
+        self.gate_instances = None
+        
+class GateInstance(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.range = None
+        self.terminals = None
+
+class ContinuousAssign(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.drive_strength = None
+        self.expandrange = None
+        self.delay = None
+        self.list_of_assignments = None
+
+class DriveStrength(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.pos1 = None
+        self.pos2 = None
+
+
+class ExpandRange(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.range = None
+
+
+class Delay(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.number = None
+        self.id = None
+        self.exp1 = None
+        self.exp2 = None
+        self.exp3 = None
+
+
+class Assignment(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.lvalue = None
+        self.exp = None
+
+
+class Expression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class Concatenation(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.expressions = None
+
+
+class Lvalue(AST):
+    def __init__(self) -> None:
+        super().__init__()
+
+class ParameterOverride(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.param_assignments = None
+        
+        
+class RegVar(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.index_begin = None
+        self.index_end = None
+        
+        
+class UDPInstantiation(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.drive_strength = None
+        self.delay = None
+        self.udp_instances = None
+        
+class UDPInstance(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.range = None
+        self.terminals = None
+        
+
+class ModuleInstantiation(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.parms = None
+        self.module_instances = None
+        
+class ModuleInstance(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.range = None
+        self.connections = None
+        
+        
+class NamePortConnection(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.expr = None
+        
+
+class InitialStmt(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.stmt = None
+        
+class AlwaysStmt(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.stmt = None
+        
+class BlockingAssign(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        
+
+class Control(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.number = None
+        self.id = None
+        self.expr = None
+        
+class EventExpression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.expr = None
+        self.edge = None
+        self.event_expr = None
+
+class Statement(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        
+
+class CaseItem(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        
+        
+class SeqBlock(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        
+class ParBlock(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        
+class TaskEnable(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        
+class SystemTaskEnable(AST):
     def __init__(self) -> None:
         super().__init__()
