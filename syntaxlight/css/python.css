@@ -60,6 +60,7 @@ pre[class*="language-python"] {
 .Token.FINALLY,
 .Token.ASSERT,
 .Token.WITH,
+.Token.RAISE,
 .Token.YIELD {
     color: --define;
 }
@@ -68,7 +69,6 @@ pre[class*="language-python"] {
 .Token.IS,
 .Token.TRUE,
 .Token.FALSE,
-.Token.RAISE,
 .Token.NOT,
 .Token.AND,
 .Token.GLOBAL,

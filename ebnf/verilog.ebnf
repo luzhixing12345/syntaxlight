@@ -1,0 +1,199 @@
+<source_text> ::= <description>*
+
+<description> ::= <module>
+                | <UDP>
+
+<module> ::= module <name_of_module> <list_of_ports>? ; <module_item>* endmodule
+           | macromodule <name_of_module> <list_of_ports>? ; <module_item>* endmodule
+
+<name_of_module> ::= <IDENTIFIER>
+
+<list_of_ports> ::= ( <port> <,<port>>* )
+
+<port> ::= <port_expression>?
+         | . <name_of_port> ( <port_expression>? )
+
+<port_expression> ::= <port_reference>
+                    | { <port_reference> <,<port_reference>>* }
+
+<port_reference> ::= <name_of_variable>
+                   | <name_of_variable> [ <constant_expression> ]
+                   | <name_of_variable> [ <constant_expression> :<constant_expression> ]
+
+<name_of_port> ::= <IDENTIFIER>
+
+<name_of_variable> ::= <IDENTIFIER>
+
+<module_item> ::= <parameter_declaration>
+                | <input_declaration>
+                | <output_declaration>
+                | <inout_declaration>
+                | <net_declaration>
+                | <reg_declaration>
+                | <time_declaration>
+                | <integer_declaration>
+                | <real_declaration>
+                | <event_declaration>
+                | <gate_declaration>
+                | <UDP_instantiation>
+                | <module_instantiation>
+                | <parameter_override>
+                | <continuous_assign>
+                | <specify_block>
+                | <initial_statement>
+                | <always_statement>
+                | <task>
+                | <function>
+
+<UDP> ::= primitive <name_of_UDP> ( <name_of_variable> <,<name_of_variable>>* ) ; <UDP_declaration>+ <UDP_initial_statement>? <table_definition> endprimitive
+
+<name_of_UDP> ::= <IDENTIFIER>
+
+<UDP_declaration> ::= <output_declaration>
+                    | <reg_declaration>
+                    | <input_declaration>
+
+<UDP_initial_statement> ::= initial <output_terminal_name> = <init_val> ;
+
+<init_val> ::= 1'b0
+             | 1'b1
+             | 1'bx
+             | 1'bX
+             | 1'B0
+             | 1'B1
+             | 1'Bx
+             | 1'BX
+             | 1
+             | 0
+
+<output_terminal_name> ::= <name_of_variable>
+
+<table_definition> ::= table <table_entries> endtable
+
+<table_entries> ::= <combinational_entry>+
+                  | <sequential_entry>+
+
+<combinational_entry> ::= <level_input_list> : <OUTPUT_SYMBOL> ;
+
+<sequential_entry> ::= <input_list> : <state> : <next_state> ;
+
+<input_list> ::= <level_input_list>
+               | <edge_input_list>
+
+<level_input_list> ::= <LEVEL_SYMBOL>+
+
+<edge_input_list> ::= <LEVEL_SYMBOL>* <edge> <LEVEL_SYMBOL>*
+
+<edge> ::= ( <LEVEL_SYMBOL> <LEVEL_SYMBOL> )
+         | <EDGE_SYMBOL>
+
+<state> ::= <LEVEL_SYMBOL>
+
+<next_state> ::= <OUTPUT_SYMBOL>
+               | - (This is a literal hyphen, see Chapter 5 for details).
+
+<OUTPUT_SYMBOL> is one of the following characters:
+0   1   x   X
+
+<LEVEL_SYMBOL> is one of the following characters:
+0   1   x   X   ?   b   B
+
+<EDGE_SYMBOL> is one of the following characters:
+r   R   f   F   p   P   n   N   *
+
+
+<task> ::= task <name_of_task> ; <tf_declaration>* <statement_or_null> endtask
+
+<name_of_task> ::= <IDENTIFIER>
+
+<function> ::= function <range_or_type>? <name_of_function> ; <tf_declaration>+ <statement> endfunction
+
+<range_or_type> ::= <range>
+                  | integer
+                  | real
+
+<name_of_function> ::= <IDENTIFIER>
+
+<tf_declaration> ::= <parameter_declaration>
+                   | <input_declaration>
+                   | <output_declaration>
+                   | <inout_declaration>
+                   | <reg_declaration>
+                   | <time_declaration>
+                   | <integer_declaration>
+                   | <real_declaration>
+
+
+# 2. Declarations
+
+<parameter_declaration> ::= parameter <list_of_param_assignments> ;
+
+<list_of_param_assignments> ::=<param_assignment><,<param_assignment>*
+
+<param_assignment> ::=<identifier> = <constant_expression>
+
+<input_declaration> ::= input <range>? <list_of_variables> ;
+
+<output_declaration> ::= output <range>? <list_of_variables> ;
+
+<inout_declaration> ::= inout <range>? <list_of_variables> ;
+
+<net_declaration> ::= <NETTYPE> <expandrange>? <delay>? <list_of_variables> ;
+                    | trireg <charge_strength>? <expandrange>? <delay>?
+
+<list_of_variables> ::= ;
+                      | <NETTYPE> <drive_strength>? <expandrange>? <delay>? <list_of_assignments> ;
+
+<NETTYPE> is one of the following keywords:
+wire  tri  tri1  supply0  wand  triand  tri0  supply1  wor  trior  trireg
+
+<expandrange> ::= <range>
+                | scalared <range>
+                | vectored <range>
+
+<reg_declaration> ::= reg <range>? <list_of_register_variables> ;
+
+<time_declaration> ::= time <list_of_register_variables> ;
+
+<integer_declaration> ::= integer <list_of_register_variables> ;
+
+<real_declaration> ::= real <list_of_variables> ;
+
+<event_declaration> ::= event <name_of_event> <,<name_of_event>>* ;
+
+<continuous_assign> ::= assign <drive_strength>? <delay>? <list_of_assignments> ;
+                      | <NETTYPE> <drive_strength>? <expandrange>? <delay>? <list_of_assignments> ;
+
+<parameter_override> ::= defparam <list_of_param_assignments> ;
+
+<list_of_variables> ::= <name_of_variable> <,<name_of_variable>>*
+
+<name_of_variable> ::= <IDENTIFIER>
+
+<list_of_register_variables> ::= <register_variable> <,<register_variable>>*
+
+<register_variable> ::= <name_of_register>
+                      | <name_of_memory> [ <constant_expression> : <constant_expression> ]
+
+<name_of_register> ::= <IDENTIFIER>
+
+<name_of_memory> ::= <IDENTIFIER>
+
+<name_of_event> ::= <IDENTIFIER>
+
+<charge_strength> ::= ( small )
+                    | ( medium )
+                    | ( large )
+
+<drive_strength> ::= ( <STRENGTH0> , <STRENGTH1> )
+                   | ( <STRENGTH1> , <STRENGTH0> )
+
+<STRENGTH0> is one of the following keywords:
+supply0  strong0  pull0  weak0  highz0
+
+<STRENGTH1> is one of the following keywords:
+supply1  strong1  pull1  weak1  highz1
+
+<range> ::= [ <constant_expression> : <constant_expression> ]
+
+<list_of_assignments> ::= <assignment> <,<assignment>>*

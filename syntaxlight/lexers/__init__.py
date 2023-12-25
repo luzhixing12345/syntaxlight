@@ -18,3 +18,4 @@ from .dot_lexer import DotLexer, DotTokenType, DotTokenSet
 from .yaml_lexer import YamlLexer, YamlTokenType
 from .python_lexer import PythonLexer, PythonTokenType
 from .txt_lexer import TxtLexer, TxtTokenType
+from .verilog_lexer import VerilogTokenType, VerilogLexer, VerilogTokenSet

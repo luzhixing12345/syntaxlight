@@ -26,7 +26,8 @@ SUPPORTED_SYNTAX = {
     "dot": SyntaxDict(lexer=DotLexer, parser=DotParser, suffix=['dot','gv']),
     "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=['yml','yaml']),
     "python": SyntaxDict(lexer=PythonLexer, parser=PythonParser, suffix=["py"]),
-    "txt": SyntaxDict(lexer=TxtLexer, parser=TxtParser, suffix=['txt'])
+    "txt": SyntaxDict(lexer=TxtLexer, parser=TxtParser, suffix=['txt']),
+    "verilog": SyntaxDict(lexer=VerilogLexer, parser=VerilogParser, suffix=['v'])
 }
 
 
