@@ -17,6 +17,18 @@ class VerilogParser(Parser):
         super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
         self.verilog_first_set = VerilogTokenSet()
 
+        self.module_map = {
+            VerilogTokenType.PARAMETER: self.parameter_declaration,
+            VerilogTokenType.INPUT: self.input_declaration,
+            VerilogTokenType.OUTPUT: self.output_declaration,
+            VerilogTokenType.INOUT: self.inout_declaration,
+            VerilogTokenType.REG: self.reg_declaration,
+            VerilogTokenType.TIME: self.time_declaration,
+            VerilogTokenType.INTEGER: self.integer_declaration,
+            VerilogTokenType.REAL: self.real_declaration,
+            VerilogTokenType.EVENT: self.event_declaration,
+        }
+
     def parse(self):
         self.root = self.source_text()
         self.skip_crlf()
@@ -156,19 +168,10 @@ class VerilogParser(Parser):
                         | <function>
         """
         # TODO
-        module_map = {
-            VerilogTokenType.PARAMETER: self.parameter_declaration,
-            VerilogTokenType.INPUT: self.input_declaration,
-            VerilogTokenType.OUTPUT: self.output_declaration,
-            VerilogTokenType.INOUT: self.inout_declaration,
-            VerilogTokenType.REG: self.reg_declaration,
-            VerilogTokenType.TIME: self.time_declaration,
-            VerilogTokenType.INTEGER: self.integer_declaration,
-            VerilogTokenType.REAL: self.real_declaration,
-            VerilogTokenType.EVENT: self.event_declaration,
-        }
 
-        if self.current_token.type in self.verilog_first_set.net_declaration:
+        if self.current_token.type in self.module_map:
+            return self.module_map[self.current_token.type]()
+        elif self.current_token.type in self.verilog_first_set.net_declaration:
             return self.net_declaration()
         elif self.current_token.type in self.verilog_first_set.gate_declaration:
             return self.gate_declaration()
@@ -536,12 +539,23 @@ class VerilogParser(Parser):
     def concatenation(self):
         """
         <concatenation> ::= { <expression> <,<expression>>* }
+
+        <multiple_concatenation> ::= { <expression> { <expression> <,<expression>>* } }
+
+        两个合并到一起处理
         """
         node = Concatenation()
         node.register_token(self.eat(TokenType.LCURLY_BRACE))
 
-        node.update(expressions=self.list_items(self.expression))
+        exprs = [self.expression()]
+        if self.current_token.type == TokenType.LCURLY_BRACE:
+            # multiple_concatenation 的情况
+            node.register_token(self.eat(TokenType.LCURLY_BRACE))
+            exprs += self.list_items(self.expression)
+            node.register_token(self.eat(TokenType.RCURLY_BRACE))
+
         node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        node.update(expressions=exprs)
         return node
 
     def constant_expression(self):
@@ -562,13 +576,39 @@ class VerilogParser(Parser):
                   ||= <identifier>
                   ||= <identifier> [ <expression> ]
                   ||= <identifier> [ <constant_expression> : <constant_expression> ]
-                  ||= <concatenation>
-                  ||= <multiple_concatenation>
+                  ||= <concatenation> | <multiple_concatenation>
                   ||= <function_call>
                   ||= ( <mintypmax_expression> )
         """
         if self.current_token.type == TokenType.NUMBER:
             return self.get_number()
+        elif self.current_token.type == TokenType.ID:
+            if self.peek_next_token().type == TokenType.LPAREN:
+                # function call
+                return self.function_call()
+            else:
+                node = Primary()
+                node.update(id=self.get_identifier())
+                if self.current_token.type == TokenType.LSQUAR_PAREN:
+                    node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+                    node.update(expr1=self.expression())
+                    if self.current_token.type == TokenType.COLON:
+                        node.register_token(self.eat(TokenType.COLON))
+                        node.update(expr2=self.expression())
+                    node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+                return node
+        elif self.current_token.type in self.verilog_first_set.concatenation:
+            return self.concatenation()
+        elif self.current_token.type == VerilogTokenType.SYSTEM_ID:
+            return self.function_call()
+        elif self.current_token.type == TokenType.LPAREN:
+            node = Primary()
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(expr=self.mintypmax_expression())
+            node.register_token(self.eat(TokenType.RPAREN))
+            return node
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be number or id or $id or { or (")
 
     def delay(self):
         """
@@ -591,6 +631,7 @@ class VerilogParser(Parser):
             if self.current_token.type == TokenType.COMMA:
                 node.register_token(self.eat())
                 node.update(exp3=self.mintypmax_expression())
+            node.register_token(self.eat(TokenType.RPAREN))
         return node
 
     def mintypmax_expression(self):
@@ -682,6 +723,7 @@ class VerilogParser(Parser):
                     node.update(expandrange=self.expandrange())
                 if self.current_token.type in self.verilog_first_set.delay:
                     node.update(delay=self.delay())
+
         elif self.current_token.type in self.verilog_first_set.net_type:
             node.update(keyword=self.get_keyword(css_type=VerilogCSS.NET_TYPE))
             if self.current_token.type in self.verilog_first_set.expandrange:
@@ -990,7 +1032,7 @@ class VerilogParser(Parser):
         if self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(exprs=self.list_items(self.expression))
-            node.register_token(self.eat(TokenType.LPAREN))
+            node.register_token(self.eat(TokenType.RPAREN))
         node.register_token(self.eat(TokenType.SEMI))
         return node
 
@@ -1328,14 +1370,14 @@ class VerilogParser(Parser):
             node = self.specparam_declaration()
         elif self.current_token.type == TokenType.LPAREN:
             node = self.path_declaration()
-        elif self.current_token.type == VerilogTokenType.LEVEL_SENSITIVE_PATH:
+        elif self.current_token.type == VerilogTokenType.IF:
+            # level_sensitive_path_declaration or edge_sensitive_path_declaration or sdpd
             node = self.level_sensitive_path_declaration()
-        elif self.current_token.type == VerilogTokenType.EDGE_SENSITIVE_PATH:
+            self.sdpd()
+        elif self.current_token.type in self.verilog_first_set.edge_sensitive_path_declaration:
             node = self.edge_sensitive_path_declaration()
-        elif self.current_token.type == VerilogTokenType.SYSTEM_TIMING_CHECK:
+        elif self.current_token.type == VerilogTokenType.SYSTEM_ID:
             node = self.system_timing_check()
-        elif self.current_token.type == VerilogTokenType.SDPD:
-            node = self.sdpd()
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
@@ -1371,12 +1413,6 @@ class VerilogParser(Parser):
             ::= ( <specify_input_terminal_descriptor> => <specify_output_terminal_descriptor> )
             ||= ( <list_of_path_inputs> *> <list_of_path_outputs> )
 
-        <list_of_path_inputs>
-            ::= <specify_input_terminal_descriptor> <,<specify_input_terminal_descriptor>>*
-
-        <list_of_path_outputs>
-            ::=  <specify_output_terminal_descriptor> <,<specify_output_terminal_descriptor>>*
-
         <specify_input_terminal_descriptor>
             ::= <input_identifier>
             ||= <input_identifier> [ <constant_expression> ]
@@ -1395,12 +1431,8 @@ class VerilogParser(Parser):
         """
         node = PathDescription()
         node.register_token(self.eat(TokenType.LPAREN))
-        specify_input_terminal_descriptors = [self.specify_terminal_descriptor()]
-        while self.current_token.type == TokenType.COMMA:
-            node.register_token(self.eat(TokenType.COMMA))
-            specify_input_terminal_descriptors.append(self.specify_terminal_descriptor())
-        node.update(specify_input_terminal_descriptors=specify_input_terminal_descriptors)
-        if len(specify_input_terminal_descriptors) == 1:
+        node.update(specify_input_terminal_descriptors=self.list_items(self.specify_terminal_descriptor))
+        if len(node.specify_input_terminal_descriptors) == 1:
             # 说明是单个变量, 匹配 =>
             node.register_token(self.eat(TokenType.LAMBDA_POINT))
         else:
@@ -1448,3 +1480,399 @@ class VerilogParser(Parser):
             ::= <mintypmax_expression>
         """
         node = PathDelayValue()
+        if self.current_token.type == TokenType.LPAREN:
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(expressions=self.list_items(self.mintypmax_expression))
+            node.register_token(self.eat(TokenType.RPAREN))
+        else:
+            node.update(expression=self.mintypmax_expression())
+        return node
+
+    def function_call(self):
+        """
+        <function_call>
+            ::= <name_of_function> ( <expression> <,<expression>>* )
+            ||= <name_of_system_function> ( <expression> <,<expression>>* )
+            ||= <name_of_system_function>
+
+        <name_of_function>
+            ::= <identifier>
+
+        <name_of_system_function>
+            ::= $<SYSTEM_IDENTIFIER>
+            (Note: the $ may not be followed by a space.)
+        """
+        node = FunctionCall()
+        if self.current_token.type == VerilogTokenType.SYSTEM_ID:
+            node.update(name=self.get_identifier(VerilogTokenType.SYSTEM_ID))
+        else:
+            node.update(name=self.get_identifier())
+
+        if self.current_token.type == TokenType.LPAREN:
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(arguments=self.list_items(self.expression))
+            node.register_token(self.eat(TokenType.RPAREN))
+        return node
+
+    def level_sensitive_path_declaration(self):
+        """
+        <level_sensitive_path_declaration>
+            ::= if (<conditional_port_expression>)
+                (<specify_input_terminal_descriptor> <polarity_operator>? =>
+                <specify_output_terminal_descriptor>) = <path_delay_value>;
+            ||= if (<conditional_port_expression>)
+                (<list_of_path_inputs> <polarity_operator>? *>
+                <list_of_path_outputs>) = <path_delay_value>;
+            (Note: The following two symbols are literal symbols, not syntax description conventions:)
+                *>	=>
+
+        <polarity_operator>
+            ::= +
+            ||= -
+        """
+        node = LevelSensitivePathDeclaration()
+        node.update(keyword=self.get_keyword(VerilogTokenType.IF))
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(conditional_port_expression=self.conditional_port_expression())
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(specify_input_terminal_descriptors=self.list_items(self.specify_terminal_descriptor))
+        
+        if self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+            node.update(polarity_operator=self.get_punctuator())
+        if len(node.specify_input_terminal_descriptors) == 1:
+            node.register_token(self.eat(TokenType.LAMBDA_POINT))
+        else:
+            node.register_token(self.eat(VerilogTokenType.MULTI_ASSIGN))
+        node.update(specify_output_terminal_descriptors=self.list_items(self.specify_terminal_descriptor))
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.register_token(self.eat(TokenType.ASSIGN))
+        node.update(path_delay_value=self.path_delay_value())
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
+
+    def conditional_port_expression(self):
+        """
+        <conditional_port_expression>
+            ::= <port_reference>
+            ||= <UNARY_OPERATOR><port_reference>
+            ||= <port_reference><BINARY_OPERATOR><port_reference>
+        """
+        if self.current_token.type == TokenType.ID:
+            port_ref = self.port_reference()
+            if self.current_token.type in self.verilog_first_set.binary_operator:
+                node = BinaryOp()
+                node.update(expr1=port_ref)
+                node.update(op=self.get_punctuator())
+                node.update(expr2=self.port_reference())
+                return node
+            else:
+                return port_ref
+        elif self.current_token.type in self.verilog_first_set.unary_operator:
+            node = UnaryOp()
+            node.register_token(self.eat())
+            node.update(expr=self.port_reference())
+            return node
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be port_reference or unary_operator")
+
+    def edge_sensitive_path_declaration(self):
+        """
+        <edge_sensitive_path_declaration>
+            ::= <if (<expression>)>? (<edge_identifier>?
+                <specify_input_terminal_descriptor> =>
+                (<specify_output_terminal_descriptor> <polarity_operator>?
+                : <data_source_expression>)) = <path_delay_value>;
+            ||= <if (<expression>)>? (<edge_identifier>?
+                <specify_input_terminal_descriptor> "*>"
+                (<list_of_path_outputs> <polarity_operator>?
+                : <data_source_expression>)) =<path_delay_value>;
+
+        <data_source_expression>
+            Any expression, including constants and lists. Its width must be one bit or
+            equal to the  destination's width. If the destination is a list, the data
+            source must be as wide as the sum of  the bits of the members.
+            
+        <edge_identifier>
+            ::= posedge
+            ||= negedge
+        """
+        node = EdgeSensitivePathDeclaration()
+        if self.current_token.type == VerilogTokenType.IF:
+            node.update(keyword=self.get_keyword(VerilogTokenType.IF))
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.update(expression=self.expression())
+            node.register_token(self.eat(TokenType.RPAREN))
+        node.register_token(self.eat(TokenType.LPAREN))
+        if self.current_token.type in (VerilogTokenType.POSEDGE, VerilogTokenType.NEGEDGE):
+            node.update(edge_id = self.get_keyword())
+        node.update(specify_input_terminal_descriptors=self.list_items(self.specify_terminal_descriptor))
+        
+        if len(node.specify_input_terminal_descriptors) == 1:
+            node.register_token(self.eat(TokenType.LAMBDA_POINT))
+        else:
+            node.register_token(self.eat(VerilogTokenType.MULTI_ASSIGN))
+            
+        node.register_token(self.eat(TokenType.LPAREN))
+        node.update(specify_output_terminal_descriptors=self.list_items(self.specify_terminal_descriptor))
+        if self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+            node.update(polarity_operator=self.get_punctuator())
+        node.register_token(self.eat(TokenType.COLON))
+        node.update(data_source_expression=self.expression())
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.register_token(self.eat(TokenType.ASSIGN))
+        node.update(path_delay_value=self.path_delay_value())
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
+
+    def system_timing_check(self):
+        """
+        <system_timing_check>
+            ::= $setup( <timing_check_event>, <timing_check_event>,
+                <timing_check_limit>
+                <,<notify_register>>? ) ;
+            ||= $hold( <timing_check_event>, <timing_check_event>,
+                <timing_check_limit>
+                <,<notify_register>>? ) ;
+            ||= $period( <controlled_timing_check_event>, <timing_check_limit>
+                <,<notify_register>>? ) ;
+            ||= $width( <controlled_timing_check_event>, <timing_check_limit>
+                <,<constant_expression>,<notify_register>>? ) ;
+            ||= $skew( <timing_check_event>, <timing_check_event>,
+                <timing_check_limit>
+                <,<notify_register>>? ) ;
+            ||= $recovery( <controlled_timing_check_event>,
+                <timing_check_event>,
+                <timing_check_limit> <,<notify_register>>? ) ;
+            ||= $setuphold( <timing_check_event>, <timing_check_event>,
+                <timing_check_limit>, <timing_check_limit> <,<notify_register>>? ) ;
+        
+        <timing_check_limit> ::= <expression>
+        <notify_register> ::= <identifier>
+        """
+        node = SystemTimingCheck()
+        node.update(sysid = self.get_identifier(VerilogTokenType.SYSTEM_ID))
+            
+        node.register_token(self.eat(TokenType.LPAREN))
+        if node.sysid.value == '$setup':
+            node.update(event1 = self.time_check_event())
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(event2 = self.time_check_event()) 
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit = self.expression())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(notify_register = self.get_identifier())
+        elif node.sysid.value == '$hold':
+            node.update(event1 = self.time_check_event())
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(event2 = self.time_check_event()) 
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit = self.expression())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(notify_register = self.get_identifier())
+        elif node.sysid.value == '$period':
+            node.update(event = self.time_check_event(is_controlled=True))
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit = self.expression())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(notify_register = self.get_identifier())
+        elif node.sysid.value == '$width':
+            node.update(event = self.time_check_event(is_controlled=True))
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit = self.expression())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(constant_expr = self.expression())
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(notify_register = self.get_identifier())
+        elif node.sysid.value == '$skew':
+            node.update(event1 = self.time_check_event())
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(event2 = self.time_check_event()) 
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit = self.expression())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(notify_register = self.get_identifier())
+        elif node.sysid.value == '$recovery':
+            node.update(event1 = self.time_check_event(is_controlled=True))
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(event2 = self.time_check_event()) 
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit = self.expression())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(notify_register = self.get_identifier())
+        elif node.sysid.value == '$setuphold':
+            node.update(event1 = self.time_check_event())
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(event2 = self.time_check_event()) 
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit1 = self.expression())
+            node.register_token(self.eat(TokenType.COMMA))
+            node.update(limit2 = self.expression())
+            if self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(notify_register = self.get_identifier())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "System timing check system identifier")
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
+
+    def time_check_event(self, is_controlled = False):
+        '''
+        <timing_check_event>
+            ::= <timing_check_event_control>? <specify_terminal_descriptor>
+                <&&& <timing_check_condition>>?
+                
+        <controlled_timing_check_event>
+            ::= <timing_check_event_control> <specify_terminal_descriptor>
+                <&&&  <timing_check_condition>>?
+        '''
+        node = TimeCheckEvent()
+        if is_controlled or self.current_token.type in self.verilog_first_set.timing_check_event_control:
+            node.update(control = self.timing_check_event_control())
+        node.update(specify_terminal_descriptor = self.specify_terminal_descriptor())
+        if self.current_token.type == VerilogTokenType.TIME_CHECK_AND:
+            node.register_token(self.eat(VerilogTokenType.TIME_CHECK_AND))
+            node.update(condition = self.timing_check_condition())
+        return node
+        
+    def timing_check_event_control(self):
+        '''
+        <timing_check_event_control>
+            ::= posedge
+            ||= negedge
+            ||= <edge_control_specifier>
+        '''
+        if self.current_token.type in (VerilogTokenType.POSEDGE, VerilogTokenType.NEGEDGE):
+            return self.get_keyword()
+        elif self.current_token.type == VerilogTokenType.EDGE:
+            return self.edge_control_specifier()
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "Expected edge or posedge or negedge")
+        
+    def edge_control_specifier(self):
+        '''
+        <edge_control_specifier> ::= edge  [ <edge_descriptor><,<edge_descriptor>>*]
+        '''
+        node = EdgeControlSpecifier()
+        node.update(keyword = self.get_keyword(VerilogTokenType.EDGE))
+        node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+        node.update(edge_descriptors = self.list_items(self.edge_descriptor))
+        node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+        return node
+        
+    def edge_descriptor(self):
+        '''
+        <edge_descriptor>
+            ::= 01
+            ||= 10
+            ||= 0x
+            ||= x1
+            ||= 1x
+            ||= x0
+        '''
+        # TODO
+
+    def timing_check_condition(self):
+        '''
+        <timing_check_condition>
+            ::= <scalar_timing_check_condition>
+            ||= ( <scalar_timing_check_condition> )
+        '''
+        if self.current_token.type == TokenType.LPAREN:
+            self.eat(TokenType.LPAREN)
+            node = self.scalar_timing_check_condition()
+            self.eat(TokenType.RPAREN)
+            return node
+        else:
+            return self.scalar_timing_check_condition()
+    
+    def scalar_timing_check_condition(self):
+        '''
+        <scalar_timing_check_condition>
+            ::= <scalar_expression>
+            ||= ~<scalar_expression>
+            ||= <scalar_expression> == <scalar_constant>
+            ||= <scalar_expression> === <scalar_constant>
+            ||= <scalar_expression> != <scalar_constant>
+            ||= <scalar_expression> !== <scalar_constant>
+        '''
+        node = ScalarTimingCheckCondition()
+        if self.current_token.type == TokenType.TILDE:
+            node.update(op = self.unary_operator())
+            node.update(expr = self.expression())
+        else:
+            node.update(expr = self.expression())
+            if self.current_token.type in (TokenType.EQ, TokenType.STRICT_EQ, TokenType.NE, TokenType.STRICT_NE):
+                node.update(op = self.get_punctuator())
+                node.update(constant = self.scalar_constant())
+
+        return node
+
+    def scalar_constant(self):
+        '''
+        <scalar_constant>
+            ::= 1'b0
+            ||= 1'b1
+            ||= 1'B0
+            ||= 1'B1
+            ||= 'b0
+            ||= 'b1
+            ||= 'B0
+            ||= 'B1
+            ||= 1
+            ||= 0
+        '''
+        # TODO
+
+    def sdpd(self):
+        """
+        <sdpd>
+            ::=if(<sdpd_conditional_expression>)<path_description>=<path_delay_value>;
+
+        <sdpd_conditional_expresssion>
+            ::=<expression><BINARY_OPERATOR><expression>
+            ||=<UNARY_OPERATOR><expression>
+        """
+        node = SDPD()
+        node.update(keyword = self.get_keyword(VerilogTokenType.IF))
+        node.register_token(self.eat(TokenType.LPAREN))
+        if self.current_token.type in self.verilog_first_set.unary_operator:
+            sub_node = UnaryOp()
+            sub_node.update(op = self.unary_operator())
+            sub_node.update(expr = self.expression())
+        elif self.current_token.type in self.verilog_first_set.expression:
+            sub_node = BinaryOp()
+            sub_node.update(expr1 = self.expression())
+            sub_node.update(op = self.binary_operator())
+            sub_node.update(expr2 = self.expression())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be expression or unary operator")
+        node.update(expr = sub_node)
+        node.register_token(self.eat(TokenType.RPAREN))
+        node.update(path_description = self.path_description())
+        node.register_token(self.eat(TokenType.ASSIGN))
+        node.update(path_delay_value = self.path_delay_value())
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
+
+    def unary_operator(self):
+        """
+        <UNARY_OPERATOR> is one of the following tokens:
+                +  -  !  ~  &  ~&  |  ^|  ^  ~^
+        """
+        return self.get_punctuator()
+
+    def binary_operator(self):
+        """
+        <BINARY_OPERATOR> is one of the following tokens:
+	            +  -  *  /  %  ==  !=  ===  !==  &&  ||  <  <=  >  >=  &  |  ^  ^~  >>  <<
+        """
+        return self.get_punctuator()

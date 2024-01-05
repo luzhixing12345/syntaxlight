@@ -452,7 +452,7 @@ class LuaParser(Parser):
         elif self.current_token.type in self.luafirst_set.tableconstructor:
             node.update(table=self.tableconstructor())
         elif self.current_token.type == TokenType.STR:
-            node.update(string = self.get_string())
+            node.update(string=self.get_string())
         else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "args error")
 

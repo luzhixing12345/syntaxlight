@@ -114,13 +114,41 @@ class VerilogTokenType(Enum):
     EDGE_SYMBOL = "rRfFpPnN"  # r   R   f   F   p   P   n   N   *
     NON_BLOCK_ASSIGN = "<="
     SYSTEM_ID = "SYSTEM_ID"
-    MULTI_ASSIGN = '*>'
+    MULTI_ASSIGN = "*>"
+    TIME_CHECK_AND = "&&&"
+    LOGICAL_AND = "~&"
+    LOGICAL_OR = "^|"
+    LOGICAL_NOR = "~^"
+    LOGICAL_XNOR = "^~"
 
 
 class VerilogLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = VerilogTokenType):
         super().__init__(text, LanguageTokenType)
-        self.build_long_op_dict(["<=", "->",'=>','*>','<='])
+        self.build_long_op_dict(
+            [
+                "<=",
+                "->",
+                "=>",
+                "*>",
+                "<=",
+                "&&&",
+                "~&",
+                "^|",
+                "~^",
+                "^~",
+                "==",
+                "!=",
+                "<=",
+                ">=",
+                "===",
+                "!==",
+                "&&",
+                ">>",
+                "<<",
+                "||",
+            ]
+        )
 
     def get_next_token(self) -> Token:
         while self.current_char is not None:
@@ -145,6 +173,9 @@ class VerilogLexer(Lexer):
                         token.type = VerilogTokenType.LEVEL_SYMBOL
 
                 return token
+
+            if self.current_char == '"':
+                return self.get_string()
 
             if self.current_char.isdigit():
                 token = self.get_number()
@@ -191,6 +222,42 @@ class VerilogTokenSet:
         self.module = TokenSet(VerilogTokenType.MODULE, VerilogTokenType.MACROMODULE)
         self.udp = TokenSet(VerilogTokenType.PRIMITIVE)
         self.description = TokenSet(self.module, self.udp)
+
+        self.unary_operator = TokenSet(
+            TokenType.PLUS,
+            TokenType.MINUS,
+            TokenType.BANG,
+            TokenType.TILDE,
+            TokenType.AMPERSAND,
+            VerilogTokenType.LOGICAL_AND,
+            TokenType.PIPE,
+            VerilogTokenType.LOGICAL_OR,
+            TokenType.CARET,
+            VerilogTokenType.LOGICAL_XNOR,
+        )
+        self.binary_operator = TokenSet(
+            TokenType.PLUS,
+            TokenType.MINUS,
+            TokenType.MUL,
+            TokenType.DIV,
+            TokenType.MOD,
+            TokenType.EQ,
+            TokenType.NE,
+            TokenType.STRICT_EQ,
+            TokenType.STRICT_NE,
+            TokenType.AND,
+            TokenType.OR,
+            TokenType.LANGLE_BRACE,  # 需要修正
+            TokenType.RANGLE_BRACE,  # 需要修正
+            TokenType.LE,
+            TokenType.GE,
+            TokenType.AMPERSAND,
+            TokenType.PIPE,
+            TokenType.CARET,
+            VerilogTokenType.LOGICAL_XNOR,
+            TokenType.SHL,
+            TokenType.SHR,
+        )
 
         self.parameter_declaration = TokenSet(VerilogTokenType.PARAMETER)
         self.input_declaration = TokenSet(VerilogTokenType.INPUT)
@@ -310,10 +377,16 @@ class VerilogTokenSet:
         )
         self.expandrange = TokenSet(self.range, VerilogTokenType.SCALARED, VerilogTokenType.VECTORED)
         self.delay = TokenSet(TokenType.HASH)
-        
+
         self.drive_strength = TokenSet(TokenType.LPAREN)
 
-        self.expression = TokenSet(TokenType.NUMBER, TokenType.ID, TokenType.LPAREN, TokenType.STRING)
+        self.concatenation = TokenSet(TokenType.LCURLY_BRACE)
+        self.function_call = TokenSet(TokenType.ID, VerilogTokenType.SYSTEM_ID)
+        self.primary = TokenSet(
+            TokenType.ID, TokenType.NUMBER, self.concatenation, self.function_call, TokenType.LPAREN
+        )
+
+        self.expression = TokenSet(self.primary, self.unary_operator, TokenType.STRING)
         self.mintypmax_expression = TokenSet(self.expression)
         self.lvalue = TokenSet(TokenType.LCURLY_BRACE, TokenType.ID)
         self.delay_or_event_control = TokenSet(VerilogTokenType.REPEAT, TokenType.HASH, TokenType.AT_SIGN)
@@ -340,7 +413,16 @@ class VerilogTokenSet:
             VerilogTokenType.FORCE,
             VerilogTokenType.RELEASE,
         )
+        self.edge_sensitive_path_declaration = TokenSet(
+            VerilogTokenType.IF, TokenType.LPAREN
+        )
         self.specify_item = TokenSet(
             VerilogTokenType.SPECPARAM,
-            TokenType.LPAREN
+            TokenType.LPAREN,
+            VerilogTokenType.IF,
+            self.edge_sensitive_path_declaration,
+            VerilogTokenType.SYSTEM_ID,
         )
+
+        self.conditional_port_expression = TokenSet(self.port_expression)
+        self.timing_check_event_control = TokenSet(VerilogTokenType.POSEDGE, VerilogTokenType.NEGEDGE, VerilogTokenType.EDGE)

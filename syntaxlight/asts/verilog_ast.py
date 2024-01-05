@@ -1,6 +1,6 @@
 from .ast import AST
 from typing import List
-
+from ..lexers import Token
 
 class Verilog(AST):
     def __init__(self) -> None:
@@ -332,9 +332,15 @@ class PathDeclaration(AST):
 class PathDescription(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.specify_input_terminal_descriptor = None
-        self.specify_output_terminal_descriptor = None
+        self.specify_input_terminal_descriptors = None
+        self.specify_output_terminal_descriptors = None
         
+class ListOfPathIOnputs(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.multiple: bool = False
+        self.path_inputs = None        
+
 class SpecifyTerminalDescriptor(AST):
     def __init__(self) -> None:
         super().__init__()
@@ -345,7 +351,7 @@ class SpecifyTerminalDescriptor(AST):
 class PathDelayValue(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.mintypmax_expressions = None
+        self.expressions = None
         
 class MintypmaxExpression(AST):
     def __init__(self) -> None:
@@ -359,3 +365,85 @@ class Range(AST):
         super().__init__()
         self.expr1 = None
         self.expr2 = None
+        
+class Primary(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.number = None
+        self.id = None
+        self.expr1 = None
+        self.expr2 = None
+
+class FunctionCall(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = None
+        self.arguments = None
+
+class BinaryOp(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.op = None
+        self.expr1 = None
+        self.expr2 = None
+        
+class UnaryOp(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.op = None
+        self.expr = None
+        
+class LevelSensitivePathDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.conditional_port_expression = None
+        self.specify_input_terminal_descriptors = None
+        self.specify_output_terminal_descriptors = None
+        self.path_delay_value = None
+        self.polarity_operator = None
+        
+class EdgeSensitivePathDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.specify_input_terminal_descriptors = None
+        self.specify_output_terminal_descriptors = None
+        self.path_delay_value = None
+        self.polarity_operator = None
+        self.data_source_expression = None
+        
+class SystemTimingCheck(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sysid:Token = None
+        self.timing_check_event = None
+        self.timing_check_limit = None
+        self.notify_register = None
+        
+class EdgeControlSpecifier(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.edge_descriptors = None
+        
+class TimeCheckEvent(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.expr = None
+        
+class ScalarTimingCheckCondition(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.op = None
+        self.expr = None
+        self.constant = None
+        
+class SDPD(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.conditional_port_expression = None
+        self.specify_input_terminal_descriptors = None
+        self.specify_output_terminal_descriptors = None
+        self.path_delay_value = None
