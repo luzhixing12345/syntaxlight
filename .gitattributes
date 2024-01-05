@@ -4,3 +4,5 @@
 *.sh    linguist-generated=false
 *.html  linguist-generated=false
 *.css   linguist-generated=false
+*.lua   linguist-generated=false
+*.mk    linguist-generated=false

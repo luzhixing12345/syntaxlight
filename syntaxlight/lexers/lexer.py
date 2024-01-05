@@ -94,6 +94,7 @@ class TokenType(Enum):
     OR = "||"
     AND = "&&"
     POINT = "->"
+    LAMBDA_POINT = "=>"
     PRODUCTION_SYMBOL = "::="
     DOUBLE_HASH = "##"
 
@@ -634,8 +635,11 @@ class Lexer:
 
     def get_long_op(self):
         """
-        对于 '+','-','=','!','<','>','*','/','&','^','|','.',':'
-        字符可能需要读入多个以匹配完整
+        匹配一个长运算符
+        
+        需要使用 build_long_op_dict 函数设置所有支持的长运算符
+        
+        默认的一些常用长运算符见 TokenType, 也可以自定义新的长运算符
         """
         assert self.current_char in self.long_op_dict
         token_type = TokenType(self.current_char)
@@ -644,10 +648,11 @@ class Lexer:
         for long_op in self.long_op_dict[self.current_char]:
             if self.peek(len(long_op)) == long_op:
                 result = self.current_char + long_op
+                # 优先尝试用户自定义的长运算符
                 try:
-                    token_type = TokenType(result)
-                except:
                     token_type = self.LanguageTokenType(result)
+                except:
+                    token_type = TokenType(result)
                 for _ in range(len(long_op)):
                     self.advance()
                 break

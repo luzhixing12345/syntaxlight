@@ -143,7 +143,7 @@ class RISCVAssmemblyParser(Parser):
                 if self._token_list[-2].type == RISCVAssemblyTokenType.INCLUDE:
                     self.current_token.add_css(RISCVAssemblyTokenType.HEADER_NAME)
                 else:
-                    self.string_inside_format()
+                    self.get_string()
 
             if self.current_token.type == TokenType.NUMBER:
                 if self.peek_next_token().type == TokenType.COLON:

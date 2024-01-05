@@ -2,6 +2,7 @@
 import unittest
 import os
 import syntaxlight
+import time
 
 test_folder_path = './test'
 languages = os.listdir(test_folder_path)
@@ -16,53 +17,23 @@ for language in languages:
         files[i] = os.path.normpath(file_path)
     TEST_FILES[language] = files
 
+# 简要输出测试的文件的信息
+for language in TEST_FILES:
+    print(f"{language}: {len(TEST_FILES[language])} files")
+
+time.sleep(3)
+
 class TestUnit(unittest.TestCase):
+    
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+        self.file_types = syntaxlight.supported_languages
 
-    def test_01_json(self):
-
-        for files in TEST_FILES['json']:
-            syntaxlight.parse_file(files)
-
-    def test_02_toml(self):
-
-        for files in TEST_FILES['toml']:
-            syntaxlight.parse_file(files)
-
-    def test_03_xml(self):
-
-        for files in TEST_FILES['xml']:
-            syntaxlight.parse_file(files)
-
-    def test_04_c(self):
-
-        for files in TEST_FILES['c']:
-            syntaxlight.parse_file(files)
-
-    def test_05_bnf(self):
-
-        for files in TEST_FILES['bnf']:
-            syntaxlight.parse_file(files)
-
-    def test_06_lua(self):
-
-        for files in TEST_FILES['lua']:
-            syntaxlight.parse_file(files)
-
-    def test_07_css(self):
-
-        for files in TEST_FILES['css']:
-            syntaxlight.parse_file(files)
-
-    def test_08_shell(self):
-
-        for files in TEST_FILES['shell']:
-            syntaxlight.parse_file(files)
-
-    def test_09_asm(self):
-
-        for files in TEST_FILES['asm']:
-            syntaxlight.parse_file(files)
-
+    def test_coverage(self):
+        
+        for language in self.file_types:
+            for file_path in TEST_FILES[language]:
+                syntaxlight.parse_file(file_path, language)
 
 
 if __name__ == "__main__":

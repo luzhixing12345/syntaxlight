@@ -30,6 +30,7 @@ SUPPORTED_SYNTAX = {
     "verilog": SyntaxDict(lexer=VerilogLexer, parser=VerilogParser, suffix=['v'])
 }
 
+supported_languages = list(SUPPORTED_SYNTAX.keys())
 
 def clean_language(language: str):
     language = language.lower()

@@ -61,7 +61,7 @@ class VerilogParser(Parser):
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be module or macromodule")
 
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         node.update(list_of_ports=self.list_of_ports())
         node.register_token(self.eat(TokenType.SEMI))
         module_items = []
@@ -88,7 +88,7 @@ class VerilogParser(Parser):
         node = Port()
         if self.current_token.type == TokenType.DOT:
             node.register_token(self.eat(TokenType.DOT))
-            node.update(name=self.identifier())
+            node.update(name=self.get_identifier())
             node.register_token(self.eat(TokenType.LPAREN))
             if self.current_token.type in self.verilog_first_set.port_expression:
                 node.update(port_expression=self.port_expression())
@@ -122,7 +122,7 @@ class VerilogParser(Parser):
                            | <name_of_variable> [ <constant_expression> :<constant_expression> ]
         """
         node = PortReference()
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         if self.current_token.type == TokenType.LSQUAR_PAREN:
             node.register_token(self.eat(TokenType.LSQUAR_PAREN))
             node.update(index_begin=self.expression())
@@ -162,13 +162,12 @@ class VerilogParser(Parser):
             VerilogTokenType.OUTPUT: self.output_declaration,
             VerilogTokenType.INOUT: self.inout_declaration,
             VerilogTokenType.REG: self.reg_declaration,
-            VerilogTokenType.TIME: self.time_declaration, 
+            VerilogTokenType.TIME: self.time_declaration,
             VerilogTokenType.INTEGER: self.integer_declaration,
             VerilogTokenType.REAL: self.real_declaration,
             VerilogTokenType.EVENT: self.event_declaration,
-            
         }
-        
+
         if self.current_token.type in self.verilog_first_set.net_declaration:
             return self.net_declaration()
         elif self.current_token.type in self.verilog_first_set.gate_declaration:
@@ -184,7 +183,7 @@ class VerilogParser(Parser):
         """
         node = UDP()
         node.update(keyword=self.get_keyword(VerilogTokenType.PRIMITIVE))
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         node.register_token(self.eat(TokenType.LPAREN))
         node.update(variable_names=self.list_of_variables())
         node.register_token(self.eat(TokenType.RPAREN))
@@ -220,7 +219,7 @@ class VerilogParser(Parser):
         """
         node = UdpInitialStatement()
         node.update(keyword=self.get_keyword(VerilogTokenType.INITIAL))
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         node.register_token(self.eat(TokenType.ASSIGN))
         node.update(init_val=self.init_val())
         return node
@@ -324,7 +323,7 @@ class VerilogParser(Parser):
         """
         node = Task()
         node.update(keyword=self.get_keyword(VerilogTokenType.TASK))
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         node.register_token(self.eat(TokenType.SEMI))
         tf_declarations = []
         while self.current_token.type in self.verilog_first_set.tf_declaration:
@@ -360,14 +359,14 @@ class VerilogParser(Parser):
                            | <real_declaration>
         """
         kv_map = {
-            VerilogTokenType.PARAMETER: self.parameter_declaration, 
+            VerilogTokenType.PARAMETER: self.parameter_declaration,
             VerilogTokenType.INPUT: self.input_declaration,
             VerilogTokenType.OUTPUT: self.output_declaration,
             VerilogTokenType.INOUT: self.inout_declaration,
             VerilogTokenType.REG: self.reg_declaration,
             VerilogTokenType.INTEGER: self.integer_declaration,
             VerilogTokenType.REAL: self.real_declaration,
-            VerilogTokenType.TIME: self.time_declaration, 
+            VerilogTokenType.TIME: self.time_declaration,
         }
         if self.current_token.type in kv_map:
             return kv_map[self.current_token.type]()
@@ -391,7 +390,7 @@ class VerilogParser(Parser):
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be range or type")
 
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         tf_declarations = [self.tf_declaration()]
         while self.current_token.type in self.verilog_first_set.tf_declaration:
             tf_declarations.append(self.tf_declaration())
@@ -423,7 +422,7 @@ class VerilogParser(Parser):
         <param_assignment> ::=<identifier> = <constant_expression>
         """
         node = ParameterAssign()
-        node.update(key=self.identifier())
+        node.update(key=self.get_identifier())
         node.register_token(self.eat(TokenType.ASSIGN))
         node.update(value=self.expression())
         return node
@@ -450,7 +449,7 @@ class VerilogParser(Parser):
         # node.update(list_of_assignments=self.list_of_assignments())
         # node.register_token(self.eat(TokenType.SEMI))
         # return node
-        return self.list_items(self.identifier)
+        return self.list_items(self.get_identifier)
 
     def drive_strength(self):
         """
@@ -523,7 +522,7 @@ class VerilogParser(Parser):
             return self.concatenation()
         elif self.current_token.type == TokenType.ID:
             node = Lvalue()
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             node.register_token(self.eat(TokenType.LSQUAR_PAREN))
             node.update(exp1=self.expression())
             if self.current_token.type == TokenType.COLON:
@@ -545,13 +544,16 @@ class VerilogParser(Parser):
         node.register_token(self.eat(TokenType.RCURLY_BRACE))
         return node
 
+    def constant_expression(self):
+        return self.expression()
+
     def expression(self):
         """
         <expression> ::= <primary>
-                         ||= <UNARY_OPERATOR> <primary>
-                         ||= <expression> <BINARY_OPERATOR> <expression>
-                         ||= <expression> <QUESTION_MARK> <expression> : <expression>
-                         ||= <STRING>
+                     ||= <UNARY_OPERATOR> <primary>
+                     ||= <expression> <BINARY_OPERATOR> <expression>
+                     ||= <expression> <QUESTION_MARK> <expression> : <expression>
+                     ||= <STRING>
         """
 
     def primary(self):
@@ -565,19 +567,21 @@ class VerilogParser(Parser):
                   ||= <function_call>
                   ||= ( <mintypmax_expression> )
         """
+        if self.current_token.type == TokenType.NUMBER:
+            return self.get_number()
 
     def delay(self):
         """
         <delay> ::= '#' <number>
-                      | '#' <identifier>
-                      | '#' ( <mintypmax_expression> <,<mintypmax_expression>>? <,<mintypmax_expression>>?)
+                  | '#' <identifier>
+                  | '#' ( <mintypmax_expression> <,<mintypmax_expression>>? <,<mintypmax_expression>>?)
         """
         node = Delay()
         node.register_token(self.eat(TokenType.HASH))
         if self.current_token.type == TokenType.NUMBER:
-            node.update(number=self.number())
+            node.update(number=self.get_number())
         elif self.current_token.type == TokenType.ID:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(exp1=self.mintypmax_expression())
@@ -590,10 +594,31 @@ class VerilogParser(Parser):
         return node
 
     def mintypmax_expression(self):
-        """ """
+        """
+        <mintypmax_expression>
+            ::= <expression>
+            ||= <expression> : <expression> : <expression>
+        """
+        node = MintypmaxExpression()
+        node.update(expr1=self.expression())
+        if self.current_token.type == TokenType.COLON:
+            node.register_token(self.eat())
+            node.update(expr2=self.expression())
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(expr3=self.expression())
+        return node
 
     def range(self):
-        """ """
+        """
+        <range> ::= [ <constant_expression> : <constant_expression> ]
+        """
+        node = Range()
+        node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+        node.update(expr1=self.constant_expression())
+        node.register_token(self.eat(TokenType.COLON))
+        node.update(expr2=self.constant_expression())
+        node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+        return node
 
     def input_declaration(self):
         """
@@ -720,7 +745,7 @@ class VerilogParser(Parser):
         node = EventDeclaration()
         node.update(keyword=self.get_keyword(VerilogTokenType.EVENT))
 
-        node.update(event_names=self.list_items(self.identifier))
+        node.update(event_names=self.list_items(self.get_identifier))
         return node
 
     def continuous_assign(self):
@@ -789,64 +814,64 @@ class VerilogParser(Parser):
         if self.current_token.type == TokenType.ID:
             # blocking_assignment
             if self.peek_next_token().type in (TokenType.LSQUAR_PAREN, TokenType.ASSIGN, TokenType.LT):
-                node.update(assignment = self.blocking_assignment())
+                node.update(assignment=self.blocking_assignment())
                 node.register_token(self.eat(TokenType.SEMI))
             else:
                 # task_enable
                 return self.task_enable()
         elif self.current_token.type == TokenType.LCURLY_BRACE:
-            node.update(assignment = self.blocking_assignment())
+            node.update(assignment=self.blocking_assignment())
             node.register_token(self.eat(TokenType.SEMI))
         elif self.current_token.type == VerilogTokenType.IF:
-            node.update(keyword = self.get_keyword(VerilogTokenType.IF))
+            node.update(keyword=self.get_keyword(VerilogTokenType.IF))
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(expr = self.expression())
+            node.update(expr=self.expression())
             node.register_token(self.eat(TokenType.RPAREN))
-            node.update(stmt = self.statement_or_null())
+            node.update(stmt=self.statement_or_null())
             if self.current_token.type == VerilogTokenType.ELSE:
-                node.update(end_keyword = self.get_keyword(VerilogTokenType.ELSE))
-                node.update(stmt_else = self.statement_or_null())
+                node.update(end_keyword=self.get_keyword(VerilogTokenType.ELSE))
+                node.update(stmt_else=self.statement_or_null())
         elif self.current_token.type in (VerilogTokenType.CASE, VerilogTokenType.CASEZ, VerilogTokenType.CASEX):
-            node.update(keyword = self.get_keyword())
+            node.update(keyword=self.get_keyword())
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(expr = self.expression())
+            node.update(expr=self.expression())
             node.register_token(self.eat(TokenType.RPAREN))
             case_items = [self.case_item()]
             while self.current_token.type in self.verilog_first_set.case_item:
                 case_items.append(self.case_item())
-            node.update(case_items = case_items)
-            node.update(end_keyword = self.get_keyword())
+            node.update(case_items=case_items)
+            node.update(end_keyword=self.get_keyword())
         elif self.current_token.type == VerilogTokenType.FOREVER:
-            node.update(keyword = self.get_keyword())
-            node.update(stmt = self.statement())
+            node.update(keyword=self.get_keyword())
+            node.update(stmt=self.statement())
         elif self.current_token.type in (VerilogTokenType.REPEAT, VerilogTokenType.WHILE):
-            node.update(keyword  = self.get_keyword())
+            node.update(keyword=self.get_keyword())
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(expr = self.expression())
+            node.update(expr=self.expression())
             node.register_token(self.eat(TokenType.RPAREN))
-            node.update(stmt = self.statement())
+            node.update(stmt=self.statement())
         elif self.current_token.type == VerilogTokenType.FOR:
-            node.update(keyword = self.get_keyword())
+            node.update(keyword=self.get_keyword())
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(assignment = self.assignment())
+            node.update(assignment=self.assignment())
             node.register_token(self.eat(TokenType.SEMI))
-            node.update(expr = self.expression())
+            node.update(expr=self.expression())
             node.register_token(self.eat(TokenType.SEMI))
-            node.update(assignment_plus = self.assignment())
+            node.update(assignment_plus=self.assignment())
             node.register_token(self.eat(TokenType.RPAREN))
-            node.update(stmt = self.statement())
+            node.update(stmt=self.statement())
         elif self.current_token.type in (TokenType.HASH, TokenType.AT_SIGN, VerilogTokenType.REPEAT):
-            node.update(control = self.delay_or_event_control())
-            node.update(stmt = self.statement_or_null())
+            node.update(control=self.delay_or_event_control())
+            node.update(stmt=self.statement_or_null())
         elif self.current_token.type == VerilogTokenType.WAIT:
-            node.update(keyword = self.get_keyword())
+            node.update(keyword=self.get_keyword())
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(expr = self.expression())
+            node.update(expr=self.expression())
             node.register_token(self.eat(TokenType.RPAREN))
-            node.update(stmt = self.statement_or_null())
+            node.update(stmt=self.statement_or_null())
         elif self.current_token.type == TokenType.POINT:
             node.register_token(self.eat())
-            node.update(name = self.identifier())
+            node.update(name=self.get_identifier())
             node.register_token(self.eat(TokenType.SEMI))
         elif self.current_token.type == VerilogTokenType.BEGIN:
             # seq_block
@@ -856,67 +881,67 @@ class VerilogParser(Parser):
         elif self.current_token.type == VerilogTokenType.SYSTEM_ID:
             return self.system_task_enable()
         elif self.current_token.type == VerilogTokenType.DISABLE:
-            node.update(keyword = self.get_keyword())
-            node.update(name = self.identifier())
+            node.update(keyword=self.get_keyword())
+            node.update(name=self.get_identifier())
             node.register_token(self.eat(TokenType.SEMI))
         elif self.current_token.type in (VerilogTokenType.ASSIGN, VerilogTokenType.FORCE):
-            node.update(keyword = self.get_keyword())
-            node.update(assignment = self.assignment())
+            node.update(keyword=self.get_keyword())
+            node.update(assignment=self.assignment())
             node.register_token(self.eat(TokenType.SEMI))
         elif self.current_token.type in (VerilogTokenType.DEASSIGN, VerilogTokenType.RELEASE):
-            node.update(keyword = self.get_keyword())
-            node.update(Lvalue = self.lvalue())
+            node.update(keyword=self.get_keyword())
+            node.update(Lvalue=self.lvalue())
             node.register_token(self.eat(TokenType.SEMI))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "statement miss match")
         return node
-        
+
     def seq_block(self):
-        '''
+        """
         <seq_block>
                     ::= begin <statement>* end
                     ||= begin : <name_of_block> <block_declaration>* <statement>* end
-        '''
+        """
         node = SeqBlock()
-        node.update(keyword = self.get_keyword(VerilogTokenType.BEGIN))
+        node.update(keyword=self.get_keyword(VerilogTokenType.BEGIN))
         if self.current_token.type == TokenType.COLON:
             node.register_token(self.eat())
-            node.update(name = self.identifier())
+            node.update(name=self.get_identifier())
             block_declarations = []
             while self.current_token.type in self.verilog_first_set.block_declaration:
                 block_declarations.append(self.block_declaration())
-            node.update(block_declarations = block_declarations)
+            node.update(block_declarations=block_declarations)
         stmts = []
-        while self.current_token.type in  self.verilog_first_set.statement:
+        while self.current_token.type in self.verilog_first_set.statement:
             stmts.append(self.statement())
-        node.update(stmts = stmts)
-        node.update(end_keyword = self.get_keyword(VerilogTokenType.END))
+        node.update(stmts=stmts)
+        node.update(end_keyword=self.get_keyword(VerilogTokenType.END))
         return node
-                
+
     def par_block(self):
-        '''
+        """
         <par_block>
                     ::= fork <statement>* join
                     ||= fork : <name_of_block> <block_declaration>* <statement>* join
-        '''
+        """
         node = ParBlock()
-        node.update(keyword = self.get_keyword(VerilogTokenType.FORK))
+        node.update(keyword=self.get_keyword(VerilogTokenType.FORK))
         if self.current_token.type == TokenType.COLON:
             node.register_token(self.eat())
-            node.update(name = self.identifier())
+            node.update(name=self.get_identifier())
             block_declarations = []
             while self.current_token.type in self.verilog_first_set.block_declaration:
                 block_declarations.append(self.block_declaration())
-            node.update(block_declarations = block_declarations)
+            node.update(block_declarations=block_declarations)
         stmts = []
-        while self.current_token.type in  self.verilog_first_set.statement:
+        while self.current_token.type in self.verilog_first_set.statement:
             stmts.append(self.statement())
-        node.update(stmts = stmts)
-        node.update(end_keyword = self.get_keyword(VerilogTokenType.JOIN))
+        node.update(stmts=stmts)
+        node.update(end_keyword=self.get_keyword(VerilogTokenType.JOIN))
         return node
-        
+
     def block_declaration(self):
-        '''
+        """
         <block_declaration>
                             ::= <parameter_declaration>
                             ||= <reg_declaration>
@@ -924,50 +949,50 @@ class VerilogParser(Parser):
                             ||= <real_declaration>
                             ||= <time_declaration>
                             ||= <event_declaration>
-        '''
+        """
         kv_map = {
-            VerilogTokenType.PARAMETER: self.parameter_declaration, 
+            VerilogTokenType.PARAMETER: self.parameter_declaration,
             VerilogTokenType.REG: self.reg_declaration,
             VerilogTokenType.INTEGER: self.integer_declaration,
             VerilogTokenType.REAL: self.real_declaration,
-            VerilogTokenType.TIME: self.time_declaration, 
-            VerilogTokenType.EVENT: self.event_declaration
+            VerilogTokenType.TIME: self.time_declaration,
+            VerilogTokenType.EVENT: self.event_declaration,
         }
         if self.current_token.type in kv_map:
             return kv_map[self.current_token.type]()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "output block declaration kv map")
-                
+
     def task_enable(self):
-        '''
+        """
         <task_enable>
                         ::= <name_of_task>
                         ||= <name_of_task> ( <expression> <,<expression>>* ) ;
-        '''
+        """
         node = TaskEnable()
-        node.update(name = self.identifier())
+        node.update(name=self.get_identifier())
         if self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(exprs = self.list_items(self.expression))
+            node.update(exprs=self.list_items(self.expression))
             node.register_token(self.eat(TokenType.RPAREN))
             node.register_token(self.eat(TokenType.SEMI))
         return node
-    
+
     def system_task_enable(self):
-        '''
+        """
         <system_task_enable>
                             ::= <name_of_system_task> ;
                             ||= <name_of_system_task> ( <expression> <,<expression>>* ) ;
         <name_of_system_task> ::= $<system_identifier> (Note: the $ may not be followed by a space.)
-        '''
+        """
         node = SystemTaskEnable()
-        node.update(name = self.identifier(VerilogTokenType.SYSTEM_ID))
+        node.update(name=self.get_identifier(VerilogTokenType.SYSTEM_ID))
         if self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(exprs = self.list_items(self.expression))
+            node.update(exprs=self.list_items(self.expression))
             node.register_token(self.eat(TokenType.LPAREN))
         node.register_token(self.eat(TokenType.SEMI))
-        return node            
+        return node
 
     def list_of_register_variables(self):
         """
@@ -981,7 +1006,7 @@ class VerilogParser(Parser):
                               | <name_of_memory> [ <constant_expression> : <constant_expression> ]
         """
         node = RegVar()
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         if self.current_token.type == TokenType.LSQUAR_PAREN:
             node.register_token(self.eat(TokenType.LSQUAR_PAREN))
             node.update(index_begin=self.expression())
@@ -1017,7 +1042,7 @@ class VerilogParser(Parser):
         """
         node = GateInstance()
         if self.current_token.type == TokenType.ID:
-            node.update(name=self.identifier())
+            node.update(name=self.get_identifier())
             if self.current_token.type in self.verilog_first_set.range:
                 node.update(range=self.range())
         node.register_token(self.eat(TokenType.LPAREN))
@@ -1037,7 +1062,7 @@ class VerilogParser(Parser):
         <UDP_instantiation> ::= <name_of_UDP> <drive_strength>? <delay>? <UDP_instance> <,<UDP_instance>>* ;
         """
         node = UDPInstantiation()
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         if self.current_token.type in self.verilog_first_set.drive_strength:
             node.update(drive_strength=self.drive_strength())
         if self.current_token.type in self.verilog_first_set.delay:
@@ -1053,7 +1078,7 @@ class VerilogParser(Parser):
         """
         node = UDPInstance()
         if self.current_token.type == TokenType.ID:
-            node.update(name=self.identifier())
+            node.update(name=self.get_identifier())
             if self.current_token.type in self.verilog_first_set.range:
                 node.update(range=self.range())
         node.register_token(self.eat(TokenType.LPAREN))
@@ -1068,7 +1093,7 @@ class VerilogParser(Parser):
         <parameter_value_assignment> ::= # ( <expression> <,<expression>>* )
         """
         node = ModuleInstantiation()
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         if self.current_token.type == TokenType.HASH:
             node.register_token(self.eat())
             node.register_token(self.eat(TokenType.LPAREN))
@@ -1087,7 +1112,7 @@ class VerilogParser(Parser):
                                      ||= <named_port_connection> <,<named_port_connection>>*
         """
         node = ModuleInstance()
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         if self.current_token.type in self.verilog_first_set.range:
             node.update(range=self.range())
         node.register_token(self.eat(TokenType.LPAREN))
@@ -1105,7 +1130,7 @@ class VerilogParser(Parser):
         """
         node = NamePortConnection()
         node.register_token(self.eat(TokenType.DOT))
-        node.update(name=self.identifier())
+        node.update(name=self.get_identifier())
         node.register_token(self.eat(TokenType.LPAREN))
         node.update(expr=self.expression())
         node.register_token(self.eat(TokenType.RPAREN))
@@ -1151,7 +1176,7 @@ class VerilogParser(Parser):
         <blocking_assignment>
                             ::= <lvalue> =|<= <expression>
                             ||= <lvalue> = <delay_or_event_control> <expression> ;
-        
+
         @扩展文法: 不好区分阻塞和非阻塞, 所以合并二者
         """
         node = BlockingAssign()
@@ -1205,9 +1230,9 @@ class VerilogParser(Parser):
         node = Control()
         node.register_token(self.eat(TokenType.HASH))
         if self.current_token.type == TokenType.NUMBER:
-            node.update(number=self.number())
+            node.update(number=self.get_number())
         elif self.current_token.type == TokenType.ID:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(expr=self.mintypmax_expression())
@@ -1225,7 +1250,7 @@ class VerilogParser(Parser):
         node = Control()
         node.register_token(self.eat(TokenType.AT_SIGN))
         if self.current_token.type == TokenType.ID:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(expr=self.event_expression())
@@ -1256,22 +1281,170 @@ class VerilogParser(Parser):
         return node
 
     def case_item(self):
-        '''
+        """
         <case_item>
                     ::= <expression> <,<expression>>* : <statement_or_null>
                     ||= default : <statement_or_null>
                     ||= default <statement_or_null>
-        '''
+        """
         node = CaseItem()
         if self.current_token.type in self.verilog_first_set.expression:
-            node.update(exprs = self.list_items(self.expression))
+            node.update(exprs=self.list_items(self.expression))
             node.register_token(self.eat(TokenType.COLON))
-            node.update(stmt = self.statement_or_null())
+            node.update(stmt=self.statement_or_null())
         elif self.current_token.type == VerilogTokenType.DEFAULT:
-            node.update(keyword = self.get_keyword())
+            node.update(keyword=self.get_keyword())
             if self.current_token.type == TokenType.COLON:
                 node.register_token(self.eat())
-            node.update(stmt = self.statement_or_null())
+            node.update(stmt=self.statement_or_null())
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be expr or default")
         return node
+
+    def specify_block(self):
+        """
+        <specify_block> ::= specify <specify_item>* endspecify
+        """
+        node = SpecifyBlock()
+        node.update(keyword=self.get_keyword(VerilogTokenType.SPECIFY))
+        specify_items = []
+        while self.current_token.type in self.verilog_first_set.specify_item:
+            specify_items.append(self.specify_item())
+        node.update(specify_items=specify_items)
+        node.update(end_keyword=self.get_keyword(VerilogTokenType.ENDSPECIFY))
+        return node
+
+    def specify_item(self):
+        """
+        <specify_item>
+                        ::= <specparam_declaration>
+                        ||= <path_declaration>
+                        ||= <level_sensitive_path_declaration>
+                        ||= <edge_sensitive_path_declaration>
+                        ||= <system_timing_check>
+                        ||= <sdpd>
+        """
+        if self.current_token.type == VerilogTokenType.SPECPARAM:
+            node = self.specparam_declaration()
+        elif self.current_token.type == TokenType.LPAREN:
+            node = self.path_declaration()
+        elif self.current_token.type == VerilogTokenType.LEVEL_SENSITIVE_PATH:
+            node = self.level_sensitive_path_declaration()
+        elif self.current_token.type == VerilogTokenType.EDGE_SENSITIVE_PATH:
+            node = self.edge_sensitive_path_declaration()
+        elif self.current_token.type == VerilogTokenType.SYSTEM_TIMING_CHECK:
+            node = self.system_timing_check()
+        elif self.current_token.type == VerilogTokenType.SDPD:
+            node = self.sdpd()
+        else:
+            self.error(
+                ErrorCode.UNEXPECTED_TOKEN,
+                "should be specparam, path, level_sensitive_path, edge_sensitive_path, system_timing_check, sdpd",
+            )
+        return node
+
+    def specparam_declaration(self):
+        """
+        <specparam_declaration> ::= specparam <list_of_specparam_assignment> ;
+
+        <list_of_param_assignments> ::=<param_assignment><,<param_assignment>>*
+        """
+        node = SpecparamDeclaration()
+        node.update(keyword=self.get_keyword(VerilogTokenType.SPECPARAM))
+        node.update(assignments=self.list_items(self.param_assignment))
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
+
+    def path_declaration(self):
+        """
+        <path_declaration> ::= <path_description> = <path_delay_value> ;
+        """
+        node = PathDeclaration()
+        node.update(path_declaration=self.path_description())
+        node.register_token(self.eat(TokenType.ASSIGN))
+        node.update(path_delay_value=self.path_delay_value())
+        return node
+
+    def path_description(self):
+        """
+        <path_description>
+            ::= ( <specify_input_terminal_descriptor> => <specify_output_terminal_descriptor> )
+            ||= ( <list_of_path_inputs> *> <list_of_path_outputs> )
+
+        <list_of_path_inputs>
+            ::= <specify_input_terminal_descriptor> <,<specify_input_terminal_descriptor>>*
+
+        <list_of_path_outputs>
+            ::=  <specify_output_terminal_descriptor> <,<specify_output_terminal_descriptor>>*
+
+        <specify_input_terminal_descriptor>
+            ::= <input_identifier>
+            ||= <input_identifier> [ <constant_expression> ]
+            ||= <input_identifier> [ <constant_expression> : <constant_expression> ]
+
+        <specify_output_terminal_descriptor>
+            ::= <output_identifier>
+            ||= <output_identifier> [ <constant_expression> ]
+            ||= <output_identifier> [ <constant_expression> : <constant_expression> ]
+
+        <input_identifier>
+            ::= the <IDENTIFIER> of a module input or inout terminal
+
+        <output_identifier>
+            ::= the <IDENTIFIER> of a module output or inout terminal.
+        """
+        node = PathDescription()
+        node.register_token(self.eat(TokenType.LPAREN))
+        specify_input_terminal_descriptors = [self.specify_terminal_descriptor()]
+        while self.current_token.type == TokenType.COMMA:
+            node.register_token(self.eat(TokenType.COMMA))
+            specify_input_terminal_descriptors.append(self.specify_terminal_descriptor())
+        node.update(specify_input_terminal_descriptors=specify_input_terminal_descriptors)
+        if len(specify_input_terminal_descriptors) == 1:
+            # 说明是单个变量, 匹配 =>
+            node.register_token(self.eat(TokenType.LAMBDA_POINT))
+        else:
+            node.register_token(self.eat(VerilogTokenType.MULTI_ASSIGN))
+        node.update(specify_output_terminal_descriptors=self.list_items(self.specify_terminal_descriptor))
+        node.register_token(self.eat(TokenType.RPAREN))
+        return node
+
+    def specify_terminal_descriptor(self):
+        """
+        <specify_input_terminal_descriptor>
+            ::= <input_identifier>
+            ||= <input_identifier> [ <constant_expression> ]
+            ||= <input_identifier> [ <constant_expression> : <constant_expression> ]
+        """
+        node = SpecifyTerminalDescriptor()
+        node.update(identifier=self.get_identifier())
+        if self.current_token.type == TokenType.LSQUAR_PAREN:
+            node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+            node.update(index_begin=self.constant_expression())
+            if self.current_token.type == TokenType.COLON:
+                node.register_token(self.eat(TokenType.COLON))
+                node.update(index_end=self.constant_expression())
+            node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+        return node
+
+    def path_delay_value(self):
+        """
+        <path_delay_value>
+            ::= <path_delay_expression>
+            ||= ( <path_delay_expression>, <path_delay_expression> )
+            ||= ( <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>)
+            ||= ( <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>, <path_delay_expression> )
+            ||= ( <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>, <path_delay_expression>,
+                <path_delay_expression>, <path_delay_expression> )
+
+        <path_delay_expression>
+            ::= <mintypmax_expression>
+        """
+        node = PathDelayValue()

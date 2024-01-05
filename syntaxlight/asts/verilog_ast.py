@@ -308,3 +308,54 @@ class TaskEnable(AST):
 class SystemTaskEnable(AST):
     def __init__(self) -> None:
         super().__init__()
+        
+class SpecifyBlock(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.specify_items = None
+        self.end_keyword = None
+        
+        
+class SpecparamDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.assignments = None
+        
+class PathDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.path_description:PathDeclaration = None
+        self.path_delay_value = None
+        
+class PathDescription(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.specify_input_terminal_descriptor = None
+        self.specify_output_terminal_descriptor = None
+        
+class SpecifyTerminalDescriptor(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.identifier = None
+        self.index_begin = None
+        self.index_end = None
+        
+class PathDelayValue(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.mintypmax_expressions = None
+        
+class MintypmaxExpression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.expr1 = None
+        self.expr2 = None
+        self.expr3 = None
+        
+class Range(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.expr1 = None
+        self.expr2 = None

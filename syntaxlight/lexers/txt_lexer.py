@@ -13,7 +13,7 @@ class TxtLexer(Lexer):
     
     def __init__(self, text: str, LanguageTokenType: Enum = TxtTokenType):
         super().__init__(text, LanguageTokenType)
-        self.build_long_op_dict(['->'])
+        self.build_long_op_dict(['->',"<=",'>=',"<-"])
         
     def get_next_token(self) -> Token:
         

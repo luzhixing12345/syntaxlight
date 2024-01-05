@@ -114,12 +114,13 @@ class VerilogTokenType(Enum):
     EDGE_SYMBOL = "rRfFpPnN"  # r   R   f   F   p   P   n   N   *
     NON_BLOCK_ASSIGN = "<="
     SYSTEM_ID = "SYSTEM_ID"
+    MULTI_ASSIGN = '*>'
 
 
 class VerilogLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = VerilogTokenType):
         super().__init__(text, LanguageTokenType)
-        self.build_long_op_dict(["<=", "->"])
+        self.build_long_op_dict(["<=", "->",'=>','*>','<='])
 
     def get_next_token(self) -> Token:
         while self.current_char is not None:
@@ -161,6 +162,9 @@ class VerilogLexer(Lexer):
                     self.advance()
                 token = Token(VerilogTokenType.SYSTEM_ID, token_value, self.line, self.column - 1)
                 return token
+
+            if self.current_char in self.long_op_dict:
+                return self.get_long_op()
 
             try:
                 token_type = TokenType(self.current_char)
@@ -306,10 +310,11 @@ class VerilogTokenSet:
         )
         self.expandrange = TokenSet(self.range, VerilogTokenType.SCALARED, VerilogTokenType.VECTORED)
         self.delay = TokenSet(TokenType.HASH)
-        self.mintypmax_expression = TokenSet()
+        
         self.drive_strength = TokenSet(TokenType.LPAREN)
 
-        self.expression = TokenSet()
+        self.expression = TokenSet(TokenType.NUMBER, TokenType.ID, TokenType.LPAREN, TokenType.STRING)
+        self.mintypmax_expression = TokenSet(self.expression)
         self.lvalue = TokenSet(TokenType.LCURLY_BRACE, TokenType.ID)
         self.delay_or_event_control = TokenSet(VerilogTokenType.REPEAT, TokenType.HASH, TokenType.AT_SIGN)
         self.case_item = TokenSet(self.expression, VerilogTokenType.DEFAULT)
@@ -334,4 +339,8 @@ class VerilogTokenSet:
             VerilogTokenType.DEASSIGN,
             VerilogTokenType.FORCE,
             VerilogTokenType.RELEASE,
+        )
+        self.specify_item = TokenSet(
+            VerilogTokenType.SPECPARAM,
+            TokenType.LPAREN
         )

@@ -218,6 +218,7 @@ class PrimaryExpression(AST):
     def __init__(self) -> None:
         super().__init__()
         self.sub_node: Union[Identifier, Constant, Expression, Char, GenericSelection] = None
+        self.sticky_strings = None
 
     def visit(self, node_visitor: NodeVisitor = None):
         node_visitor.link(self, self.sub_node)
@@ -611,3 +612,6 @@ class PPtoken(AST):
 class GNU_C_Assembly(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.keyword = None
+        self.asm_qualifier = None
+        self.sticky_strings = None

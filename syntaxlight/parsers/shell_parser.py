@@ -128,7 +128,7 @@ class ShellParser(Parser):
                     is_program_name = True
 
             if self.current_token.type == TokenType.STRING:
-                self.string_inside_format(self.current_token)
+                self.get_string()
                 continue
 
             self.eat()

@@ -1,10 +1,10 @@
-
 from .parser import Parser
 from ..lexers import TokenType, DotTokenType, DotTokenSet
 from ..gdt import *
 from ..error import ErrorCode
 from ..asts.ast import add_ast_type, Identifier
 from ..asts.dot_ast import *
+
 
 class DotCSS(Enum):
     ATTRIBUTE_KEY = "AttributeKey"
@@ -36,7 +36,7 @@ class DotParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be graph or digraph")
 
         if self.current_token.type == TokenType.ID:
-            node.update(name=self.identifier())
+            node.update(name=self.get_identifier())
 
         node.register_token(self.eat(token_type=TokenType.LCURLY_BRACE))
         if self.current_token.type in self.first_set.stmt_list:
@@ -74,9 +74,9 @@ class DotParser(Parser):
         if self.current_token.type == TokenType.ID:
             # <ID> '=' <ID>
             if self.peek_next_token().type == TokenType.ASSIGN:
-                node.update(key=self.identifier())
+                node.update(key=self.get_identifier())
                 node.register_token(self.eat(TokenType.ASSIGN))
-                node.update(value=self.identifier())
+                node.update(value=self.get_identifier())
                 add_ast_type(node.key, DotCSS.ATTRIBUTE_KEY)
                 add_ast_type(node.value, DotCSS.ATTRIBUTE_VALUE)
             # node_stmt 和 edge_stmt 有重叠部分, 需要判断
@@ -140,9 +140,9 @@ class DotParser(Parser):
         keys = []
         values = []
         while self.current_token.type == TokenType.ID:
-            keys.append(self.identifier())
+            keys.append(self.get_identifier())
             node.register_token(self.eat(TokenType.ASSIGN))
-            values.append(self.identifier())
+            values.append(self.get_identifier())
             if self.current_token.type in (TokenType.SEMI, TokenType.COMMA):
                 node.register_token(self.eat())
 
@@ -199,7 +199,7 @@ class DotParser(Parser):
         <node_id> ::= <ID> <port>?
         """
         node = NodeId()
-        node.update(id=self.identifier())
+        node.update(id=self.get_identifier())
         if self.current_token.type == TokenType.COLON:
             node.update(port=self.port())
         return node
@@ -211,10 +211,10 @@ class DotParser(Parser):
         """
         node = Port()
         node.register_token(self.eat(TokenType.COLON))
-        node.update(id=self.identifier())
+        node.update(id=self.get_identifier())
         if self.current_token.type == TokenType.COLON:
             node.register_token(self.eat(TokenType.COLON))
-            node.update(compass_pt=self.identifier())
+            node.update(compass_pt=self.get_identifier())
         return node
 
     def subgraph(self):
@@ -225,7 +225,7 @@ class DotParser(Parser):
         if self.current_token.type == DotTokenType.SUBGRAPH:
             node.update(keyword=self.get_keyword())
             if self.current_token.type == TokenType.ID:
-                node.update(id=self.identifier())
+                node.update(id=self.get_identifier())
         node.register_token(self.eat(token_type=TokenType.LCURLY_BRACE))
         node.update(stmt_list=self.stmt_list())
         node.register_token(self.eat(token_type=TokenType.RCURLY_BRACE))
@@ -236,14 +236,14 @@ class DotParser(Parser):
         <compass_pt> ::= (n | ne | e | se | s | sw | w | nw | c | _)
         """
 
-    def identifier(self):
+    def get_identifier(self):
         if self.current_token.type == TokenType.ID:
             node = Identifier(self.current_token.value)
             node.register_token(self.eat(TokenType.ID))
             return node
         elif self.current_token.type == TokenType.STRING:
-            return self.string()
+            return self.get_string()
         elif self.current_token.type == TokenType.NUMBER:
-            return self.number()
+            return self.get_number()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be id")

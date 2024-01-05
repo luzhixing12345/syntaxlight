@@ -1,4 +1,3 @@
-
 from .parser import Parser
 from ..lexers import TokenType, LuaTokenType, LuaTokenSet, Token
 from ..error import ErrorCode
@@ -8,22 +7,21 @@ from typing import List, Union
 from enum import Enum
 from ..gdt import *
 
+
 class LuaCSS(Enum):
     TABLE_KEY = "TableKey"
     ATTRIBUTE_TYPE = "AttributeType"
 
 
 class LuaParser(Parser):
-    def __init__(
-        self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True
-    ):
+    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True):
         super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
         self.luafirst_set = LuaTokenSet()
 
     def parse(self):
         self.root = self.chunk()
         self.skip_crlf()
-        if self.current_token.type != TokenType.EOF: # pragma: no cover
+        if self.current_token.type != TokenType.EOF:  # pragma: no cover
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
         return self.root
 
@@ -85,7 +83,7 @@ class LuaParser(Parser):
             node.update(keyword=self.get_keyword(LuaTokenType.BREAK))
         elif self.current_token.type == LuaTokenType.GOTO:
             node.update(keyword=self.get_keyword(LuaTokenType.GOTO))
-            node.update(gotoid=self.identifier())
+            node.update(gotoid=self.get_identifier())
         elif self.current_token.type == LuaTokenType.DO:
             node.update(keyword=self.get_keyword(LuaTokenType.DO))
             node.update(block=self.block())
@@ -124,7 +122,7 @@ class LuaParser(Parser):
         elif self.current_token.type == LuaTokenType.FOR:
             node.update(keyword=self.get_keyword(LuaTokenType.FOR))
             if self.peek_next_token().type == TokenType.ASSIGN:
-                node.update(id=self.identifier())
+                node.update(id=self.get_identifier())
                 node.register_token(self.eat(TokenType.ASSIGN))
                 exprs = [self.exp()]
                 node.register_token(self.eat(TokenType.COMMA))
@@ -151,7 +149,7 @@ class LuaParser(Parser):
             node.update(keyword=self.get_keyword(LuaTokenType.LOCAL))
             if self.current_token.type == LuaTokenType.FUNCTION:
                 node.update(sub_keyword=self.get_keyword(LuaTokenType.FUNCTION))
-                node.update(id=self.identifier())
+                node.update(id=self.get_identifier())
                 node.update(funcbody=self.funcbody())
             elif self.current_token.type in self.luafirst_set.attnamelist:
                 node.update(attnamelist=self.attnamelist())
@@ -168,14 +166,14 @@ class LuaParser(Parser):
         """
         result = []
         node = AttributeName()
-        node.update(id=self.identifier())
+        node.update(id=self.get_identifier())
         node.update(attribute=self.attrib())
         result.append(node)
 
         while self.current_token.type == TokenType.COMMA:
             node = AttributeName()
             node.register_token(self.eat(TokenType.COMMA))
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             node.update(attribute=self.attrib())
             result.append(node)
         return result
@@ -189,7 +187,7 @@ class LuaParser(Parser):
         if self.current_token.type == TokenType.LANGLE_BRACE:
             node = Attribute()
             node.register_token(self.eat(TokenType.LANGLE_BRACE))
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             node.register_token(self.eat(TokenType.RANGLE_BRACE))
             # 对于 close 和 const 特殊标记
             if node.id.id in ("close", "const"):
@@ -216,7 +214,7 @@ class LuaParser(Parser):
         """
         node = Label()
         node.register_token(self.eat(TokenType.DOUBLE_COLON))
-        node.update(id=self.identifier())
+        node.update(id=self.get_identifier())
         node.register_token(self.eat(TokenType.DOUBLE_COLON))
         return node
 
@@ -225,16 +223,16 @@ class LuaParser(Parser):
         <funcname> ::= <ID> ('.' <ID>)* (':' <ID>)?
         """
         node = FuncName()
-        node.update(id=self.identifier())
+        node.update(id=self.get_identifier())
         sub_ids = []
         while self.current_token.type == TokenType.DOT:
             node.register_token(self.eat(TokenType.DOT))
-            sub_ids.append(self.identifier())
+            sub_ids.append(self.get_identifier())
         node.update_subnode = True
         node.update(sub_ids=sub_ids)
         if self.current_token.type == TokenType.COLON:
             node.register_token(self.eat(TokenType.COLON))
-            node.update(return_value=self.identifier())
+            node.update(return_value=self.get_identifier())
 
         if len(node.sub_ids) == 0:
             add_ast_type(node.id, CSS.FUNCTION_NAME)
@@ -269,12 +267,12 @@ class LuaParser(Parser):
         """
         node = Variable()
         if self.current_token.type == TokenType.ID:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
             node.update(exp=self.exp())
             node.register_token(self.eat(TokenType.RPAREN))
-        else: # pragma: no cover
+        else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "error in var, should be id or (")
 
         sub_nodes = []
@@ -296,7 +294,7 @@ class LuaParser(Parser):
 
             elif self.current_token.type == TokenType.DOT:
                 sub_node.register_token(self.eat(TokenType.DOT))
-                sub_node.update(id=self.identifier())
+                sub_node.update(id=self.get_identifier())
                 sub_node.suffix_type = VarSuffixType.DOT_ID
                 if self.current_token.type in self.luafirst_set.args:
                     sub_node.update(args=self.args())
@@ -308,7 +306,7 @@ class LuaParser(Parser):
             else:
                 # COLON
                 sub_node.register_token(self.eat(TokenType.COLON))
-                sub_node.update(id=self.identifier())
+                sub_node.update(id=self.get_identifier())
                 sub_node.update(args=self.args())
                 sub_node.suffix_type = VarSuffixType.COLON_ID_FUNCTION
             sub_nodes.append(sub_node)
@@ -356,13 +354,10 @@ class LuaParser(Parser):
         """
         <namelist> ::= <ID> (',' <ID>)*
         """
-        result = [self.identifier()]
-        while (
-            self.current_token.type == TokenType.COMMA
-            and self.peek_next_token().type == TokenType.ID
-        ):
+        result = [self.get_identifier()]
+        while self.current_token.type == TokenType.COMMA and self.peek_next_token().type == TokenType.ID:
             self.eat(TokenType.COMMA)
-            result.append(self.identifier())
+            result.append(self.get_identifier())
         return result
 
     def explist(self) -> List[Expression]:
@@ -396,7 +391,7 @@ class LuaParser(Parser):
             node.register_token(self.eat(TokenType.NUMBER))
         elif self.current_token.type == TokenType.STR:
             node = Expression()
-            node.update(string=self.string_inside_format(self.current_token))
+            node.update(string=self.get_string())
         elif self.current_token.type == TokenType.VARARGS:
             node = Expression()
             varargs = Punctuator(self.current_token.value)
@@ -415,7 +410,7 @@ class LuaParser(Parser):
             node = Expression()
             node.update(unop=self.unop())
             node.update(exp=self.exp())
-        else: # pragma: no cover
+        else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "error in exp")
 
         if self.current_token.type in self.luafirst_set.binop:
@@ -457,9 +452,8 @@ class LuaParser(Parser):
         elif self.current_token.type in self.luafirst_set.tableconstructor:
             node.update(table=self.tableconstructor())
         elif self.current_token.type == TokenType.STR:
-            sub_node = self.string_inside_format(self.current_token)
-            node.update(string=sub_node)
-        else: # pragma: no cover
+            node.update(string = self.get_string())
+        else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "args error")
 
         return node
@@ -493,15 +487,15 @@ class LuaParser(Parser):
         """
 
         if self.current_token.type == TokenType.VARARGS:
-            return self.punctuator()
+            return self.get_punctuator()
         elif self.current_token.type in self.luafirst_set.namelist:
             node = ParameterList()
             node.update(namelist=self.namelist())
             if self.current_token.type == TokenType.COMMA:
                 node.register_token(self.eat(TokenType.COMMA))
-                node.update(varargs=self.punctuator(TokenType.VARARGS))
+                node.update(varargs=self.get_punctuator(TokenType.VARARGS))
             return node
-        else: # pragma: no cover
+        else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "parlist error")
 
     def tableconstructor(self):
@@ -548,11 +542,8 @@ class LuaParser(Parser):
             node.register_token(self.eat(TokenType.RSQUAR_PAREN))
             node.register_token(self.eat(TokenType.ASSIGN))
             node.update(end_exp=self.exp())
-        elif (
-            self.current_token.type == TokenType.ID
-            and self.peek_next_token().type == TokenType.ASSIGN
-        ):
-            node.update(id=self.identifier())
+        elif self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.ASSIGN:
+            node.update(id=self.get_identifier())
             node.register_token(self.eat(TokenType.ASSIGN))
             node.update(exp=self.exp())
         else:
@@ -564,7 +555,7 @@ class LuaParser(Parser):
         <fieldsep> ::= ','
                      | ';'
         """
-        return self.punctuator()
+        return self.get_punctuator()
 
     def binop(self):
         """
@@ -593,7 +584,7 @@ class LuaParser(Parser):
         if self.current_token.type in (LuaTokenType.AND, LuaTokenType.OR):
             return self.get_keyword()
         else:
-            return self.punctuator()
+            return self.get_punctuator()
 
     def unop(self):
         """
@@ -605,11 +596,9 @@ class LuaParser(Parser):
         if self.current_token.type == LuaTokenType.NOT:
             return self.get_keyword()
         else:
-            return self.punctuator()
+            return self.get_punctuator()
 
-    def _match_functiondef(
-        self, varlist: Union[AST, List[AST]], explist: Union[List[Expression], Expression]
-    ):
+    def _match_functiondef(self, varlist: Union[AST, List[AST]], explist: Union[List[Expression], Expression]):
         """
         匹配 varlist 和 explist 的函数定义
         """

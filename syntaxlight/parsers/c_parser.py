@@ -257,7 +257,7 @@ class CParser(Parser):
         if self.current_token.type == CTokenType.TYPEDEF_ID:
             self.current_token.type = TokenType.ID
         if self.current_token.type == TokenType.ID:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
         # else:
         #     # 匿名 struct
         #     if self.current_token.type != TokenType.LCURLY_BRACE:
@@ -429,7 +429,7 @@ class CParser(Parser):
         """
         node = DirectDeclaractor()
         if self.current_token.type == TokenType.ID:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             # 对于初始化的变量去掉其 DefineName 的 tag
             if node.id.id in GDT and GDT[node.id.id] == CSS.MACRO_DEFINE:
                 delete_ast_type(node.id, CSS.MACRO_DEFINE)
@@ -546,10 +546,10 @@ class CParser(Parser):
         """
         <identifier-list> ::= <identifier> ("," <identifier>)*
         """
-        result = [self.identifier()]
+        result = [self.get_identifier()]
         while self.current_token.type == TokenType.COMMA:
             self.eat(TokenType.COMMA)
-            result.append(self.identifier())
+            result.append(self.get_identifier())
         return result
 
     def constant_expression(self):
@@ -872,10 +872,10 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.RPAREN))
             elif self.current_token.type == TokenType.DOT:
                 node.register_token(self.eat(TokenType.DOT))
-                sub_nodes.append(self.identifier())
+                sub_nodes.append(self.get_identifier())
             elif self.current_token.type == TokenType.POINT:
                 node.register_token(self.eat(TokenType.POINT))
-                sub_nodes.append(self.identifier())
+                sub_nodes.append(self.get_identifier())
             else:
                 # ++ --
                 node.register_token(self.eat(self.current_token.type))
@@ -894,11 +894,13 @@ class CParser(Parser):
         """
         node = PrimaryExpression()
         if self.current_token.type == TokenType.ID:
-            sub_node = self.identifier()
+            sub_node = self.get_identifier()
             # 多个 STRING 可以拼接在一起
             # printk(KERN_INFO "%s\n")
+            sticky_strings = []
             while self.current_token.type == TokenType.STRING:
-                self.string_inside_format()
+                sticky_strings.append(self.get_string())
+            node.update(sticky_strings=sticky_strings)
         elif self.current_token.type in self.cfirst_set.constant:
             # @扩展文法
             # Constant 包含了 true, false
@@ -906,11 +908,13 @@ class CParser(Parser):
             sub_node = Constant(self.current_token.value)
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.STRING:
-            sub_node = self.string()
+            sub_node = self.get_string()
             # 多个 STRING 可以拼接在一起
             # printk(KERN_INFO "%s\n")
+            sticky_strings = []
             while self.current_token.type == TokenType.STRING:
-                self.string_inside_format()
+                sticky_strings.append(self.get_string())
+            node.update(sticky_strings=sticky_strings)
         elif self.current_token.type == TokenType.CHARACTER:
             sub_node = Char(self.current_token.value)
             sub_node.register_token(self.eat(self.current_token.type))
@@ -1165,7 +1169,7 @@ class CParser(Parser):
         node = EnumSpecifier()
         node.update(keyword=self.get_keyword(CTokenType.ENUM))
         if self.current_token.type in self.cfirst_set.identifier:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             delete_ast_type(node.id, CSS.MACRO_DEFINE)
             add_ast_type(node.id, CSS.ENUM_ID)
             GDT.register_id(node.id.id, CSS.ENUM_ID)
@@ -1187,7 +1191,7 @@ class CParser(Parser):
         <enumerator> ::= <identifier> ("=" <constant-expression>)?
         """
         node = Enumerator()
-        node.update(id=self.identifier())
+        node.update(id=self.get_identifier())
         add_ast_type(node.id, CSS.ENUMERATOR)
         GDT.register_id(node.id.id, CSS.ENUMERATOR)
         if self.current_token.type == TokenType.ASSIGN:
@@ -1419,7 +1423,7 @@ class CParser(Parser):
             node.register_token(self.eat(TokenType.RSQUAR_PAREN))
         elif self.current_token.type == TokenType.DOT:
             node.register_token(self.eat(TokenType.DOT))
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be constant expression or id")
         return node
@@ -1492,7 +1496,7 @@ class CParser(Parser):
         node = LabeledStatement()
 
         if self.current_token.type in self.cfirst_set.identifier:
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             # goto 的标签
             add_ast_type(node.id, C_CSS.GOTO_LABEL)
             GDT.register_id(node.id.id, C_CSS.GOTO_LABEL)
@@ -1602,7 +1606,7 @@ class CParser(Parser):
         if self.current_token.type in self.cfirst_set.jump_statement:
             if self.current_token.type == CTokenType.GOTO:
                 node.update(keyword=self.get_keyword())
-                node.update(expr=self.identifier())
+                node.update(expr=self.get_identifier())
                 add_ast_type(node.expr, C_CSS.GOTO_LABEL)
             elif self.current_token.type == CTokenType.RETURN:
                 node.update(keyword=self.get_keyword())
@@ -1634,8 +1638,10 @@ class CParser(Parser):
             node.update(asm_qualifier=self.get_keyword())
         node.register_token(self.eat(TokenType.LPAREN))
 
+        sticky_strings = []
         while self.current_token.type == TokenType.STRING:
-            self.string_inside_format()
+            sticky_strings.append(self.get_string())
+        node.update(sticky_strings=sticky_strings)
 
         while self.current_token.type == TokenType.COLON:
             node.register_token(self.eat(TokenType.COLON))
@@ -1656,7 +1662,7 @@ class CParser(Parser):
 
         node.register_token(self.eat(TokenType.RPAREN))
 
-    def identifier(self):
+    def get_identifier(self):
         """
         <ID>
         """
@@ -1674,12 +1680,6 @@ class CParser(Parser):
 
         return node
 
-    def string(self):
-        """
-        string
-        """
-        return self.string_inside_format(self.current_token)
-
     def static_assert_declaration(self):
         """
         <static_assert-declaration> ::= _Static_assert "(" <constant-expression> "," <string> ")"
@@ -1689,7 +1689,7 @@ class CParser(Parser):
         node.register_token(self.eat(TokenType.LPAREN))
         node.update(const_expr=self.constant_expression())
         node.register_token(self.eat(TokenType.COMMA))
-        node.update(string=self.string())
+        node.update(string=self.get_string())
         return node
 
     def group(self):
@@ -1786,7 +1786,7 @@ class CParser(Parser):
             node.update(const_expr=self.constant_expression())
         elif self.current_token.type in (CTokenType.IFDEF, CTokenType.IFNDEF):
             node.update(keyword=self.get_keyword(css_type=CSS.PREPROCESS))
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             add_ast_type(node.id, CSS.MACRO_DEFINE)
             GDT.register_id(node.id.id, CSS.MACRO_DEFINE)
         else:
@@ -1861,14 +1861,14 @@ class CParser(Parser):
             # 这里禁用skip_space和skip_invisible_characters以单步匹配下一个 token
             self.skip_space = False
             self.skip_invisible_characters = False
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
             self.skip_invisible_characters = True
             self.skip_space = True
             if self.current_token.type == TokenType.LPAREN:
                 # parameters 或 parameterization 被定义了说明是函数
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.identifier_list:
-                    node.update(parameters = self.identifier_list())
+                    node.update(parameters=self.identifier_list())
                 if self.current_token.type == TokenType.VARARGS:
                     node.update(parameterization=self.get_keyword(TokenType.VARARGS))
                 node.register_token(self.eat(TokenType.RPAREN))
@@ -1883,10 +1883,10 @@ class CParser(Parser):
 
         elif self.current_token.type == CTokenType.UNDEF:
             node.update(keyword=self.get_keyword(css_type=CSS.PREPROCESS))
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
         elif self.current_token.type in (CTokenType.LINE, CTokenType.ERROR):
             node.update(keyword=self.get_keyword(css_type=CSS.PREPROCESS))
-            node.update(id=self.identifier())
+            node.update(id=self.get_identifier())
 
         elif self.current_token.type == CTokenType.PRAGMA:
             node.update(keyword=self.get_keyword(css_type=CSS.PREPROCESS))
@@ -1923,9 +1923,9 @@ class CParser(Parser):
             self.current_token.type = TokenType.GT
 
         if self.current_token.type == TokenType.ID:
-            return self.identifier()
+            return self.get_identifier()
         elif self.current_token.type == TokenType.STRING:
-            return self.string()
+            return self.get_string()
         elif self.current_token.value in self.lexer.reserved_keywords:
             return self.get_keyword()
         elif self.current_token.type in self.cfirst_set.struct_or_union:
@@ -1945,7 +1945,7 @@ class CParser(Parser):
         """
         node = HeaderName()
         if self.current_token.type == TokenType.STRING:
-            node.update(file_path=self.string())
+            node.update(file_path=self.get_string())
             add_ast_type(node.file_path, C_CSS.HEADER_NAME)
         elif self.current_token.type == TokenType.LANGLE_BRACE:
             node.register_token(self.eat(TokenType.LANGLE_BRACE))

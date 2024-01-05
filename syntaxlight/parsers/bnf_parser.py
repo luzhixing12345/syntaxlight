@@ -126,7 +126,7 @@ class BNFParser(Parser):
         node.update(id=self.identifer())
         node.register_token(self.eat(TokenType.RANGLE_BRACE))
         if self.current_token.type in self.punctuator_first_set:
-            node.update(op=self.punctuator())
+            node.update(op=self.get_punctuator())
         return node
 
     def expression(self):
@@ -165,13 +165,13 @@ class BNFParser(Parser):
         """
         node = Item()
         if self.current_token.type == TokenType.STR:
-            node.update(value=self.string())
+            node.update(value=self.get_string())
         elif self.current_token.type == TokenType.ID:
             node.update(value=self.identifer())
         else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be str or id")
         if self.current_token.type in self.punctuator_first_set:
-            node.update(op=self.punctuator())
+            node.update(op=self.get_punctuator())
         return node
 
     def group_term(self):
@@ -191,10 +191,10 @@ class BNFParser(Parser):
             node.register_token(self.eat(TokenType.RCURLY_BRACE))
 
         if self.current_token.type in self.punctuator_first_set:
-            node.update(op=self.punctuator())
+            node.update(op=self.get_punctuator())
         return node
 
-    def string(self):
+    def get_string(self):
         node = String(self.current_token.value)
         node.register_token(self.eat(TokenType.STR))
         return node

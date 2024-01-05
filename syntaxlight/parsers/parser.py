@@ -321,15 +321,15 @@ class Parser:
             add_ast_type(keyword, css_type)
         return keyword
 
-    def identifier(self, token_type = TokenType.ID) -> Identifier:
+    def get_identifier(self, token_type=TokenType.ID) -> Identifier:
         """
-        ID
+        获取标识符
         """
         node = Identifier(self.current_token.value)
         node.register_token(self.eat(token_type))
         return node
 
-    def punctuator(self, token_type: Enum = None) -> Punctuator:
+    def get_punctuator(self, token_type: Enum = None) -> Punctuator:
         """
         获取运算符
 
@@ -347,18 +347,40 @@ class Parser:
             node.register_token(self.eat(token_type))
         return node
 
-    def string(self):
-        node = WrapString()
-        node.update(strings=self.string_inside_format())
+    def get_string(
+        self,
+        enable_format: bool = True,
+        output_pattern: re.Pattern = r"%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+",
+        invisible_pattern: re.Pattern = r"\\\\|\\n|\\t|\\v|\\f",
+    ) -> String:
+        """
+        获取字符串
+        """
+        if enable_format:
+            node = WrapString()
+            node.update(
+                strings=self.string_inside_format(output_pattern=output_pattern, invisible_pattern=invisible_pattern)
+            )
+        else:
+            node = String(self.current_token.value)
+            node.register_token(self.eat(TokenType.STRING))
         return node
 
-    def string_inside_format(self, token: Token = None) -> List[String]:
+    def string_inside_format(
+        self,
+        token: Token = None,
+        output_pattern: re.Pattern = r"%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+",
+        invisible_pattern: re.Pattern = r"\\\\|\\n|\\t|\\v|\\f",
+    ) -> List[String]:
         """
         取出其中格式化字符(如 %d %x \n) 并新建 token
         """
         if token is None:
             token = self.current_token
-        pattern = r"(%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+|(?:\\\\|\\n|\\t|\\v|\\f))"
+
+        # pattern 是 output_pattern 和 invisible_pattern 的组合
+        pattern = re.compile("(" + output_pattern + "|(?:" + invisible_pattern + "))")
+        # pattern = r"(%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+|(?:\\\\|\\n|\\t|\\v|\\f))"
         sub_strings = re.split(pattern, token.value)
         new_asts = []
         line = token.line
@@ -369,9 +391,9 @@ class Parser:
                 continue
             column += len(sub_string)
             token = Token(token_type, sub_string, line, column)
-            if bool(re.match(r"%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+", sub_string)):
+            if bool(re.match(output_pattern, sub_string)):
                 token.add_css(CSS.FORMAT)
-            elif sub_string in ["\\n", "\\t", "\\f", "\\v", "\\a", "\\b", "\\\\"]:
+            elif bool(re.match(invisible_pattern, sub_string)):
                 token.add_css(CSS.CONTROL)
 
             self.manual_register_token(token)
@@ -382,7 +404,7 @@ class Parser:
         self.manual_get_next_token()
         return new_asts
 
-    def number(self):
+    def get_number(self):
         node = Number(self.current_token.value)
         node.register_token(self.eat())
         return node
