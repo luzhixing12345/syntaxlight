@@ -1,5 +1,8 @@
+from typing import List
+from syntaxlight.lexers.lexer import Token
 from .lexer import Lexer, Token, TokenType, ErrorCode, TokenSet
 from enum import Enum
+import re
 
 
 class VerilogTokenType(Enum):
@@ -150,6 +153,42 @@ class VerilogLexer(Lexer):
             ]
         )
 
+    def get_number(self) -> Token:
+        """
+        <NUMBER>
+            Numbers can be specified in decimal, hexadecimal, octal or binary, and may
+            optionally start with a + or -.  The <BASE> token controls what number digits
+            are legal.  <BASE> must be one of d, h, o, or b, for the bases decimal,
+            hexadecimal, octal, and binary respectively. A number can contain any set of
+            the following characters that is consistent with <BASE>:
+            0123456789abcdefABCDEFxXzZ?
+
+        <BASE> is one of the following tokens:
+            'b   'B   'o   'O   'd   'D   'h   'H
+        """
+        result = ""
+        while self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+        if self.current_char == "'":
+            result += self.current_char
+            self.advance()
+            if self.current_char in "bBoOdDhH":
+                result += self.current_char
+                self.advance()
+            else:
+                result += self.current_char
+                self.advance()
+                token = Token(TokenType.NUMBER, result, self.line, self.column)
+                self.error(ErrorCode.UNKNOWN_CHARACTER, token, "Expected one of 'bBoOdDhH'")
+
+        while self.current_char is not None and bool(re.match(r"[0-9a-fA-FxXzZ]", self.current_char)):
+            result += self.current_char
+            self.advance()
+
+        token = Token(TokenType.NUMBER, result, self.line, self.column - 1)
+        return token
+
     def get_next_token(self) -> Token:
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
@@ -177,7 +216,7 @@ class VerilogLexer(Lexer):
             if self.current_char == '"':
                 return self.get_string()
 
-            if self.current_char.isdigit():
+            if self.current_char.isdigit() or self.current_char == "'":
                 token = self.get_number()
                 if len(token.value) == 1 and token.value in ("0", "1"):
                     token.type = VerilogTokenType.LEVEL_SYMBOL
@@ -413,9 +452,7 @@ class VerilogTokenSet:
             VerilogTokenType.FORCE,
             VerilogTokenType.RELEASE,
         )
-        self.edge_sensitive_path_declaration = TokenSet(
-            VerilogTokenType.IF, TokenType.LPAREN
-        )
+        self.edge_sensitive_path_declaration = TokenSet(VerilogTokenType.IF, TokenType.LPAREN)
         self.specify_item = TokenSet(
             VerilogTokenType.SPECPARAM,
             TokenType.LPAREN,
@@ -425,4 +462,7 @@ class VerilogTokenSet:
         )
 
         self.conditional_port_expression = TokenSet(self.port_expression)
-        self.timing_check_event_control = TokenSet(VerilogTokenType.POSEDGE, VerilogTokenType.NEGEDGE, VerilogTokenType.EDGE)
+        self.timing_check_event_control = TokenSet(
+            VerilogTokenType.POSEDGE, VerilogTokenType.NEGEDGE, VerilogTokenType.EDGE
+        )
+        self.edge_identifier = TokenSet(VerilogTokenType.POSEDGE, VerilogTokenType.NEGEDGE)

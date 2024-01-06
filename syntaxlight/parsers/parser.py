@@ -34,7 +34,8 @@ class Parser:
         message: str = "",
         token: Token = None,
     ):
-        error_trace = self.error_func_trace()
+        if DEBUG:
+            traceback.print_stack()
         if token is None:
             token = self.current_token
 
@@ -50,7 +51,6 @@ class Parser:
             context=self.lexer.get_error_token_context(token),
             file_path=self.lexer.file_path,
             message=message,
-            error_trace=error_trace,
         )
 
     def warning(self, message=None, ast: AST = None):
@@ -65,26 +65,6 @@ class Parser:
         sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color, underline=False) + message + "\n")
         # sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
-    def error_func_trace(self) -> List[str]:
-        """
-        查看 python 函数调用栈
-        """
-        error_trace = []
-        # 前4后2不重要
-        stack_trace = traceback.extract_stack()[4:-2]
-        function_length = 0
-        line_length = 0
-        for stack in stack_trace:
-            _, line_number, function_name, _ = stack
-            function_length = max(function_length, len(function_name))
-            line_length = max(line_length, len(str(line_number)))
-        for stack in stack_trace:
-            _, line_number, function_name, line_of_code = stack
-            error_trace.append(
-                f"[{function_name:>{function_length}}][{line_number:<{line_length}}]: {line_of_code.strip()}"
-            )
-        return error_trace
-
     def eat(self, token_type: Enum = None) -> List[Token]:
         """
         匹配一个 token_type 类型的 token, 并获取下一个 token 更新 current_token
@@ -92,7 +72,7 @@ class Parser:
         token_type 默认值为 None, 表示匹配当前 current_token.type
         """
         # print(token_type, self.current_token)
-        # self._log_trace()
+        # traceback.print_exc()
         # if DEBUG:
         #     import inspect
         #     frame = inspect.currentframe().f_back

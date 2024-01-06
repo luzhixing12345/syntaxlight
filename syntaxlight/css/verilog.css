@@ -1,0 +1,23 @@
+pre[class*="language-verilog"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.ID {
+    color: --variant;
+}
+
+.Token.BraceDepth-0 {
+    color: --brace1;
+}
+
+.Token.BraceDepth-1 {
+    color: --brace2;
+}
+
+.Token.BraceDepth-2 {
+    color: --brace3;
+}
