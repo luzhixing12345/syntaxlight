@@ -18,7 +18,6 @@ from ..asts.ast import (
     Keyword,
     UnaryOp,
     BinaryOp,
-    ConditionalExpression,
     Identifier,
     Constant,
     Expression,
@@ -130,9 +129,10 @@ class CParser(Parser):
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be StorageType or BaseType or QualifyType")
 
+        self._unknown_typedef_id_guess()
         return node
 
-    def _unknown_typedef_id_guess(self, next_token_types=[TokenType.ID, TokenType.MUL]):
+    def _unknown_typedef_id_guess(self):
         """
         @扩展文法
 
@@ -142,11 +142,15 @@ class CParser(Parser):
         - static clock_t *ticks = 10;                 *
 
         下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
-        - static uint64 (*syscalls[])(void)           (
+        - static uint64 (*syscalls[])(void)
         """
-        if self.current_token.type == TokenType.ID and self.peek_next_token().type in next_token_types:
-            self.current_token.type = CTokenType.TYPEDEF_ID
-            GDT.register_id(self.current_token.value, CSS.TYPEDEF)
+        next_token_types = [TokenType.ID, TokenType.MUL]
+
+        if self.current_token.type == TokenType.ID:
+            next_token_type = self.peek_next_token().type
+            if next_token_type in next_token_types:
+                self.current_token.type = CTokenType.TYPEDEF_ID
+                GDT.register_id(self.current_token.value, CSS.TYPEDEF)
 
     def storage_class_specifier(self):
         """
@@ -661,21 +665,15 @@ class CParser(Parser):
     def cast_expression(self):
         """
         <cast-expression> ::= ("(" <type-name> ")")* <unary-expression>
-
-        @修改文法
-        个人感觉这里存在问题, 对于 Person* ptr = &(Person) { "Bob", 30, { 50, 60 } }; 这里的 <type-name> 会被优先匹配到, 而不是匹配后面 <primary-expression> => "(" <type-name> ")" "{" <initializer-list> (",")? "}"
-
-        所以这里做了一个对于 <initializer-list> 的补充
         """
         node = CastExpression()
         type_names = []
 
-        """
-        @特殊处理
-        对于强制类型转换 (uint64)trampoline (见 test/c/40.c)
-        """
+        # @特殊处理 检查强制类型转换: is_type_cast
+        # test/c/40.c
+
         while self.current_token.type == TokenType.LPAREN and (
-            self.peek_next_token().type in self.cfirst_set.type_name or self._type_cast_check()
+            self.peek_next_token().type in self.cfirst_set.type_name or self.is_type_cast()
         ):
             if self.peek_next_token().type in self.cfirst_set.type_name:
                 node.register_token(self.eat(TokenType.LPAREN))
@@ -691,7 +689,13 @@ class CParser(Parser):
         node.update(type_names=type_names)
         if self.current_token.type in self.cfirst_set.unary_expression:
             node.update(expr=self.unary_expression())
+
         elif self.current_token.type == TokenType.LCURLY_BRACE:
+            # @修改文法
+            # 个人感觉这里存在问题, 对于 Person* ptr = &(Person) { "Bob", 30, { 50, 60 } }; 这里的 <type-name> 会被优先匹配到, 而不是匹配后面 <primary-expression> => "(" <type-name> ")" "{" <initializer-list> (",")? "}"
+
+            # 所以这里做了一个对于 <initializer-list> 的补充
+
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             node.update(initializer_list=self.initializer_list())
             if self.current_token.type == TokenType.COMMA:
@@ -701,7 +705,7 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be unary expression or (")
         return node
 
-    def _type_cast_check(self):
+    def is_type_cast(self):
         """
         强制类型转换的情况
 
@@ -727,7 +731,7 @@ class CParser(Parser):
 
         return False
 
-    def unary_expression(self):
+    def unary_expression(self) -> Union[PostfixExpression, UnaryExpression]:
         """
         <unary-expression> ::= <postfix-expression>
                              | "++" <unary-expression>
@@ -757,7 +761,11 @@ class CParser(Parser):
                 self.current_token.type = CTokenType.POINTER
             unary_expr = UnaryOp(op=self.current_token.value)
             unary_expr.register_token(self.eat(self.current_token.type))
-            unary_expr.update(expr=self.cast_expression())
+
+            # @扩展文法: 可能没有 cast_expression
+            # time_t (*)(time_t *)
+            if self.current_token.type != TokenType.RPAREN:
+                unary_expr.update(expr=self.cast_expression())
             node.update(expr=unary_expr)
         elif self.current_token.type == CTokenType.SIZEOF:
             node.update(keyword=self.get_keyword(CTokenType.SIZEOF))
@@ -843,7 +851,7 @@ class CParser(Parser):
                         # 宏函数匹配
                         self._match_macro_function(node.primary_expr.sub_node.id)
 
-        sub_nodes = []
+        sub_nodes: List[Union[AssignmentExpression, Identifier]] = []
         while self.current_token.type in self.cfirst_set.postfix_expression_inside:
             if self.current_token.type == TokenType.LSQUAR_PAREN:
                 node.register_token(self.eat(TokenType.LSQUAR_PAREN))
@@ -851,24 +859,49 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.RSQUAR_PAREN))
             elif self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
-                # function call
-                # 对于函数指针, 不视为 FunctionCall
+                if len(sub_nodes) >= 1:
+                    # @扩展文法
+                    # 对于多个 () 的情况, 有两种可能
+
+                    # time_t (*f)(); 函数指针
+                    # func (*f)(); func 的返回值是一个函数指针, 是一个函数调用
+                    # 在不知道 func 类型的情况下无法判断, 默认视为函数指针形式.
+
+                    # 如果第一个元素是 *fp
+                    if (
+                        type(sub_nodes[0]) == AssignmentExpression
+                        and type(sub_nodes[0].expr.condition_expr) == CastExpression
+                    ):
+                        cast_expr = sub_nodes[0].expr.condition_expr
+                        if type(cast_expr.expr.expr) == UnaryOp:
+                            unary_op = cast_expr.expr.expr
+                            if unary_op.op == "*":
+                                # 修正为函数指针
+                                add_ast_type(unary_op, CSS.FUNCTION_POINTER)
+                                # 修正函数指针返回值类型为 typedef
+                                delete_ast_type(node.primary_expr, CSS.FUNCTION_CALL)
+                                node.primary_expr.sub_node._tokens[0].type = CTokenType.TYPEDEF_ID
+                                add_ast_type(node.primary_expr, CSS.TYPEDEF)
+                                GDT.register_id(node.primary_expr.sub_node.id, CSS.TYPEDEF)
+                                sub_nodes.append(self.parameter_list())
+                                node.register_token(self.eat(TokenType.RPAREN))
+                                continue
+
                 func_node = node.primary_expr.sub_node
                 if type(func_node) == Identifier and GDT[func_node.id] == CSS.FUNCTION_POINTER:
-                    pass
-                elif len(sub_nodes) >= 1:
-                    # 间接调用不视为 FunctionCall
-                    #
-                    # person.printInfo = printPersonInfo;
-                    # person.printInfo(person.name, person.age);
+                    # 对于函数指针, 不视为 FunctionCall
                     pass
                 else:
+                    # 暂且视为 function call
+                    # 也可能是一个函数指针 time_t (*f)() = NULL; 后续再处理
                     add_ast_type(node.primary_expr, CSS.FUNCTION_CALL)
+
                 if self.current_token.type in self.cfirst_set.assignment_expression:
                     sub_nodes.append(self.assignment_expression())
                     while self.current_token.type == TokenType.COMMA:
                         node.register_token(self.eat(TokenType.COMMA))
                         sub_nodes.append(self.assignment_expression())
+
                 node.register_token(self.eat(TokenType.RPAREN))
             elif self.current_token.type == TokenType.DOT:
                 node.register_token(self.eat(TokenType.DOT))
@@ -1232,12 +1265,10 @@ class CParser(Parser):
         if self.current_token.type == CTokenType._ATTRIBUTE:
             node.update(gnu_attribute=self.gnu_c_attribute())
 
-        declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
         self._unknown_typedef_id_guess()
-
+        declaration_specifiers: List[AST] = [self.declaration_sepcifier()]
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_specifiers.append(self.declaration_sepcifier())
-            self._unknown_typedef_id_guess()
 
         if self.current_token.type in self.cfirst_set.init_declarator_list:
             init_declarator_list = self.init_declarator_list()

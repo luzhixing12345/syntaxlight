@@ -1,6 +1,6 @@
 
 
-from .ast import AST, NodeVisitor, Identifier, Constant, Expression, Char
+from .ast import AST, NodeVisitor, Identifier, Constant, Expression, Char, BinaryOp, UnaryOp
 from typing import List, Union
 
 class TranslationUnit(AST):
@@ -174,7 +174,7 @@ class CastExpression(AST):
     def __init__(self) -> None:
         super().__init__()
         self.type_names = None
-        self.expr = None
+        self.expr:UnaryExpression = None
         self.initializer_list = None
 
     def visit(self, node_visitor: NodeVisitor = None):
@@ -184,10 +184,25 @@ class CastExpression(AST):
         return super().visit(node_visitor)
 
 
+class ConditionalExpression(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.condition_expr:Union[BinaryOp, CastExpression] = None
+        self.value_true = None
+        self.value_false = None
+
+    def visit(self, node_visitor: "NodeVisitor" = None):
+        node_visitor.link(self, self.condition_expr)
+        if self.value_true:
+            node_visitor.link(self, self.value_true)
+        if self.value_false:
+            node_visitor.link(self, self.value_false)
+        return super().visit(node_visitor)
+
 class UnaryExpression(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.expr = None
+        self.expr:Union[PostfixExpression, CastExpression, UnaryOp] = None
         self.keyword = None
         self.initializer_list = None
 
@@ -344,7 +359,7 @@ class AbstractDeclarator(AST):
 class AssignmentExpression(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.expr = None
+        self.expr: ConditionalExpression = None
         self.assign_op = None
         self.assignment_expr = None
 

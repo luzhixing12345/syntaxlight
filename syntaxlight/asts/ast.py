@@ -1,7 +1,7 @@
 import textwrap
 from enum import Enum
 from ..lexers import Token
-from typing import List
+from typing import List, Union
 from ..gdt import Enum
 
 AST_CREATED_INDEX = 0
