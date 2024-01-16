@@ -46,7 +46,10 @@ class GlobalDescriptorTable:
         self._loginfo.append(info)
 
     def register_id(self, id_name: str, id_type: Enum, scope: str = "global"):
-        """ """
+        """
+        将一个 id 注册到 GDT 中
+        """
+        assert type(id_name) == str
         # 允许后面覆盖前面
         if id_name in self._descriptors:
             self._log(f"[register_id]: cover {id_name}")

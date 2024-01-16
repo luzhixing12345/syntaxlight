@@ -444,13 +444,14 @@ class CParser(Parser):
             node.register_token(self.eat(TokenType.RPAREN))
         # parameter_declaration 中无法区分, 在 <declarator> 内部区分
         elif self.current_token.type in self.cfirst_set.direct_abstract_declarator:
-            node = self.direct_abstract_declarator()
-            return node
-        elif self.current_token.type == TokenType.RPAREN:
-            return None
+            return self.direct_abstract_declarator()
+        # elif self.current_token.type == TokenType.RPAREN:
+        #     return None
+        # else:
+        #     node = DirectAbstractDeclaractor()
+        #     return node
         else:
-            node = DirectAbstractDeclaractor()
-            return node
+            return None
 
         # 先在这里统一保存, 后续根据 token [] () 来分析具体的 [3](int,int)[4]
         sub_nodes = []
@@ -483,16 +484,15 @@ class CParser(Parser):
                 if node.id is not None:
                     node.is_function = True
                     add_ast_type(node, CSS.FUNCTION_NAME)
-                    # TODO
+                    # TODO: 注册函数到 GDT
                     GDT.register_id(node.id.id, CSS.FUNCTION_NAME)
-                else:
+                if node.declarator is not None:
                     # 函数指针 "(" <declarator> ")"
                     add_ast_type(node, CSS.FUNCTION_POINTER)
-                    fp_node: DirectDeclaractor = node
-                    while fp_node is not None and fp_node.declarator is not None:
-                        fp_node = fp_node.declarator.direct_declarator
-                    if fp_node is not None:
-                        GDT.register_id(fp_node.id.id, CSS.FUNCTION_POINTER)
+                    # 找到最底层的函数指针的名字, 标记为 FUNCTION_POINTER
+                    declarator_id = self._find_declaractor_id(node)
+                    if declarator_id is not None:
+                        GDT.register_id(declarator_id.id, CSS.FUNCTION_POINTER)
 
                 node.register_token(self.eat(TokenType.LPAREN))
                 self._unknown_typedef_id_guess()
@@ -513,6 +513,26 @@ class CParser(Parser):
         if self.current_token.type == CTokenType._ATTRIBUTE:
             node.update(gnu_attribute=self.gnu_c_attribute())
         return node
+
+    def _find_declaractor_id(self, node: DirectDeclaractor) -> Identifier:
+        """
+        找到变量的 id node
+        """
+        # int (*(*fp));
+        if node.declarator is not None:
+            # 函数指针 "(" <declarator> ")"
+            # 找到最底层的函数指针的名字, 标记为 FUNCTION_POINTER
+            fp_node = node
+            while fp_node is not None and fp_node.declarator is not None:
+                fp_node = fp_node.declarator.direct_declarator
+            if fp_node is not None:
+                return fp_node.id
+        # int x;
+        elif node.id is not None:
+            # node.id 应该有值
+            return node.id
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be declarator or id")
 
     def type_qualifier_list(self) -> List[AST]:
         """
@@ -883,6 +903,8 @@ class CParser(Parser):
                                 node.primary_expr.sub_node._tokens[0].type = CTokenType.TYPEDEF_ID
                                 add_ast_type(node.primary_expr, CSS.TYPEDEF)
                                 GDT.register_id(node.primary_expr.sub_node.id, CSS.TYPEDEF)
+
+                                self._unknown_typedef_id_guess()
                                 sub_nodes.append(self.parameter_list())
                                 node.register_token(self.eat(TokenType.RPAREN))
                                 continue
@@ -1114,10 +1136,8 @@ class CParser(Parser):
         node = ParameterDeclaration()
         self._unknown_typedef_id_guess()
         declaration_sepcifiers = [self.declaration_sepcifier()]
-        self._unknown_typedef_id_guess()
         while self.current_token.type in self.cfirst_set.declaration_specifier:
             declaration_sepcifiers.append(self.declaration_sepcifier())
-            self._unknown_typedef_id_guess()
         node.update(declaration_sepcifiers=declaration_sepcifiers)
 
         # 这里也没有办法 LL1 的判断, 先统统考虑为 <declarator>
@@ -1160,6 +1180,15 @@ class CParser(Parser):
                     sub_node.update(expr=self.abstract_declarator())
                 elif self.current_token.type in self.cfirst_set.parameter_list:
                     sub_node.update(expr=self.parameter_list())
+                elif self.current_token.type == TokenType.MUL:
+                    # void (*binary_func)() = (void (*)())mem;
+                    #                                |
+                    self.current_token.type = CTokenType.POINTER
+                    sub_node.register_token(self.eat(CTokenType.POINTER))
+                elif self.current_token.type == TokenType.RPAREN:
+                    # void (*binary_func)() = (void (*)())mem;
+                    #                                   |
+                    pass
                 else:
                     self.error(
                         ErrorCode.UNEXPECTED_TOKEN,
@@ -1282,8 +1311,10 @@ class CParser(Parser):
                 # 对于 typedef 重命名的符号, 加入 GDT 中
                 if type(node.declaration_specifiers[0]) == Keyword and node.declaration_specifiers[0].name == "typedef":
                     for init_declarator in node.init_declarator_list:
-                        add_ast_type(init_declarator.declarator.direct_declarator.id, CSS.TYPEDEF)
-                        GDT.register_id(init_declarator.declarator.direct_declarator.id.id, CSS.TYPEDEF)
+                        declarator_id = self._find_declaractor_id(init_declarator.declarator.direct_declarator)
+                        declarator_id._tokens[0].type = CTokenType.TYPEDEF_ID
+                        add_ast_type(declarator_id, CSS.TYPEDEF)
+                        GDT.register_id(declarator_id.id, CSS.TYPEDEF)
 
                 return node
             elif self._is_C_function(init_declarator_list) and (

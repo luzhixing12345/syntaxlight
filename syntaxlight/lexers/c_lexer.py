@@ -73,8 +73,8 @@ class CTokenType(Enum):
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
 
-    POINTER = "POINTER"
-    STAR = "STAR"
+    POINTER = "POINTER" # 指针 *
+    STAR = "STAR" # 任意占位符 *
     TYPEDEF_ID = "typedef-id"
 
     # 预处理关键字, 除if else外默认被解析为 ID, 在解析过程中处理
@@ -233,8 +233,9 @@ class CTokenSet:
             self.function_speficier,
             self.alignment_specifier,
         )
+        # declarator 这里添加 [ 是为了匹配无形参名类型的参数, 例如 int[]
         self.declarator = TokenSet(
-            TokenType.MUL, TokenType.ID, TokenType.LPAREN  # => CTokenType.POINTER
+            TokenType.MUL, TokenType.ID, TokenType.LPAREN, TokenType.LSQUAR_PAREN  # => CTokenType.POINTER
         )
         self.function_definition = TokenSet(self.declaration_specifier, self.declarator)
         self.declaration = TokenSet(self.declaration_specifier, CTokenType._ATTRIBUTE)
