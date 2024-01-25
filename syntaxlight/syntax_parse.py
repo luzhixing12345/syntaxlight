@@ -11,16 +11,21 @@ def parse(text: str, language=None, file_path=None, show_error_context=True, sav
     if len(text) == 0:
         return ""
     language = clean_language(language)
+    parser = get_parser(text, language)
+    parser.lexer.file_path = file_path
 
     try:
-        parser = get_parser(text, language)
-        parser.lexer.file_path = file_path
         parser.parse()
     except Error as e:
         sys.stderr.write(e.message)
         if show_error_context:
             sys.stderr.write(e.context)
-    else:
+        
+        # 失败后将剩余部分也解析
+        while parser.current_token.type != TokenType.EOF:
+            parser.eat()
+        
+    finally:
         display_ast(parser.root, parser.sub_roots, save_ast_tree=save_ast_tree)
         # print(parser.node)
         return parser.to_html()
