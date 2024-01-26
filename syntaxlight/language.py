@@ -27,7 +27,8 @@ SUPPORTED_SYNTAX = {
     "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=['yml','yaml']),
     "python": SyntaxDict(lexer=PythonLexer, parser=PythonParser, suffix=["py"]),
     "txt": SyntaxDict(lexer=TxtLexer, parser=TxtParser, suffix=['txt']),
-    "verilog": SyntaxDict(lexer=VerilogLexer, parser=VerilogParser, suffix=['v'])
+    "verilog": SyntaxDict(lexer=VerilogLexer, parser=VerilogParser, suffix=['v']),
+    "rust": SyntaxDict(lexer=RustLexer, parser=RustParser, suffix=['rs']),
 }
 
 supported_languages = list(SUPPORTED_SYNTAX.keys())

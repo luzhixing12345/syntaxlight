@@ -51,7 +51,7 @@ def parse_file(file_path: str, language=None, show_error_context=True, save_ast_
 def get_tokens(lexer: Lexer):
     token = lexer.get_next_token()
     tokens = [token]
-    while token.type.value != "EOF":
+    while token.type != TokenType.EOF:
         try:
             token = lexer.get_next_token()
             tokens.append(token)

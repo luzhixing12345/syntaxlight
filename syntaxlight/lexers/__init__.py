@@ -19,3 +19,4 @@ from .yaml_lexer import YamlLexer, YamlTokenType
 from .python_lexer import PythonLexer, PythonTokenType
 from .txt_lexer import TxtLexer, TxtTokenType
 from .verilog_lexer import VerilogTokenType, VerilogLexer, VerilogTokenSet
+from .rust_lexer import RustLexer, RustTokenType, RustTokenSet

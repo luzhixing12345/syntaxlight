@@ -1,0 +1,311 @@
+////////////////////////////////////////////////////////////////////////
+// Part 1: Items and attributes
+////////////////////////////////////////////////////////////////////////
+
+rustFile ::= inner_attr* item_with_attrs *
+
+inner_attr ::= '#!' '[' meta_item ']'
+
+outer_attrs ::= outer_attr *
+
+outer_attr ::= '#' '[' meta_item ']'
+
+meta_item ::= ident '=' lit
+            | ident '(' <<comma_separated_list meta_item>> ')'
+            | ident
+
+item_with_attrs ::= attrs_and_vis item
+
+attrs_and_vis ::= outer_attrs [visibility]
+
+// items that can appear outside of a fn block
+private item ::= stmt_item
+               | use_item
+               | extern_crate_item
+
+
+extern_crate_item ::= extern crate ident [as ident] ';'
+use_item ::= use path_glob ';'
+
+path_glob ::= path_item ["::" (path_glob | "*")]
+            | '{' [<<comma_separated_list path_item>>] '}'
+
+path_item ::= ident | self
+
+// items that can appear in "stmts"
+private stmt_item ::= static_item
+                    | const_item
+                    | type_item
+                    | block_item
+
+static_item ::= static [mut] ident ':' ty '=' expr ';'
+
+const_item ::= const ident ':' ty '=' expr ';'
+
+type_item ::= type ident [generic_params] [where_clause] '=' ty_sum ';'
+
+private block_item ::= fn_item
+                     | mod_item
+                     | struct_item
+                     | enum_item
+                     | impl_item
+                     | trait_item
+                     | foreign_mod_item
+
+
+visibility ::= pub
+
+fn_item ::= fn ident [generic_params] fn_params [ret_ty] [where_clause] block_expr
+
+private fn_params ::= '(' [ <<comma_separated_list fn_param>> ] ')'
+
+fn_param ::= pat ':' ty_sum
+
+private ret_ty ::= '->' ('!' | ty)
+
+generic_params ::= '<' [lifetime] [<<comma_separated_list ty_param>>] '>'
+
+where_clause ::= where <<comma_separated_list (ty ':' ty_param_bounds)>>
+
+mod_item ::= mod ident ('{' inner_attr* item_with_attrs* '}' | ';')
+
+struct_item ::= struct ident [generic_params] ( [where_clause] ';'
+                                              | tuple_struct_body [where_clause] ';'
+                                              | [where_clause] record_struct_body)
+
+tuple_struct_body ::= '(' <<comma_separated_list tuple_struct_member>> ')'
+
+tuple_struct_member ::= outer_attrs [visibility] ty
+
+record_struct_body ::= '{' <<comma_separated_list record_struct_member>> '}'
+
+record_struct_member ::= [visibility] ident ':' ty_sum
+
+enum_item ::= enum ident [generic_params] enum_body
+enum_body ::= '{' <<comma_separated_list enum_member>> '}'
+enum_member ::= outer_attrs [visibility] ident [record_struct_body | tuple_struct_body]
+
+impl_item ::= [unsafe] impl [generic_params] ty_sum [for ty_sum] [where_clause]
+              '{' inner_attr* ([visibility] impl_member)* '}'
+
+impl_member ::= type ident '=' ty_sum ';'
+              | const ident ':' ty_sum '=' expr ';'
+              | member_fn_item
+
+member_fn_item ::= fn ident [generic_params] member_fn_params [ret_ty] [where_clause] block_expr
+
+member_fn_params ::= '(' ')'
+                   | '(' self_param [','] ')'
+                   | '(' self_param ',' <<comma_separated_list fn_param>> ')'
+                   | '(' <<comma_separated_list fn_param>> ')'
+
+self_param ::= ['&' [lifetime]] [mut] self
+
+trait_item ::= trait ident [generic_params] [':' ty_param_bounds] [where_clause] trait_body
+
+trait_body ::= '{' (outer_attrs trait_member) * '}'
+
+trait_member ::= type ty_param ';'
+               | fn ident [generic_params] member_fn_params [ret_ty] [where_clause] (';' | block_expr )
+
+foreign_mod_item ::= extern [abi] '{' inner_attr*  foreign_item* '}'
+abi ::= lit_string
+foreign_item ::= outer_attrs [visibility] fn ident [generic_params] fn_params [ret_ty] [where_clause] ';'
+
+////////////////////////////////////////////////////////////////////////
+// Part 2: Patterns
+////////////////////////////////////////////////////////////////////////
+
+pat ::= '_'
+      | '&' pat
+      | mut ident
+      | ref [mut] ident
+      | '(' <<comma_separated_list pat>> ')'
+      | '[' <<comma_separated_list pat>> ']'
+      | path '(' <<comma_separated_list pat>> ')'
+      | path '{' <<comma_separated_list pat_field>> ['..']'}'
+      | path
+      | lit
+
+pat_field ::= ident ':' pat | [ref] [mut] ident
+
+pats ::= pat ('|' pat)*
+
+////////////////////////////////////////////////////////////////////////
+// Part 3: Types
+////////////////////////////////////////////////////////////////////////
+
+ty_sum ::= ty ['+' ty_param_bounds]
+
+ty ::= '(' ty_sum ')'
+     | '()'
+     | '(' <<comma_separated_list ty>> ')'
+     | '*' ptr
+     | '[' ty_sum ']'
+     | '[' ty_sum ';' expr ']'
+     | '&' [lifetime] [mut] ty
+     | bare_fn
+     | type_path
+
+ty_param ::= ident [':' ty_param_bounds]
+
+ty_param_bounds ::= ty_param_bound ('+' ty_param_bound)*
+ty_param_bound ::= lifetime | type_path
+
+// XXX: things like `Fn(f64, f64) -> f64` are also paths
+type_path ::= type_path_segment ("::" type_path_segment)*
+type_path_segment ::= ident [generic_values | '(' [<<comma_separated_list ty_sum>>] ')' [ret_ty]]
+
+path ::= ident ("::" ident)*
+
+////////////////////////////////////////////////////////////////////////
+// Part 4: Blocks, statements, and expressions
+////////////////////////////////////////////////////////////////////////
+
+expr_path ::= expr_path_segment ("::" expr_path_segment)*
+expr_path_segment ::= ident ["::" generic_values]
+
+generic_values ::= '<' <<comma_separated_list (ident '=' ty | ty_sum | lifetime)>> '>'
+
+stmt ::= stmt_item
+       | let pat [':' ty_sum] ['=' expr] ';'
+       | statement_like_expr
+       | expr ';'
+       | ';'
+
+
+// the root expression rule
+expr ::= assign_expr
+       | range_expr
+       | lor_expr
+       | land_expr
+       | comp_group
+       | bor_expr
+       | bxor_expr
+       | band_expr
+       | shift_group
+       | add_group
+       | mul_group
+       | cast_expr
+       | unary_group
+       | macro_expr
+       | ref_group
+       | primary_group
+
+
+// private rules to define operators with the same priority
+private comp_group ::= eq_expr | neq_expr | lt_expr | gt_expr | leq_expr | geq_expr
+private shift_group ::= shl_expr | shr_expr
+private add_group ::= plus_expr | minus_expr
+private mul_group ::= mul_expr | div_expr | mod_expr
+private unary_group ::= box_expr | unary_min_expr | deref_expr | not_expr | borrow_expr
+private ref_group ::= ref_expr | array_ref_expr | call_expr
+private primary_group ::= struct_expr
+                        | simple_ref_expr
+                        | literal_expr
+                        | paren_expr
+                        | tuple_expr
+                        | array_expr
+                        | lambda_expr
+                        | return_expr
+                        | statement_like_expr
+
+statement_like_expr ::= block_expr
+                      | unsafe_block_expr
+                      | if_expr
+                      | while_expr
+                      | loop_expr
+                      | match_expr
+                      | for_expr
+
+// public rules for each expression
+assign_expr ::= expr  [bin_op] '=' expr { rightAssociative=true }
+bin_op ::= '+' | '-' | '*' | '/' | '%' | '<<' | '>>' | '|' | '&'
+range_expr ::= expr '..' expr
+lor_expr ::= expr '||' expr
+land_expr ::= expr '&&' expr
+
+eq_expr ::= expr '==' expr
+neq_expr ::= expr '!=' expr
+lt_expr ::= expr '<' expr
+gt_expr ::= expr '>' expr
+leq_expr ::= expr '<=' expr
+geq_expr ::= expr '>=' expr
+
+bor_expr ::= expr '|' expr
+bxor_expr ::= expr '^' expr
+
+band_expr ::= expr '&' expr
+
+shl_expr ::= expr '<<' expr
+shr_expr ::= expr '>>' expr
+
+minus_expr ::= expr '-' expr
+plus_expr ::= expr '+' expr
+
+div_expr ::= expr '/' expr
+mul_expr ::= expr '*' expr
+mod_expr ::= expr '%' expr
+
+cast_expr ::= expr 'as' ty
+
+unary_min_expr ::= '-' expr
+deref_expr ::= '*' expr
+not_expr ::= '!' expr
+borrow_expr ::= '&' [mut] expr
+
+macro_expr ::= ident '!' '(' [<<comma_separated_list expr>>] ')'
+
+ref_expr ::= expr '.' (ident | lit_integer)
+array_ref_expr ::= expr '[' index_expr ']'
+private index_expr ::= expr
+call_expr ::= expr ["::" generic_values] '(' [<<comma_separated_list expr>>] ')'
+
+simple_ref_expr ::= expr_path | self
+literal_expr ::= lit
+paren_expr ::= &('(' expr ')') '(' expr ')'
+tuple_expr ::= '(' expr ',' [<<comma_separated_list expr>>] ')'
+array_expr ::= '[' expr ';' expr ']'
+             | '[' [<<comma_separated_list expr>>] ']'
+block_expr ::= '{' stmt* [expr] '}'
+unsafe_block_expr ::= unsafe block_expr
+
+lambda_expr ::= ('||' | '|' [<<comma_separated_list lambda_param>>] '|') [ret_ty] expr
+lambda_param ::= pat [":" ty_sum]
+
+struct_expr ::= expr_path '{' <<comma_separated_list struct_field>> ['..' expr]'}'
+struct_field ::= ident ':' expr
+
+box_expr ::= box expr
+
+return_expr ::= return [expr]
+
+if_expr ::= if (let pat '=' expr | expr) block_expr [else (if_expr | block_expr)]
+
+while_expr ::= while (let pat '=' expr | expr) block_expr
+
+loop_expr ::= loop block_expr
+
+match_expr ::= match expr '{'
+    (pats [if expr] '=>' (block_expr [',']| expr ','))*
+    [pats [if expr] '=>' expr]
+'}'
+
+for_expr ::= for pat in expr block_expr
+
+////////////////////////////////////////////////////////////////////////
+// Part 5: Macros and misc. rules
+////////////////////////////////////////////////////////////////////////
+
+lit ::= lit_byte
+      | lit_char
+      | lit_integer
+      | lit_float
+      | lit_string
+      | lit_byte_string
+      | '()'
+      | true
+      | false
+      | str
+
+meta comma_separated_list ::= <<param>> ( ',' <<param>> ) * [',']
