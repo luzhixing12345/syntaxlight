@@ -7,7 +7,7 @@ from .asts.ast import display_ast
 import sys
 
 
-def parse(text: str, language=None, file_path=None, show_error_context=True, save_ast_tree=False) -> str:
+def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> str:
     if len(text) == 0:
         return ""
     language = clean_language(language)
@@ -18,9 +18,6 @@ def parse(text: str, language=None, file_path=None, show_error_context=True, sav
         parser.parse()
     except Error as e:
         sys.stderr.write(e.message)
-        if show_error_context:
-            sys.stderr.write(e.context)
-        
         # 失败后将剩余部分也解析
         while parser.current_token.type != TokenType.EOF:
             parser.eat()
@@ -31,7 +28,7 @@ def parse(text: str, language=None, file_path=None, show_error_context=True, sav
         return parser.to_html()
 
 
-def parse_file(file_path: str, language=None, show_error_context=True, save_ast_tree=False) -> str:
+def parse_file(file_path: str, language=None, save_ast_tree=False) -> str:
     if not os.path.exists(file_path):
         print(f"{file_path} file not exsist")
 
@@ -44,7 +41,7 @@ def parse_file(file_path: str, language=None, show_error_context=True, save_ast_
         language = clean_language(language)
 
     return parse(
-        text, language=language, file_path=file_path, show_error_context=show_error_context, save_ast_tree=save_ast_tree
+        text, language=language, file_path=file_path, save_ast_tree=save_ast_tree
     )
 
 

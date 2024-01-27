@@ -1,5 +1,5 @@
 from enum import Enum
-from ..error import ErrorCode, LexerError
+from ..error import ErrorCode, LexerError, TTYColor, ttyinfo
 from typing import Dict, List, Tuple
 import re
 
@@ -25,7 +25,7 @@ class TokenType(Enum):
     RSQUAR_PAREN = "]"
     LCURLY_BRACE = "{"
     RCURLY_BRACE = "}"
-    LANGLE_BRACE = "<"  # 左尖括号, 如果想表达小于应转换为 LT 
+    LANGLE_BRACE = "<"  # 左尖括号, 如果想表达小于应转换为 LT
     RANGLE_BRACE = ">"  # 右尖括号, 如果想表达大于应转换为 GT
     UNDERLINE = "_"
     SEMI = ";"
@@ -99,17 +99,6 @@ class TokenType(Enum):
     DOUBLE_HASH = "##"
 
 
-class TTYColor(Enum):
-    BLACK = 30
-    RED = 91
-    GREEN = 92
-    YELLOW = 93
-    BLUE = 94
-    MAGENTA = 95
-    CYAN = 96
-    WHITE = 97
-
-
 class Token:
     def __init__(self, type: Enum, value, line=None, column=None):
         self.type: Enum = type
@@ -169,8 +158,8 @@ class Lexer:
         self.line: int = 1
         self.column: int = 1  # 指向 token 的 value 中最后出现的字符的位置
         self.LanguageTokenType: Enum = LanguageTokenType
-        self.context_bias = 10  # 发生错误时 token 的前后文行数
-        self.file_path = None  # 手动修改文件路径, 用于后期错误处理的输出
+        self.context_bias = 3  # 发生错误时 token 的前后文行数
+        self.file_path = ""  # 手动修改文件路径, 用于后期错误处理的输出
         self._status_stack = []  # 状态栈
 
         # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
@@ -210,17 +199,6 @@ class Lexer:
                 self.long_op_dict[long_op[0]] = []
             self.long_op_dict[long_op[0]].append(long_op[1:])
 
-    def ttyinfo(self, text: str, color: TTYColor = TTYColor.RED, underline=True) -> str:
-        """
-        tty 彩色输出, 默认红色
-        """
-        ESC = "\033"
-        UNDERLINE = 4
-        if underline:
-            return f"{ESC}[{color.value}m{ESC}[{UNDERLINE}m{text}{ESC}[0m"
-        else:
-            return f"{ESC}[{color.value}m{text}{ESC}[0m"
-
     def _record(self):
         """
         用于 parser 中 peek_next_token
@@ -228,9 +206,7 @@ class Lexer:
         记录当前 lexer 解析状态, 被 _reset 调用时恢复
         """
         # 采用栈的方式保存数据状态, 避免由于 peek_next_token 中的 eat 导致多次嵌套调用覆盖数据
-        self._status_stack.append(
-            {"pos": self.pos, "c": self.current_char, "line": self.line, "column": self.column}
-        )
+        self._status_stack.append({"pos": self.pos, "c": self.current_char, "line": self.line, "column": self.column})
 
     def _reset(self):
         """
@@ -244,33 +220,57 @@ class Lexer:
         self.line = status["line"]
         self.column = status["column"]
 
-    def error(self, error_code: ErrorCode = None, token: Token = None, message: str = ""):
-        raise LexerError(
+    def error(self, error_code: ErrorCode = None, token: Token = None, message: str = "", ErrorType=LexerError):
+        """
+        仿 rust 错误输出格式
+
+          --> src/main.rs:33:9
+           |
+        33 |     let result = loop {
+           |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
+           |
+           = note: `#[warn(unused_variables)]` on by default
+        """
+        # 对于 file_path 的处理, 去掉开头的 ./
+        # \ 改为 /
+        if self.file_path.startswith("./"):
+            self.file_path = self.file_path[2:]
+        self.file_path = self.file_path.replace("\\", "/")
+
+        error_position = (
+            " " * len(str(token.line))
+            + ttyinfo("--> ", TTYColor.BLUE)
+            + self.file_path
+            + f":{token.line}:{token.column}\n"
+        )
+        error_context = self.get_error_token_context(token)
+        error_info = " " * len(str(token.line)) + ttyinfo(" = ", TTYColor.BLUE) + f"{ttyinfo('note', TTYColor.YELLOW)}: {message}"
+        raise ErrorType(
             error_code=error_code,
-            token=token,
-            context=self.get_error_token_context(token),
-            file_path=self.file_path,
-            message=message,
+            error_position=error_position,
+            error_context=error_context,
+            error_info=error_info,
         )
 
     def get_error_token_context(self, token: Token) -> str:
         """
-        出错时获取上下文
+        出错时获取上下文, 报错信息输出格式参考 rust
         """
         lines = self.text.split("\n")
         lines.insert(0, [])
 
-        if token.type == TokenType.EOF:
-            return ""
+        # if token.type == TokenType.EOF:
+        #     return ""
         context_start_line = max(token.line - self.context_bias, 1)
         context_end_line = min(token.line + self.context_bias, len(lines))
+
         context = ""
 
         # token 为多行文本的处理
         current_context_line = token.line  # 当前处于哪一行, 从下往上找
         token_length = len(token.value)
         token_lines = []  # token 的所占行
-        column = token.column  # 当前行
+        column = token.column  # 当前列
 
         #  如果当前行的列数少于 token 的长度, 说明 token 跨行, 将当前行加入到 token_lines 中并且继续到上一行去找
         while column < token_length:
@@ -283,14 +283,11 @@ class Lexer:
         if token_length != 0:
             token_lines.insert(0, current_context_line)
 
-        # 单行 token
-        if len(token_lines) == 0:
-            token_lines.append(token.line)
-            token_length = len(token.value)
-
+        left_space_length = len(str(token_lines[-1]))
         for i in range(context_start_line, context_end_line):
             # print(i, token.lineno)
             if i not in token_lines:
+                context += ttyinfo(" " * left_space_length + " | ", TTYColor.BLUE)
                 context += lines[i] + "\n"
             else:
                 if len(token_lines) == 1:
@@ -298,18 +295,26 @@ class Lexer:
                     pre_context = lines[i][: token.column - token_length]
                     # token 后面的部分
                     end_context = lines[i][token.column :]
-                    context += pre_context + self.ttyinfo(token.value) + end_context + "\n"
+
+                    context += (
+                        ttyinfo(str(i) + " | ", TTYColor.BLUE)
+                        + pre_context
+                        + ttyinfo(token.value, underline=True)
+                        + end_context
+                        + "\n"
+                    )
                 else:
                     if i == token_lines[0]:
+                        context += ttyinfo(str(i) + " | ", TTYColor.BLUE)
                         pre_context = lines[i][: column - token_length]
-                        context += (
-                            pre_context + self.ttyinfo(lines[i][column - token_length :]) + "\n"
-                        )
+                        context += pre_context + ttyinfo(lines[i][column - token_length :], underline=True) + "\n"
                     elif i == token_lines[-1]:
                         end_context = lines[i][token.column + 1 :]
-                        context += self.ttyinfo(lines[i][: token.column + 1]) + f"{end_context}\n"
+                        context += ttyinfo(" " * left_space_length + " | ", TTYColor.BLUE)
+                        context += ttyinfo(lines[i][: token.column + 1]) + f"{end_context}\n"
                     else:
-                        context += self.ttyinfo(lines[i]) + "\n"
+                        context += ttyinfo(" " * left_space_length + " | ", TTYColor.BLUE)
+                        context += ttyinfo(lines[i]) + "\n"
 
         return context
 
@@ -524,10 +529,7 @@ class Lexer:
 
         end_symbol_length = len(end_symbol)
         while self.current_char is not None:
-            if (
-                self.current_char == end_symbol[0]
-                and self.peek(end_symbol_length - 1) == end_symbol[1:]
-            ):
+            if self.current_char == end_symbol[0] and self.peek(end_symbol_length - 1) == end_symbol[1:]:
                 break
             else:
                 if self.current_char == "\\":
@@ -559,20 +561,14 @@ class Lexer:
         此函数应次于 get_number 调用
         """
         result = ""
-        while self.current_char is not None and (
-            self.current_char.isalnum() or self.current_char in extend_chars
-        ):
+        while self.current_char is not None and (self.current_char.isalnum() or self.current_char in extend_chars):
             result += self.current_char
             self.advance()
 
         # 忽略关键字的大小写
         if ignore_case:
             token_type = next(
-                (
-                    self.reserved_keywords[item]
-                    for item in self.reserved_keywords
-                    if item.lower() == result.lower()
-                ),
+                (self.reserved_keywords[item] for item in self.reserved_keywords if item.lower() == result.lower()),
                 None,
             )
             # token_type = self.reserved_keywords.get(result.upper())
@@ -636,9 +632,9 @@ class Lexer:
     def get_long_op(self):
         """
         匹配一个长运算符
-        
+
         需要使用 build_long_op_dict 函数设置所有支持的长运算符
-        
+
         默认的一些常用长运算符见 TokenType, 也可以自定义新的长运算符
         """
         assert self.current_char in self.long_op_dict

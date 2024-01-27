@@ -1,5 +1,5 @@
 from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
-from ..error import ParserError, ErrorCode
+from ..error import ParserError, ErrorCode, ttyinfo
 from enum import Enum
 from ..asts.ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
 from typing import List, Callable
@@ -11,7 +11,7 @@ from ..gdt import CSS
 
 
 DEBUG = False
-DEBUG = True
+# DEBUG = True
 
 
 class Parser:
@@ -34,6 +34,16 @@ class Parser:
         message: str = "",
         token: Token = None,
     ):
+        """
+        仿 rust 错误输出格式
+
+          --> src/main.rs:33:9
+           |
+        33 |     let result = loop {
+           |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
+           |
+           = note: `#[warn(unused_variables)]` on by default
+        """
         if DEBUG:
             traceback.print_stack()
         if token is None:
@@ -45,13 +55,7 @@ class Parser:
             else:
                 message = token.value
 
-        raise ParserError(
-            error_code=error_code,
-            token=token,
-            context=self.lexer.get_error_token_context(token),
-            file_path=self.lexer.file_path,
-            message=message,
-        )
+        self.lexer.error(error_code, token, message, ParserError)
 
     def warning(self, message=None, ast: AST = None):
         """
@@ -62,7 +66,7 @@ class Parser:
 
         warning_color = TTYColor.MAGENTA
 
-        sys.stderr.write(self.lexer.ttyinfo("warning: ", warning_color, underline=False) + message + "\n")
+        sys.stderr.write(ttyinfo("warning: ", warning_color) + message + "\n")
         # sys.stderr.write(self.lexer.ttyinfo(str(ast), warning_color))
 
     def eat(self, token_type: Enum = None) -> List[Token]:
@@ -207,7 +211,7 @@ class Parser:
 
     def look_back_token(self, n=1) -> Token:
         """
-        查看前面以匹配的 token 类型
+        查看前面已经匹配的 token 类型
         """
         return self._token_list[-n]
 

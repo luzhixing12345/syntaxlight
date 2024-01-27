@@ -57,7 +57,7 @@ class JsonParser(Parser):
                 #                                    |
                 # }                             trailing comma
                 if self.current_token.type == TokenType.RCURLY_BRACE:
-                    self.error(ErrorCode.TRAILING_COMMA, token=comma, message=TokenType.COMMA.value)
+                    self.error(ErrorCode.TRAILING_COMMA, token=comma, message='should not be a trailing comma')
                 pairs.append(self.pair())
 
             # { pair1   pair2}
@@ -84,7 +84,7 @@ class JsonParser(Parser):
                 comma = self.current_token
                 node.register_token(self.eat(TokenType.COMMA))
                 if self.current_token.type == TokenType.RSQUAR_PAREN:
-                    self.error(ErrorCode.TRAILING_COMMA, token=comma, message=TokenType.COMMA.value)
+                    self.error(ErrorCode.TRAILING_COMMA, token=comma, message='should not be a trailing comma')
                 elements.append(self.value())
 
             if self.current_token.type != TokenType.RSQUAR_PAREN:
