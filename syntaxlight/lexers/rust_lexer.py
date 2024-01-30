@@ -1,6 +1,6 @@
 
 from enum import Enum
-from .lexer import Lexer, TokenType, Token
+from .lexer import Lexer, TokenType, Token, TokenSet
 
 class RustTokenType(Enum):
     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
@@ -57,11 +57,14 @@ class RustTokenType(Enum):
     WHILE = 'while'
     YIELD = 'yield'
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
+    
+    HASH_BANG = '#!'
 
 class RustLexer(Lexer):
     
     def __init__(self, text: str, LanguageTokenType: Enum = RustTokenType):
         super().__init__(text, LanguageTokenType)
+        self.build_long_op_dict(['->',"<=",'>=','#!','::','..','...','==','=>','||','&&'])
         
         
     def get_next_token(self):
@@ -80,6 +83,9 @@ class RustLexer(Lexer):
             
             if self.current_char.isalnum() or self.current_char == '_':
                 return self.get_id()
+            
+            if self.current_char in self.long_op_dict:
+                return self.get_long_op()
 
             try:
                 token_type = TokenType(self.current_char)
@@ -103,4 +109,9 @@ class RustLexer(Lexer):
 
 class RustTokenSet:
     def __init__(self) -> None:
-        pass
+        
+        self.inner_attr = TokenSet(RustTokenType.HASH_BANG)
+        self.outer_attr = TokenSet(TokenType.HASH)
+        
+        self.attrs_and_vis = TokenSet(self.outer_attr)
+        self.item_with_attrs = TokenSet(self.attrs_and_vis)

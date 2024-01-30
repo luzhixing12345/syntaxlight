@@ -1,3 +1,65 @@
+{
+  parserClass="org.jetbrains.rust.grammar.RustParser"
+
+  extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
+
+  psiClassPrefix="Rust"
+  psiImplClassSuffix="Impl"
+  psiPackage="org.jetbrains.rust.psi"
+  psiImplPackage="org.jetbrains.rust.psi.impl"
+
+  elementTypeHolderClass="org.jetbrains.rust.psi.RustTypes"
+  elementTypeClass="org.jetbrains.rust.psi.RustElementType"
+  tokenTypeClass="org.jetbrains.rust.parser.RustTokenType"
+
+  tokens=[
+    par_left            = "("
+    par_right           = ")"
+    curly_left          = "{"
+    curly_right         = "}"
+    bracket_left        = "["
+    bracket_right       = "]"
+    pipe                = "|"
+    pipe_pipe           = "||"
+    ampersand           = "&"
+    ampersand_ampersand = "&&"
+    dot                 = "."
+    dot_dot             = ".."
+    dot_dot_dot         = "..."
+    semi                = ";"
+    comma               = ","
+    bang                = "!"
+    colon               = ":"
+    minus               = "-"
+    plus                = "+"
+    equal_equal         = "=="
+    less_equal          = "<="
+    greater_equal       = ">="
+    less                = "<"
+    greater             = ">"
+    fat_arrow           = "=>"
+    thin_arrow          = "->"
+    assign              = "="
+    hash                = "#"
+
+    white_space='regexp:\s+'
+    line_comment='regexp://.*'
+    block_comment='regexp:/\*(.|\n)*\*/'
+    ident='regexp:(\p{Alpha}|_)*'
+    lifetime="regexp:'(\p{Alpha}|_)*"
+
+    lit_char="regexp:'.'"
+    lit_string="regexp:(r?\"([^\"\\]|\\.)*\")"
+    lit_byte_string='byte_string_lit'
+    lit_float='regexp:\d+\.\d+'
+    lit_byte='byte_lit'
+    lit_integer='regexp:\d+'
+  ]
+
+   extends(".*expr")=expr
+}
+
+
 ////////////////////////////////////////////////////////////////////////
 // Part 1: Items and attributes
 ////////////////////////////////////////////////////////////////////////
