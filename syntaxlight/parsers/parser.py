@@ -1,8 +1,8 @@
-from ..lexers.lexer import Lexer, Token, TokenType, TTYColor
+from ..lexers.lexer import Lexer, Token, TokenType, TTYColor, TokenSet
 from ..error import ParserError, ErrorCode, ttyinfo
 from enum import Enum
 from ..asts.ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
-from typing import List, Callable
+from typing import List, Callable, Union
 import sys
 import html
 import traceback
@@ -387,12 +387,19 @@ class Parser:
         node.register_token(self.eat())
         return node
 
-    def list_items(self, func: Callable, delimiter=TokenType.COMMA):
+    def list_items(self, func: Callable, delimiter=TokenType.COMMA, trailing_set: Union[TokenSet,List[TokenType]] = None):
         """
         对于 <terminal> (<delimiter> <terminal>)* 的快速匹配
+        
+        @func: 需要循环匹配的函数
+        @delimiter: 分隔符, None 表示匹配 func*
+        @trailing_set: func 的 token_set
         """
         nodes = [func()]
-        while self.current_token.type == delimiter:
-            self.eat()
+        while delimiter is None or self.current_token.type == delimiter:
+            if delimiter is not None:
+                self.eat(delimiter)
+            if trailing_set is not None and self.current_token.type not in trailing_set:
+                break
             nodes.append(func())
         return nodes

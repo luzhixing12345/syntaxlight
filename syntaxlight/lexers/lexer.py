@@ -81,8 +81,8 @@ class TokenType(Enum):
     MOD_ASSIGN = "%="
     ADD_ASSIGN = "+="
     SUB_ASSIGN = "-="
-    LSHIFT_ASSIGN = "<<="
-    RSHIFT_ASSIGN = ">>="
+    SHL_ASSIGN = "<<="
+    SHR_ASSIGN = ">>="
     AND_ASSIGN = "&="
     XOR_ASSIGN = "^="
     OR_ASSIGN = "|="
@@ -237,7 +237,7 @@ class Lexer:
             self.file_path = self.file_path[2:]
         self.file_path = self.file_path.replace("\\", "/")
 
-        token_info = f'{repr(token.value)} [{token.type.name}]'
+        token_info = f"{repr(token.value)} [{token.type.name}]"
 
         error_position = (
             " " * len(str(token.line))
@@ -246,13 +246,17 @@ class Lexer:
             + f":{token.line}:{token.column}\n"
         )
         error_context = self.get_error_token_context(token)
-        
+
         error_info = (
-            " " * len(str(token.line))
-            + ttyinfo(" = ", TTYColor.BLUE)
-            + f"{ttyinfo('note', TTYColor.YELLOW)}: {message}"
-        ) if message != '' else ""
-        
+            (
+                " " * len(str(token.line))
+                + ttyinfo(" = ", TTYColor.BLUE)
+                + f"{ttyinfo('note', TTYColor.YELLOW)}: {message}"
+            )
+            if message != ""
+            else ""
+        )
+
         raise ErrorType(
             token_info=token_info,
             error_code=error_code,

@@ -10,7 +10,7 @@
 
 <list_of_ports> ::= ( <port> <,<port>>* )
 
-<port> ::= (input | output)? <port_expression>?
+<port> ::= (input | output)? (wire|reg|logic)? <range>? <port_expression>?
          | . <name_of_port> ( <port_expression>? )
 
 <port_expression> ::= <port_reference>
@@ -44,6 +44,8 @@
                 | <always_statement>
                 | <task>
                 | <function>
+                | <generate_statement>
+                | <genvar_declaration>
 
 <UDP> ::= primitive <name_of_UDP> ( <name_of_variable> <,<name_of_variable>>* ) ; <UDP_declaration>+ <UDP_initial_statement>? <table_definition> endprimitive
 
@@ -345,6 +347,7 @@ supply1  strong1  pull1  weak1  highz1
 	||= <real_declaration>
 	||= <time_declaration>
 	||= <event_declaration>
+    ||= <module_instantiation>
 
 <task_enable>
 	::= <name_of_task>
@@ -374,6 +377,8 @@ supply1  strong1  pull1  weak1  highz1
 	||= posedge <scalar_event_expression>
 	||= negedge <scalar_event_expression>
 	||= <event_expression> or <event_expression>
+
+<genvar_declartion> ::= genvar <list_of_register_variables> ;
 
 
 6. Specify Section

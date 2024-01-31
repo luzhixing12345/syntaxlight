@@ -65,7 +65,7 @@ class CTokenType(Enum):
     _THREAD_LOCAL = "_Thread_local"  # C23 => THREAD_LOCAL
 
     # GNU C extension
-    ASM = 'asm'
+    ASM = "asm"
     _ASM = "__asm__"
     _ATTRIBUTE = "__attribute__"
 
@@ -73,8 +73,8 @@ class CTokenType(Enum):
     # start - end 之间为对应语言的保留关键字
     # -----------------------------------------------
 
-    POINTER = "POINTER" # 指针 *
-    STAR = "STAR" # 任意占位符 *
+    POINTER = "POINTER"  # 指针 *
+    STAR = "STAR"  # 任意占位符 *
     TYPEDEF_ID = "typedef-id"
 
     # 预处理关键字, 除if else外默认被解析为 ID, 在解析过程中处理
@@ -221,9 +221,7 @@ class CTokenSet:
             self.enum_specifier,
             self.typedef_name,
         )
-        self.type_qualifier = TokenSet(
-            CTokenType.CONST, CTokenType.VOLATILE, CTokenType.RESTRICT, CTokenType._ATOMIC
-        )
+        self.type_qualifier = TokenSet(CTokenType.CONST, CTokenType.VOLATILE, CTokenType.RESTRICT, CTokenType._ATOMIC)
         self.function_speficier = TokenSet(CTokenType.INLINE, CTokenType._NORETURN)
         self.alignment_specifier = TokenSet(CTokenType._ALIGNAS)
         self.declaration_specifier = TokenSet(
@@ -257,8 +255,8 @@ class CTokenSet:
             TokenType.MOD_ASSIGN,
             TokenType.ADD_ASSIGN,
             TokenType.SUB_ASSIGN,
-            TokenType.LSHIFT_ASSIGN,
-            TokenType.RSHIFT_ASSIGN,
+            TokenType.SHL_ASSIGN,
+            TokenType.SHR_ASSIGN,
             TokenType.AND_ASSIGN,
             TokenType.XOR_ASSIGN,
             TokenType.OR_ASSIGN,
@@ -317,9 +315,7 @@ class CTokenSet:
         self.compound_statement = TokenSet(TokenType.LCURLY_BRACE)
         self.selection_statement = TokenSet(CTokenType.IF, CTokenType.SWITCH)
         self.iteration_statement = TokenSet(CTokenType.WHILE, CTokenType.DO, CTokenType.FOR)
-        self.jump_statement = TokenSet(
-            CTokenType.GOTO, CTokenType.CONTINUE, CTokenType.BREAK, CTokenType.RETURN
-        )
+        self.jump_statement = TokenSet(CTokenType.GOTO, CTokenType.CONTINUE, CTokenType.BREAK, CTokenType.RETURN)
         self.gnu_c_statement_extension = TokenSet(CTokenType._ASM, CTokenType.ASM)
         self.statement = TokenSet(
             self.labeled_statement,
@@ -340,9 +336,7 @@ class CTokenSet:
         self.elif_group = TokenSet(CTokenType.ELIF)
         self.else_group = TokenSet(CTokenType.ELSE_P)
         self.endif_group = TokenSet(CTokenType.ENDIF)
-        self.if_section = TokenSet(
-            self.if_group, self.elif_group, self.endif_group, self.else_group
-        )
+        self.if_section = TokenSet(self.if_group, self.elif_group, self.endif_group, self.else_group)
         self.control_line = TokenSet(
             CTokenType.INCLUDE,
             CTokenType.DEFINE,
