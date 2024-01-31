@@ -49,12 +49,6 @@ class Parser:
         if token is None:
             token = self.current_token
 
-        if message == "":
-            if token.value in self.lexer.invisible_characters:
-                message = token.type.name
-            else:
-                message = token.value
-
         self.lexer.error(error_code, token, message, ParserError)
 
     def warning(self, message=None, ast: AST = None):

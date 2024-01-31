@@ -21,3 +21,11 @@ pre[class*="language-"] {
 .Token.BraceDepth-2 {
     color: --brace3;
 }
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.NUMBER {
+    color: --number;
+}

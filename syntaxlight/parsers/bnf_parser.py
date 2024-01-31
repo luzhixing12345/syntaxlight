@@ -80,7 +80,7 @@ class Item(AST):
 class BNFParser(Parser):
     def __init__(self, lexer, skip_invisible_characters=False, skip_space=True, display_warning=True):
         super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
-        self.punctuator_first_set = [TokenType.PLUS, TokenType.MUL, TokenType.QUSTION]
+        self.punctuator_first_set = [TokenType.PLUS, TokenType.MUL, TokenType.QUESTION]
         self.term_first_set = [
             TokenType.STR,
             TokenType.LANGLE_BRACE,

@@ -1,8 +1,11 @@
 from .parser import Parser
 from ..lexers import TokenType, VerilogTokenType, Token, VerilogTokenSet
 from ..error import ErrorCode
+from ..gdt import CSS
+from ..asts.ast import add_ast_type, Number
 from ..asts.verilog_ast import *
 from enum import Enum
+import re
 
 
 class VerilogCSS(Enum):
@@ -10,6 +13,10 @@ class VerilogCSS(Enum):
     STRENGTH0 = "Strength0"
     STRENGTH1 = "Strength1"
     GATE_WAY = "GateWay"
+    MODULE_NAME = "ModuleName"
+    DEFINED_MODULE = "DefinedModule"
+    PORT_NAME = "PortName"
+    BIT_WIDTH = 'BitWidth'
 
 
 class VerilogParser(Parser):
@@ -27,6 +34,15 @@ class VerilogParser(Parser):
             VerilogTokenType.INTEGER: self.integer_declaration,
             VerilogTokenType.REAL: self.real_declaration,
             VerilogTokenType.EVENT: self.event_declaration,
+            VerilogTokenType.DEFPARAM: self.parameter_override,
+            VerilogTokenType.ASSIGN: self.continuous_assign,
+            VerilogTokenType.SPECIFY: self.specify_block,
+            VerilogTokenType.INITIAL: self.initial_statement,
+            VerilogTokenType.ALWAYS: self.always_statement,
+            VerilogTokenType.TASK: self.task,
+            VerilogTokenType.FUNCTION: self.function,
+            VerilogTokenType.GENERATE: self.generate_statement,
+            VerilogTokenType.GENVAR: self.genvar_declaration
         }
 
     def parse(self):
@@ -64,7 +80,7 @@ class VerilogParser(Parser):
 
     def module(self):
         """
-        <module> ::= module <name_of_module> <list_of_ports>? ; <module_item>* endmodule
+        <module> ::= module <name_of_module> <module_parameters>? <list_of_ports>? ; <module_item>* endmodule
                    | macromodule <name_of_module> <list_of_ports>? ; <module_item>* endmodule
         """
         node = Module()
@@ -74,6 +90,11 @@ class VerilogParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be module or macromodule")
 
         node.update(name=self.get_identifier())
+        add_ast_type(node.name, VerilogCSS.MODULE_NAME)
+
+        if self.current_token.type == TokenType.HASH:
+            node.update(parameter=self.module_parameters())
+
         node.update(list_of_ports=self.list_of_ports())
         node.register_token(self.eat(TokenType.SEMI))
         module_items = []
@@ -81,6 +102,20 @@ class VerilogParser(Parser):
             module_items.append(self.module_item())
         node.update(module_items=module_items)
         node.update(end_keyword=self.get_keyword(VerilogTokenType.ENDMODULE))
+        return node
+
+    def module_parameters(self):
+        '''
+        <module_parameters> ::= # ( <parameter_declaration>* )
+        '''
+        node = ModuleParameters()
+        node.register_token(self.eat(TokenType.HASH))
+        node.register_token(self.eat(TokenType.LPAREN))
+        paramters = []
+        while self.current_token.type in self.verilog_first_set.parameter_declaration:
+            paramters.append(self.parameter_declaration())
+        node.update(paramters=paramters)
+        node.register_token(self.eat(TokenType.RPAREN))
         return node
 
     def list_of_ports(self):
@@ -94,8 +129,10 @@ class VerilogParser(Parser):
 
     def port(self):
         """
-        <port> ::= <port_expression>?
+        <port> ::= (input | output)? (wire|reg|logic)? <range>? <port_expression>?
                  | . <name_of_port> ( <port_expression>? )
+
+        @EXTEND-GRAMMAR: 添加 input/output wire/reg/logic
         """
         node = Port()
         if self.current_token.type == TokenType.DOT:
@@ -105,9 +142,17 @@ class VerilogParser(Parser):
             if self.current_token.type in self.verilog_first_set.port_expression:
                 node.update(port_expression=self.port_expression())
             node.register_token(self.eat(TokenType.RPAREN))
+        elif self.current_token.type in (VerilogTokenType.INPUT, VerilogTokenType.OUTPUT):
+            node.update(port_type=self.get_keyword())
+            if self.current_token.type in (VerilogTokenType.WIRE, VerilogTokenType.REG, VerilogTokenType.LOGIC):
+                node.update(data_type=self.get_keyword())
+            if self.current_token.type in self.verilog_first_set.range:
+                node.update(range=self.range())
+            node.update(port_expression=self.port_expression())
         elif self.current_token.type in self.verilog_first_set.port_expression:
             node.update(port_expression=self.port_expression())
-
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be port or port_expression")
         return node
 
     def port_expression(self):
@@ -125,6 +170,8 @@ class VerilogParser(Parser):
                 self.eat(TokenType.COMMA)
                 port_references.append(self.port_reference())
             self.eat(TokenType.RCURLY_BRACE)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be port_reference or LCURLY_BRACE")
         return port_references
 
     def port_reference(self):
@@ -166,6 +213,10 @@ class VerilogParser(Parser):
                         | <always_statement>
                         | <task>
                         | <function>
+                        | <generate_statement>
+                        | <genvar_declaration>
+                        
+        @EXTEND-GRAMMAR: 添加 generate statement, genvar_declaration
         """
         # TODO
 
@@ -176,9 +227,9 @@ class VerilogParser(Parser):
         elif self.current_token.type in self.verilog_first_set.gate_declaration:
             return self.gate_declaration()
         elif self.current_token.type in self.verilog_first_set.UDP_instantiation:
-            return self.UDP_instantiation()
+            return self.module_instantiation()
         else:
-            self.error()
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should match a module item")
 
     def udp(self):
         """
@@ -401,6 +452,29 @@ class VerilogParser(Parser):
         node.update(end_keyword=self.get_keyword(VerilogTokenType.ENDFUNCTION))
         return node
 
+    def generate_statement(self):
+        """
+        <generate_statement> ::= generate <statement>* endgenerate
+        """
+        node = GenerateStmt()
+        node.update(keyword=self.get_keyword(VerilogTokenType.GENERATE))
+        stmts = []
+        while self.current_token.type in self.verilog_first_set.statement:
+            stmts.append(self.statement())
+        node.update(stmts=stmts)
+        node.update(end_keyword=self.get_keyword(VerilogTokenType.ENDGENERATE))
+        return node
+    
+    def genvar_declaration(self):
+        '''
+        genvar <list_of_register_variables> ;
+        '''
+        node = GenvarDeclaration()
+        node.update(keyword=self.get_keyword(VerilogTokenType.GENVAR))
+        node.update(vars=self.list_of_register_variables())
+        node.register_token(self.eat(TokenType.SEMI))
+        return node
+
     def parameter_declaration(self):
         """
         <parameter_declaration> ::= parameter <list_of_param_assignments> ;
@@ -410,13 +484,7 @@ class VerilogParser(Parser):
         """
         node = Parameter()
         node.update(keyword=self.get_keyword(VerilogTokenType.PARAMETER))
-
-        param_assignments = [self.param_assignment()]
-        while self.current_token.type == TokenType.COMMA:
-            node.register_token(self.eat())
-            param_assignments.append(self.param_assignment())
-
-        node.update(param_assignments=param_assignments)
+        node.update(param_assignments=self.list_items(self.param_assignment))
         node.register_token(self.eat(TokenType.SEMI))
         return node
 
@@ -508,9 +576,19 @@ class VerilogParser(Parser):
         <assignment> ::= <lvalue> = <expression>
         """
         node = Assignment()
+        # @EXTEND-GRAMMAR for system verilog
+        # for (int i=0;i<100;i++)
+        if self.current_token.type in (VerilogTokenType.INTEGER, VerilogTokenType.INT):
+            node.update(keyword=self.get_keyword())
         node.update(lvalue=self.lvalue())
-        node.register_token(self.eat(TokenType.ASSIGN))
-        node.update(exp=self.expression())
+        
+        if self.current_token.type == TokenType.ASSIGN:
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(exp=self.expression())
+        elif self.current_token.type in (TokenType.INC, TokenType.DEC):
+            node.register_token(self.eat())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be = or ++ or --")
         return node
 
     def lvalue(self):
@@ -526,12 +604,13 @@ class VerilogParser(Parser):
         elif self.current_token.type == TokenType.ID:
             node = Lvalue()
             node.update(id=self.get_identifier())
-            node.register_token(self.eat(TokenType.LSQUAR_PAREN))
-            node.update(exp1=self.expression())
-            if self.current_token.type == TokenType.COLON:
-                node.register_token(self.eat())
-                node.update(exp2=self.expression())
-            node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+            if self.current_token.type == TokenType.LSQUAR_PAREN:
+                node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+                node.update(exp1=self.expression())
+                if self.current_token.type == TokenType.COLON:
+                    node.register_token(self.eat())
+                    node.update(exp2=self.expression())
+                node.register_token(self.eat(TokenType.RSQUAR_PAREN))
             return node
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be id or {")
@@ -553,9 +632,16 @@ class VerilogParser(Parser):
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             exprs += self.list_items(self.expression)
             node.register_token(self.eat(TokenType.RCURLY_BRACE))
+            node.update(expressions=exprs)
+        elif self.current_token.type == TokenType.COMMA:
+            while self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                exprs.append(self.expression())
+            node.update(expressions=exprs)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be , or {")
 
         node.register_token(self.eat(TokenType.RCURLY_BRACE))
-        node.update(expressions=exprs)
         return node
 
     def constant_expression(self):
@@ -569,6 +655,26 @@ class VerilogParser(Parser):
                      ||= <expression> <QUESTION_MARK> <expression> : <expression>
                      ||= <STRING>
         """
+        node = Expression()
+        if self.current_token.type in self.verilog_first_set.unary_operator:
+            node.update(op=self.get_punctuator())
+            node.update(primary=self.primary())
+        elif self.current_token.type in self.verilog_first_set.primary:
+            node.update(primary=self.primary())
+        elif self.current_token.type == TokenType.STRING:
+            return self.get_string()
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be unary_operator or primary or string")
+
+        if self.current_token.type in self.verilog_first_set.binary_operator:
+            node.update(bin_op=self.get_punctuator())
+            node.update(expr=self.expression())
+        elif self.current_token.type == TokenType.QUESTION:
+            node.register_token(self.eat(TokenType.QUESTION))
+            node.update(expr1=self.expression())
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(expr2=self.expression())
+        return node
 
     def primary(self):
         """
@@ -609,6 +715,59 @@ class VerilogParser(Parser):
             return node
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be number or id or $id or { or (")
+
+    def get_number(self):
+        """
+        对于 4'h111 的类型做分割
+        """
+        pattern = re.compile(r"(\d*\'[bBoOdDhH])([0-9a-fA-FxXzZ\?]+)")
+        match = pattern.match(self.current_token.value)
+        if match:
+            line = self.current_token.line
+
+            new_asts = []
+            # 前面的 4'b
+            value = match.group(1)
+            token = Token(
+                self.current_token.type,
+                value,
+                line,
+                self.current_token.column - len(self.current_token.value) + len(value),
+            )
+            self.manual_register_token(token)
+            node = Number(value)
+            node.register_token([token])
+            add_ast_type(node, VerilogCSS.BIT_WIDTH)
+            new_asts.append(node)
+
+            # 后面的 111
+            token = Token(self.current_token.type, match.group(2), line, self.current_token.column)
+            self.manual_register_token(token)
+            node = Number(match.group(2))
+            node.register_token([token])
+            new_asts.append(node)
+
+            self.manual_get_next_token()
+            return new_asts
+        else:
+            node = Number(self.current_token.value)
+            node.register_token(self.eat(TokenType.NUMBER))
+            return node
+        
+    def get_identifier(self):
+        '''
+        hierarchical_path.mem_1.ADDR_WIDTH
+        '''
+        nodes = [super().get_identifier()]
+        while self.current_token.type == TokenType.DOT:
+            self.eat(TokenType.DOT)
+            nodes.append(super().get_identifier())
+        
+        for node in nodes:
+            if bool(re.match(r"^[A-Z0-9_]+$", node.id)):
+                # ID 全部为 大写/数字/下划线, 很可能为宏
+                add_ast_type(node, CSS.ENUM_ID)
+        return nodes
 
     def delay(self):
         """
@@ -742,7 +901,7 @@ class VerilogParser(Parser):
         <reg_declaration> ::= reg <range>? <list_of_register_variables> ;
         """
         node = Declaration()
-        node.update(keyword=self.get_keyword(VerilogTokenType.INOUT))
+        node.update(keyword=self.get_keyword(VerilogTokenType.REG))
         if self.current_token.type in self.verilog_first_set.range:
             node.update(range=self.range())
 
@@ -809,6 +968,7 @@ class VerilogParser(Parser):
         if self.current_token.type in self.verilog_first_set.delay:
             node.update(delay=self.delay())
         node.update(list_of_assignments=self.list_of_assignments())
+        node.register_token(self.eat(TokenType.SEMI))
         return node
 
     def parameter_override(self):
@@ -817,12 +977,8 @@ class VerilogParser(Parser):
         """
         node = ParameterOverride()
         node.update(keyword=self.get_keyword(VerilogTokenType.DEFPARAM))
-        param_assignments = [self.param_assignment()]
-        while self.current_token.type == TokenType.COMMA:
-            node.register_token(self.eat())
-            param_assignments.append(self.param_assignment())
-
-        node.update(param_assignments=param_assignments)
+        node.update(param_assignments=self.list_items(self.param_assignment))
+        node.register_token(self.eat(TokenType.SEMI))
         return node
 
     def statement(self):
@@ -851,11 +1007,19 @@ class VerilogParser(Parser):
                     ||= deassign <lvalue> ;
                     ||= force <assignment> ;
                     ||= release <lvalue> ;
+                    ||= <genvar_declaration>
+        
+        @EXTEND-GRAMMAR: 不好区分阻塞和非阻塞, 所以合并二者
+        @EXTEND-GRAMMAR: 添加 genvar
         """
         node = Statement()
         if self.current_token.type == TokenType.ID:
             # blocking_assignment
-            if self.peek_next_token().type in (TokenType.LSQUAR_PAREN, TokenType.ASSIGN, TokenType.LT):
+            if self.peek_next_token().type in (
+                TokenType.LSQUAR_PAREN,
+                TokenType.ASSIGN,
+                VerilogTokenType.NON_BLOCK_ASSIGN,
+            ):
                 node.update(assignment=self.blocking_assignment())
                 node.register_token(self.eat(TokenType.SEMI))
             else:
@@ -934,6 +1098,8 @@ class VerilogParser(Parser):
             node.update(keyword=self.get_keyword())
             node.update(Lvalue=self.lvalue())
             node.register_token(self.eat(TokenType.SEMI))
+        elif self.current_token.type == VerilogTokenType.GENVAR:
+            return self.genvar_declaration()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "statement miss match")
         return node
@@ -991,6 +1157,9 @@ class VerilogParser(Parser):
                             ||= <real_declaration>
                             ||= <time_declaration>
                             ||= <event_declaration>
+                            ||= <module_instantiation>
+
+        @EXTEND-GRAMMAR: 添加 module_instantiation
         """
         kv_map = {
             VerilogTokenType.PARAMETER: self.parameter_declaration,
@@ -1002,6 +1171,8 @@ class VerilogParser(Parser):
         }
         if self.current_token.type in kv_map:
             return kv_map[self.current_token.type]()
+        elif self.current_token.type == TokenType.ID and self.peek_next_token().type in (TokenType.ID, TokenType.HASH):
+            return self.module_instantiation()
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "output block declaration kv map")
 
@@ -1136,10 +1307,23 @@ class VerilogParser(Parser):
         """
         node = ModuleInstantiation()
         node.update(name=self.get_identifier())
+        add_ast_type(node.name, VerilogCSS.DEFINED_MODULE)
         if self.current_token.type == TokenType.HASH:
             node.register_token(self.eat())
             node.register_token(self.eat(TokenType.LPAREN))
-            node.update(parms=self.list_items(self.expression))
+            parms = []
+            if self.current_token.type in self.verilog_first_set.expression:
+                parms.append(self.expression())
+                if self.current_token.type == TokenType.ASSIGN:
+                    node.register_token(self.eat(TokenType.ASSIGN))
+                    self.expression()
+            while self.current_token.type == TokenType.COMMA:
+                self.eat(TokenType.COMMA)
+                parms.append(self.expression())
+                if self.current_token.type == TokenType.ASSIGN:
+                    node.register_token(self.eat(TokenType.ASSIGN))
+                    self.expression()
+            node.update(parms=parms)
             node.register_token(self.eat(TokenType.RPAREN))
 
         node.update(module_instances=self.list_items(self.module_instance))
@@ -1173,6 +1357,7 @@ class VerilogParser(Parser):
         node = NamePortConnection()
         node.register_token(self.eat(TokenType.DOT))
         node.update(name=self.get_identifier())
+        add_ast_type(node.name, VerilogCSS.PORT_NAME)
         node.register_token(self.eat(TokenType.LPAREN))
         node.update(expr=self.expression())
         node.register_token(self.eat(TokenType.RPAREN))
@@ -1216,20 +1401,17 @@ class VerilogParser(Parser):
     def blocking_assignment(self):
         """
         <blocking_assignment>
-                            ::= <lvalue> =|<= <expression>
+                            ::= <lvalue> (=|<=) <expression>
                             ||= <lvalue> = <delay_or_event_control> <expression> ;
 
-        @扩展文法: 不好区分阻塞和非阻塞, 所以合并二者
+        @EXTEND-GRAMMAR: 不好区分阻塞和非阻塞, 所以合并二者
         """
         node = BlockingAssign()
         node.update(lvalue=self.lvalue())
-        if self.current_token.type == TokenType.ASSIGN:
-            node.register_token(self.eat(TokenType.ASSIGN))
-        elif self.current_token.type == TokenType.LE:
-            self.current_token.type = VerilogTokenType.NON_BLOCK_ASSIGN
+        if self.current_token.type in (TokenType.ASSIGN, VerilogTokenType.NON_BLOCK_ASSIGN):
             node.register_token(self.eat())
         else:
-            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be = <=")
+            self.error(ErrorCode.UNEXPECTED_TOKEN, "should be '=' or '<='")
         if self.current_token.type in self.verilog_first_set.expression:
             node.update(expr=self.expression())
         elif self.current_token.type in self.verilog_first_set.delay_or_event_control:
@@ -1305,15 +1487,23 @@ class VerilogParser(Parser):
         """
         <event_expression>
                             ::= <expression>
-                            ||= posedge <expression>
-                            ||= negedge <expression>
+                            ||= (posedge|negedge) <expression> ',' <event_expression>
                             ||= <event_expression> or <event_expression>
+                            ||= *
         """
         node = EventExpression()
-        if self.current_token.type in self.verilog_first_set.expression:
+        if self.current_token.type == TokenType.MUL:
+            # always @(*)
+            self.current_token.type = VerilogTokenType.STAR
+            node.register_token(self.eat(VerilogTokenType.STAR))
+        elif self.current_token.type in self.verilog_first_set.expression:
             node.update(expr=self.expression())
         elif self.current_token.type in (VerilogTokenType.POSEDGE, VerilogTokenType.NEGEDGE):
             node.update(edge=self.get_keyword())
+            node.update(expr=self.expression())
+            while self.current_token.type == TokenType.COMMA:
+                node.register_token(self.eat(TokenType.COMMA))
+                node.update(event_expr=self.event_expression())
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be expr posedge negedge")
 
@@ -1411,7 +1601,7 @@ class VerilogParser(Parser):
 
     def path_description(self):
         """
-        @扩展文法: <polarity_operator>?
+        @EXTEND-GRAMMAR: <polarity_operator>?
         补充 edge_sensitive_path_declaration 的情况
 
         <path_description>

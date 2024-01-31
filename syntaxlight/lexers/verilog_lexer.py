@@ -110,6 +110,14 @@ class VerilogTokenType(Enum):
     WOR = "wor"
     XNOR = "xnor"
     XOR = "xor"
+    
+    # system verilog syntax
+    INT = 'int'
+    GENERATE = 'generate'
+    ENDGENERATE = 'endgenerate'
+    GENVAR = 'genvar'
+    LOGIC = 'logic'
+    
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
 
     OUTPUT_SYMBOL = "01xX"  # 0   1   x   X
@@ -123,6 +131,7 @@ class VerilogTokenType(Enum):
     LOGICAL_OR = "^|"
     LOGICAL_NOR = "~^"
     LOGICAL_XNOR = "^~"
+    STAR = '*'
 
 
 class VerilogLexer(Lexer):
@@ -150,6 +159,7 @@ class VerilogLexer(Lexer):
                 ">>",
                 "<<",
                 "||",
+                "++",'--'
             ]
         )
 
@@ -182,7 +192,7 @@ class VerilogLexer(Lexer):
                 token = Token(TokenType.NUMBER, result, self.line, self.column)
                 self.error(ErrorCode.UNKNOWN_CHARACTER, token, "Expected one of 'bBoOdDhH'")
 
-        while self.current_char is not None and bool(re.match(r"[0-9a-fA-FxXzZ]", self.current_char)):
+        while self.current_char is not None and bool(re.match(r"[0-9a-fA-FxXzZ\?]", self.current_char)):
             result += self.current_char
             self.advance()
 
@@ -205,11 +215,11 @@ class VerilogLexer(Lexer):
 
             if self.current_char.isalpha() or self.current_char == "_":
                 token = self.get_id(extend_chars=["_", "$"])
-                if len(token.value) == 1:
-                    if token.value in VerilogTokenType.EDGE_SYMBOL.value:
-                        token.type = VerilogTokenType.EDGE_SYMBOL
-                    elif token.value in VerilogTokenType.LEVEL_SYMBOL.value:
-                        token.type = VerilogTokenType.LEVEL_SYMBOL
+                # if len(token.value) == 1:
+                #     if token.value in VerilogTokenType.EDGE_SYMBOL.value:
+                #         token.type = VerilogTokenType.EDGE_SYMBOL
+                #     elif token.value in VerilogTokenType.LEVEL_SYMBOL.value:
+                #         token.type = VerilogTokenType.LEVEL_SYMBOL
 
                 return token
 
@@ -218,8 +228,8 @@ class VerilogLexer(Lexer):
 
             if self.current_char.isdigit() or self.current_char == "'":
                 token = self.get_number()
-                if len(token.value) == 1 and token.value in ("0", "1"):
-                    token.type = VerilogTokenType.LEVEL_SYMBOL
+                # if len(token.value) == 1 and token.value in ("0", "1"):
+                #     token.type = VerilogTokenType.LEVEL_SYMBOL
                 return token
 
             if self.current_char == "$" and self.peek() != " ":
@@ -326,6 +336,7 @@ class VerilogTokenSet:
             self.real_declaration,
             self.time_declaration,
             self.event_declaration,
+            TokenType.ID
         )
         self.gate_type = TokenSet(
             VerilogTokenType.AND,
@@ -354,14 +365,15 @@ class VerilogTokenSet:
         )
         self.gate_declaration = TokenSet(self.gate_type)
         self.UDP_instantiation = TokenSet(TokenType.ID)
-        self.module_instantiation = TokenSet()
-        self.parameter_override = TokenSet()
-        self.continuous_assign = TokenSet()
-        self.specify_block = TokenSet()
-        self.initial_statement = TokenSet()
-        self.always_statement = TokenSet()
+        self.module_instantiation = TokenSet(TokenType.ID)
+        self.parameter_override = TokenSet(VerilogTokenType.DEFPARAM)
+        self.continuous_assign = TokenSet(VerilogTokenType.ASSIGN)
+        self.specify_block = TokenSet(VerilogTokenType.SPECIFY)
+        self.initial_statement = TokenSet(VerilogTokenType.INITIAL)
+        self.always_statement = TokenSet(VerilogTokenType.ALWAYS)
         self.task = TokenSet(VerilogTokenType.TASK)
         self.function = TokenSet(VerilogTokenType.FUNCTION)
+        self.generate_statement = TokenSet(VerilogTokenType.GENERATE)
 
         self.module_item = TokenSet(
             self.parameter_declaration,
@@ -384,6 +396,8 @@ class VerilogTokenSet:
             self.always_statement,
             self.task,
             self.function,
+            self.generate_statement,
+            VerilogTokenType.GENVAR
         )
         self.tf_declaration = TokenSet(
             self.parameter_declaration,
@@ -451,6 +465,7 @@ class VerilogTokenSet:
             VerilogTokenType.DEASSIGN,
             VerilogTokenType.FORCE,
             VerilogTokenType.RELEASE,
+            VerilogTokenType.GENVAR
         )
         self.edge_sensitive_path_declaration = TokenSet(VerilogTokenType.IF, TokenType.LPAREN)
         self.specify_item = TokenSet(

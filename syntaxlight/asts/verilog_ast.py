@@ -447,3 +447,22 @@ class SDPD(AST):
         self.specify_input_terminal_descriptors = None
         self.specify_output_terminal_descriptors = None
         self.path_delay_value = None
+        
+        
+class GenerateStmt(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.stmt = None
+        self.end_keyword = None
+        
+class GenvarDeclaration(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.keyword = None
+        self.vars = None
+        
+class ModuleParameters(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parameter_declarations = None

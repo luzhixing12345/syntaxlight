@@ -93,7 +93,7 @@ class CParser(Parser):
 
         在这里没有办法区分, 需要查看 <declarator> 后面是否有<declaration>* 和 <compound-statement> 才可以确定是 <function-definition>
 
-        @扩展文法
+        @EXTEND-GRAMMAR
         添加 <group> <statement> 以适配宏定义与开头的陈述语句. C 默认不支持 if for 作为陈述语句, 这里添加对于代码段的扩展支持
         """
         # function-definition 在 declaration 中被检验和修正
@@ -134,7 +134,7 @@ class CParser(Parser):
 
     def _unknown_typedef_id_guess(self):
         """
-        @扩展文法
+        @EXTEND-GRAMMAR
 
         对于未知符号, 判断下一个 token 类型, 更正为 TYPEDEF_ID
 
@@ -181,7 +181,7 @@ class CParser(Parser):
                            | <typedef-name>
 
                            | bool
-        @扩展文法
+        @EXTEND-GRAMMAR
         bool 为 C23 中引入, 但实在是太常见了, 一般都会 typedef int bool
         """
         if self.current_token.type in self.cfirst_set.atomic_type_specifier:
@@ -302,7 +302,7 @@ class CParser(Parser):
                                | <static_assert-declaration>
                                | "..."
 
-        @扩展文法
+        @EXTEND-GRAMMAR
         支持 ... 省略
         """
         node = StructDeclaration()
@@ -499,7 +499,7 @@ class CParser(Parser):
                 if self.current_token.type in self.cfirst_set.parameter_list:
                     sub_node.update(parameter_list=self.parameter_list())
                 # elif self.current_token.type == TokenType.ID:
-                #     # @扩展文法
+                #     # @EXTEND-GRAMMAR
                 #     # 对于未定义过的 Person 类 void updatePersonInfo(Person* person);
                 #     sub_node.update(parameter_list=self.parameter_list())
                 elif self.current_token.type in self.cfirst_set.identifier:
@@ -547,7 +547,7 @@ class CParser(Parser):
         """
         <parameter-list> ::= <parameter-declaration> ("," <parameter-declaration>)* ("," "...")?
 
-        @扩展文法
+        @EXTEND-GRAMMAR
         考虑未定义过的参数类型: void updatePersonInfo(Person*, int, char*, Student*);
         对于 TokenType.ID 修改为CTokenType.TYPEDEF_ID
         """
@@ -588,8 +588,8 @@ class CParser(Parser):
         """
         node = ConditionalExpression()
         node.update(condition_expr=self.logical_or_expression())
-        if self.current_token.type == TokenType.QUSTION:
-            node.register_token(self.eat(TokenType.QUSTION))
+        if self.current_token.type == TokenType.QUESTION:
+            node.register_token(self.eat(TokenType.QUESTION))
             node.update(value_true=self.expression())
             node.register_token(self.eat(TokenType.COLON))
             node.update(value_false=self.conditional_expression())
@@ -782,7 +782,7 @@ class CParser(Parser):
             unary_expr = UnaryOp(op=self.current_token.value)
             unary_expr.register_token(self.eat(self.current_token.type))
 
-            # @扩展文法: 可能没有 cast_expression
+            # @EXTEND-GRAMMAR: 可能没有 cast_expression
             # time_t (*)(time_t *)
             if self.current_token.type != TokenType.RPAREN:
                 unary_expr.update(expr=self.cast_expression())
@@ -880,7 +880,7 @@ class CParser(Parser):
             elif self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
                 if len(sub_nodes) >= 1:
-                    # @扩展文法
+                    # @EXTEND-GRAMMAR
                     # 对于多个 () 的情况, 有两种可能
 
                     # time_t (*f)(); 函数指针
@@ -957,7 +957,7 @@ class CParser(Parser):
                 sticky_strings.append(self.get_string())
             node.update(sticky_strings=sticky_strings)
         elif self.current_token.type in self.cfirst_set.constant:
-            # @扩展文法
+            # @EXTEND-GRAMMAR
             # Constant 包含了 true, false
             # 该关键字由 C23 引入, 但非常常用, 一般会 define 为 1 和 0, 所以这里引入为 Constant
             sub_node = Constant(self.current_token.value)
@@ -1307,7 +1307,7 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.SEMI))
                 if self._is_C_function(init_declarator_list):
                     add_ast_type(declaration_specifiers, CSS.FUNCTION_RETURN_TYPE)
-                # @扩展文法
+                # @EXTEND-GRAMMAR
                 # 对于 typedef 重命名的符号, 加入 GDT 中
                 if type(node.declaration_specifiers[0]) == Keyword and node.declaration_specifiers[0].name == "typedef":
                     for init_declarator in node.init_declarator_list:
@@ -1455,7 +1455,7 @@ class CParser(Parser):
             designators.append(self.designator())
         node.update(designators=designators)
 
-        # @扩展文法
+        # @EXTEND-GRAMMAR
         # 此处为 GNU C 扩展, 正常来说赋值应该为
         # struct x[] = {
         #    [0] = 1
@@ -1498,7 +1498,7 @@ class CParser(Parser):
                        | <statement>
                        | "..."
 
-        @扩展文法
+        @EXTEND-GRAMMAR
         支持 ... 省略
         """
         node = CompoundStatement()
@@ -1813,7 +1813,7 @@ class CParser(Parser):
                        | <else-group>
                        | <endif-line>
 
-        @扩展文法
+        @EXTEND-GRAMMAR
         考虑到宏与定义穿插, 这里直接将原始的文法(如下)打散
 
         <if-section> ::= <if-group> <elif-group>* <else-group>? <endif-line>

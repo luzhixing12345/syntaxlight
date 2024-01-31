@@ -10,7 +10,7 @@
 
 <list_of_ports> ::= ( <port> <,<port>>* )
 
-<port> ::= <port_expression>?
+<port> ::= (input | output)? <port_expression>?
          | . <name_of_port> ( <port_expression>? )
 
 <port_expression> ::= <port_reference>

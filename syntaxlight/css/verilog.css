@@ -21,3 +21,47 @@ pre[class*="language-verilog"] {
 .Token.BraceDepth-2 {
     color: --brace3;
 }
+
+.Token.Keyword {
+    color: --type;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.ModuleName,
+.Token.DefinedModule,
+.Token.WIRE, .Token.REG, .Token.INTEGER, .Token.GENVAR {
+    color: --struct;
+}
+
+
+.Token.MODULE,
+.Token.ENDMODULE {
+    color: --define;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.STAR, .Token.BitWidth, .Token.INPUT, .Token.OUTPUT {
+    color: --type;
+}
+
+.Token.PortName, .Token.SYSTEM_ID {
+    color: --function;
+}
+
+.Token.ALWAYS,
+.Token.BEGIN,
+.Token.END,
+.Token.CASE,.Token.CASEZ, .Token.CASEX,
+.Token.ENDCASE, .Token.IF, .Token.ELSE, .Token.DEFAULT, .Token.GENERATE, .Token.ENDGENERATE {
+    color: --define;
+}
+
+.Token.EnumID {
+    color: --enum;
+}

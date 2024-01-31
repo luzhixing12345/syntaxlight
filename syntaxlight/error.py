@@ -43,32 +43,34 @@ def ttyinfo(text: str, color: TTYColor = TTYColor.RED, underline=False) -> str:
 class Error(Exception):
     def __init__(
         self,
+        token_info: str = None,
         error_code: ErrorCode = None,
         error_position: str = None,
         error_context: str = None,
         error_info: str = None,
     ):
-        
-        self.message = f'\n{ttyinfo(self.__class__.__name__)}: {error_code.value}\n'
+        self.message = f'\n{ttyinfo(self.__class__.__name__)}: {error_code.value} {token_info}\n'
         self.message += f'{error_position}{error_context}{error_info}\n\n'
 
 class LexerError(Error):
     def __init__(
         self,
+        token_info: str = None,
         error_code: ErrorCode = None,
         error_position: str = None,
         error_context: str = None,
         error_info: str = None,
     ):
-        super().__init__(error_code, error_position, error_context, error_info)
+        super().__init__(token_info, error_code, error_position, error_context, error_info)
 
 
 class ParserError(Error):
     def __init__(
         self,
+        token_info: str = None,
         error_code: ErrorCode = None,
         error_position: str = None,
         error_context: str = None,
         error_info: str = None,
     ):
-        super().__init__(error_code, error_position, error_context, error_info)
+        super().__init__(token_info, error_code, error_position, error_context, error_info)
