@@ -493,7 +493,7 @@ class LuaParser(Parser):
             node.update(namelist=self.namelist())
             if self.current_token.type == TokenType.COMMA:
                 node.register_token(self.eat(TokenType.COMMA))
-                node.update(varargs=self.get_punctuator(TokenType.VARARGS))
+                node.register_token(self.eat(TokenType.VARARGS))
             return node
         else:  # pragma: no cover
             self.error(ErrorCode.UNEXPECTED_TOKEN, "parlist error")

@@ -1,9 +1,10 @@
-from typing import Callable
+
 from .parser import Parser
 from ..lexers import TokenType, RustTokenSet, RustTokenType
 from ..error import ErrorCode
 from ..asts.rust_ast import *
-
+from ..asts.ast import add_ast_type
+from ..gdt import CSS
 
 class RustParser(Parser):
     def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True):
@@ -45,13 +46,14 @@ class RustParser(Parser):
         ]
 
     def parse(self):
-        """
-        rustFile ::= inner_attr* item_with_attrs *
-        """
+        
         self.root = self.rustFiles()
         return self.root
 
     def rustFiles(self):
+        """
+        rustFile ::= inner_attr* item_with_attrs*
+        """
         node = Rust()
         inner_attrs = []
         while self.current_token.type in self.rust_first_set.inner_attr:
@@ -179,6 +181,7 @@ class RustParser(Parser):
         node = UseItem()
         node.update(use=self.get_keyword(token_type=RustTokenType.USE))
         node.update(path_glob=self.path_glob())
+        add_ast_type(node.path_glob, CSS.IMPORT_LIBNAME)
         node.register_token(self.eat(TokenType.SEMI))
         return node
 
@@ -308,6 +311,7 @@ class RustParser(Parser):
         node = FnItem()
         node.update(fn=self.get_keyword(token_type=RustTokenType.FN))
         node.update(id=self.get_identifier())
+        add_ast_type(node.id, CSS.FUNCTION_NAME)
         if self.current_token.type in self.rust_first_set.generic_params:
             node.update(generic_params=self.generic_params())
         node.update(fn_params=self.fn_params())
@@ -961,7 +965,7 @@ class RustParser(Parser):
         """
         node = ExprPathSegment()
         node.update(id=self.get_identifier())
-        if self.current_token.type == TokenType.DOUBLE_COLON:
+        if self.current_token.type == TokenType.DOUBLE_COLON and self.peek_next_token().type in self.rust_first_set.generic_values:
             node.register_token(self.eat(TokenType.DOUBLE_COLON))
             node.update(generic_values=self.generic_values())
         return node
@@ -980,16 +984,388 @@ class RustParser(Parser):
                | add_group
                | mul_group
                | cast_expr
+
+               --- expr op expr ---
+
                | unary_group
                | macro_expr
-               | ref_group
                | primary_group
-        """
 
-    def binary_op(self):
+               --- expr match ---
+
+               | ref_group -- expr suffix
         """
-        binary_op ::= '+' | '-' | '*' | '/' | '%' | '<<' | '>>' | '&' | '|' | '^' | '&&' | '||' | '==' | '!=' | '<' | '>' | '<=' | '>='
+        node = Expr()
+        # unary_group.borrow_expr 和 primary_group.paren_expr 有重叠, 但是不影响匹配, 可以直接在这里过 unary_group, 交由下一组匹配 expr
+        if self.current_token.type in self.rust_first_set.unary_group:
+            node.update(expr=self.unary_group())
+        elif self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.BANG:
+            node.update(expr=self.macro_expr())
+        elif self.current_token.type in self.rust_first_set.primary_group:
+            node.update(expr=self.primary_group())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be unary group or primary group or macro expr")
+
+        while self.current_token.type in self.rust_first_set.ref_group:
+            self.ref_group(node)
+
+        if self.current_token.type in self.binary_op_set or self.current_token.type == RustTokenType.AS:
+            if self.current_token.type == RustTokenType.AS:
+                node.update(kw_as=self.get_keyword(token_type=RustTokenType.AS))
+            else:
+                node.update(op=self.get_punctuator())
+            node.update(next_expr=self.expr())
+        return node
+
+    def unary_group(self):
         """
+        unary_group ::= box_expr
+                      | unary_min_expr
+                      | deref_expr
+                      | not_expr
+                      | borrow_expr
+        """
+        node = UnaryGroup()
+        if self.current_token.type == RustTokenType.BOX:
+            node.update(kw=self.get_keyword(token_type=RustTokenType.BOX))
+        elif self.current_token.type == TokenType.MUL:
+            self.current_token.type = RustTokenType.DEREF
+            node.register_token(self.eat(RustTokenType.DEREF))
+        elif self.current_token.type == TokenType.MINUS:
+            node.register_token(self.eat(TokenType.MINUS))
+        elif self.current_token.type == TokenType.AMPERSAND:
+            node.register_token(self.eat(TokenType.AMPERSAND))
+            if self.current_token.type == RustTokenType.MUT:
+                node.update(kw=self.get_keyword(token_type=RustTokenType.MUT))
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be box, *, & or -")
+        node.update(expr=self.expr())
+        return node
+
+    def macro_expr(self):
+        """
+        macro_expr ::= ident '!' '(' [<<comma_separated_list expr>>] ')'
+        """
+        node = MacroExpr()
+        node.update(ident=self.get_identifier())
+        node.register_token(self.eat(TokenType.BANG))
+        add_ast_type(node.ident, CSS.MACRO_DEFINE)
+        node.register_token(self.eat(TokenType.LPAREN))
+        if self.current_token.type in self.rust_first_set.expr:
+            node.update(exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr))
+        node.register_token(self.eat(TokenType.RPAREN))
+        return node
+
+    def ref_group(self, expr: Expr):
+        """
+        ref_group ::= ref_expr | array_ref_expr | call_expr
+
+        ref_expr ::= expr '.' (ident | lit_integer)
+        array_ref_expr ::= expr '[' index_expr ']'
+        private index_expr ::= expr
+        call_expr ::= expr ["::" generic_values] '(' [<<comma_separated_list expr>>] ')'
+        """
+        node = RefGroup()
+        if self.current_token.type == TokenType.DOT:
+            node.register_token(self.eat(TokenType.DOT))
+            if self.current_token.type == TokenType.ID:
+                node.update(id=self.get_identifier())
+            elif self.current_token.type == TokenType.INT:
+                node.register_token(self.eat(TokenType.INT))
+            else:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be identifier or integer")
+        elif self.current_token.type == TokenType.LSQUAR_PAREN:
+            node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+            node.update(index_expr=self.expr())
+            node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+        elif self.current_token.type == TokenType.DOUBLE_COLON:
+            node.register_token(self.eat(TokenType.DOUBLE_COLON))
+            node.update(generic_values=self.generic_values())
+            node.register_token(self.eat(TokenType.LPAREN))
+            if self.current_token.type in self.rust_first_set.expr:
+                node.update(exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr))
+            node.register_token(self.eat(TokenType.RPAREN))
+        elif self.current_token.type == TokenType.LPAREN:
+            # call_expr
+            add_ast_type(expr.expr.expr_path, CSS.FUNCTION_CALL)
+            node.register_token(self.eat(TokenType.LPAREN))
+            if self.current_token.type in self.rust_first_set.expr:
+                node.update(exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr))
+            node.register_token(self.eat(TokenType.RPAREN))
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be . or [")
+
+        expr.ref_exprs.append(node)
+
+    def primary_group(self):
+        """
+        primary_group ::= struct_expr
+                        | simple_ref_expr
+                        | literal_expr
+                        | paren_expr
+                        | tuple_expr
+                        | array_expr
+                        | lambda_expr
+                        | return_expr
+                        | statement_like_expr
+                        | continue
+                        | break [expr]
+        
+        struct_expr ::= expr_path '{' <<comma_separated_list struct_field>> ['..' expr]'}'
+        
+        simple_ref_expr ::= expr_path | self
+        literal_expr ::= lit
+        paren_expr ::= &('(' expr ')') '(' expr ')'
+        tuple_expr ::= '(' expr ',' [<<comma_separated_list expr>>] ')'
+        array_expr ::= '[' expr ';' expr ']'
+                     | '[' [<<comma_separated_list expr>>] ']'
+        return_expr ::= return [expr]
+        
+        @EXTENDED-GRAMMAR: 添加 continue 和 break 的语法
+        """
+        if self.current_token.type == RustTokenType.SELF:
+            return self.get_keyword(token_type=RustTokenType.SELF)
+        
+        node = PrimaryGroup()
+        if self.current_token.type == TokenType.ID:
+            # struct_expr | simple_ref_expr
+            node.update(expr_path=self.expr_path())
+            if self.current_token.type == TokenType.LCURLY_BRACE and self.peek_next_token().type == TokenType.ID:
+                node.register_token(self.eat(TokenType.LCURLY_BRACE))
+                node.update(struct_fields=self.list_items(self.struct_field, trailing_set=[TokenType.ID]))
+                if self.current_token.type == TokenType.CONCAT:
+                    node.register_token(self.eat(TokenType.CONCAT))
+                    node.update(expr=self.expr())
+                node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        elif self.current_token.type in self.rust_first_set.lit:
+            node.update(lit=self.lit())
+        elif self.current_token.type == TokenType.LPAREN:
+            node.update(exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr))
+        elif self.current_token.type == TokenType.LSQUAR_PAREN:
+            node.register_token(self.eat(TokenType.LSQUAR_PAREN))
+            if self.current_token.type in self.rust_first_set.expr:
+                node.update(expr=self.expr())
+                if self.current_token.type == TokenType.SEMI:
+                    node.register_token(self.eat(TokenType.SEMI))
+                    node.update(next_expr=self.expr())
+                elif self.current_token.type == TokenType.COMMA:
+                    node.register_token(self.eat(TokenType.COMMA))
+                    exprs = []
+                    while self.current_token.type in self.rust_first_set.expr:
+                        exprs.append(self.expr())
+                        if self.current_token.type == TokenType.COMMA:
+                            node.register_token(self.eat(TokenType.COMMA))
+                        else:
+                            break
+                    node.update(exprs=exprs)
+                        
+            node.register_token(self.eat(TokenType.RSQUAR_PAREN))
+            
+        elif self.current_token.type in self.rust_first_set.lambda_expr:
+            node.update(lambda_expr=self.lambda_expr())
+        elif self.current_token.type == RustTokenType.RETURN:
+            node.update(kw=self.get_keyword(token_type=RustTokenType.RETURN))
+            if self.current_token.type in self.rust_first_set.expr:
+                node.update(expr=self.expr())
+        elif self.current_token.type in self.rust_first_set.statement_like_expr:
+            node.update(statement_like_expr=self.statement_like_expr())
+        elif self.current_token.type == RustTokenType.CONTINUE:
+            node.update(kw=self.get_keyword(token_type=RustTokenType.CONTINUE))
+        elif self.current_token.type == RustTokenType.BREAK:
+            node.update(kw=self.get_keyword(token_type=RustTokenType.BREAK))
+            if self.current_token.type in self.rust_first_set.expr:
+                node.update(expr=self.expr())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be struct_expr | simple_ref_expr | literal_expr | paren_expr | tuple_expr | array_expr | return_expr | statement_like_expr | continue | break")
+        return node
+
+    def struct_field(self):
+        '''
+        struct_field ::= ident ':' expr
+        '''
+        node = StructField()
+        node.update(id=self.get_identifier())
+        node.register_token(self.eat(TokenType.COLON))
+        node.update(expr=self.expr())
+        return node
+
+    def lambda_expr(self):
+        '''
+        lambda_expr ::= ('||' | '|' [<<comma_separated_list lambda_param>>] '|') [ret_ty] expr
+        '''
+        node = LambdaExpr()
+        if self.current_token.type == TokenType.OR:
+            self.current_token.type = RustTokenType.LAMBDA
+            node.register_token(self.eat(RustTokenType.LAMBDA))
+        elif self.current_token.type == TokenType.PIPE:
+            node.register_token(self.eat(TokenType.PIPE))
+            if self.current_token.type in self.rust_first_set.pat:
+                node.update(lambda_params=self.list_items(self.lambda_param, trailing_set=self.rust_first_set.pat))
+            node.register_token(self.eat(TokenType.PIPE))
+            if self.current_token.type in self.rust_first_set.ret_ty:
+                node.update(ret_ty=self.ret_ty())
+            node.update(expr=self.expr())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be || or |")
+        
+        return node
+    
+    def lambda_param(self):
+        '''
+        lambda_param ::= pat [":" ty_sum]
+        '''
+        node = LambdaParam()
+        node.update(pat=self.pat())
+        if self.current_token.type == TokenType.COLON:
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(ty_sum=self.ty_sum())
+        return node
+
+    def statement_like_expr(self):
+        '''
+        statement_like_expr ::= block_expr
+                              | unsafe_block_expr
+                              | if_expr
+                              | while_expr
+                              | loop_expr
+                              | match_expr
+                              | for_expr
+        '''
+        if self.current_token.type == TokenType.LCURLY_BRACE:
+            return self.block_expr()
+        elif self.current_token.type == RustTokenType.UNSAFE:
+            return self.unsafe_block_expr()
+        elif self.current_token.type == RustTokenType.IF:
+            return self.if_expr()
+        elif self.current_token.type == RustTokenType.WHILE:
+            return self.while_expr()
+        elif self.current_token.type == RustTokenType.LOOP:
+            return self.loop_expr()
+        elif self.current_token.type == RustTokenType.MATCH:
+            return self.match_expr()
+        elif self.current_token.type == RustTokenType.FOR:
+            return self.for_expr()
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be block_expr | unsafe_block_expr | if_expr | while_expr | loop_expr | match_expr | for_expr")
+
+    def block_expr(self):
+        '''
+        block_expr ::= '{' stmt* [expr] '}'
+        '''
+        node = BlockExpr()
+        node.register_token(self.eat(TokenType.LCURLY_BRACE))
+        node.update(stmts=self.list_items(self.stmt, trailing_set=self.rust_first_set.stmt, delimiter=None))
+        if self.current_token.type in self.rust_first_set.expr:
+            node.update(expr=self.expr())
+        node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        return node
+
+    def unsafe_block_expr(self):
+        '''
+        unsafe_block_expr ::= unsafe block_expr
+        '''
+        node = UnsafeBlockExpr()
+        node.update(unsafe=self.get_keyword(token_type=RustTokenType.UNSAFE))
+        node.update(block_expr=self.block_expr())
+        return node
+
+    def if_expr(self):
+        '''
+        if_expr ::= if (let pat '=' expr | expr) block_expr [else (if_expr | block_expr)]
+        '''
+        node = IfExpr()
+        node.update(if_kw=self.get_keyword(token_type=RustTokenType.IF))
+        if self.current_token.type == RustTokenType.LET:
+            node.update(let_kw=self.get_keyword(token_type=RustTokenType.LET))
+            node.update(pat=self.pat())
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(expr=self.expr())
+        elif self.current_token.type in self.rust_first_set.expr:
+            node.update(expr=self.expr())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be let | expr")
+        node.update(block_expr=self.block_expr())
+        if self.current_token.type == RustTokenType.ELSE:
+            node.register_token(self.eat(RustTokenType.ELSE))
+            if self.current_token.type == RustTokenType.IF:
+                node.update(if_expr=self.if_expr())
+            elif self.current_token.type in self.rust_first_set.block_expr:
+                node.update(block_expr=self.block_expr())
+            else:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be if | block_expr")
+        return node
+
+    def while_expr(self):
+        '''
+        while_expr ::= while (let pat '=' expr | expr) block_expr
+        '''
+        node = WhileExpr()
+        node.update(while_kw=self.get_keyword(token_type=RustTokenType.WHILE))
+        if self.current_token.type == RustTokenType.LET:
+            node.update(let_kw=self.get_keyword(token_type=RustTokenType.LET))
+            node.update(pat=self.pat())
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(expr=self.expr())
+        elif self.current_token.type in self.rust_first_set.expr:
+            node.update(expr=self.expr())
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be let | expr")
+        node.update(block_expr=self.block_expr())
+        return node
+    
+    def loop_expr(self):
+        '''
+        loop_expr ::= loop block_expr
+        '''
+        node = LoopExpr()
+        node.update(loop_kw=self.get_keyword(token_type=RustTokenType.LOOP))
+        node.update(block_expr=self.block_expr())
+        return node
+
+    def match_expr(self):
+        '''
+        match_expr ::= match expr '{'
+            (pats [if expr] '=>' (block_expr [',']| expr ','))*
+            [pats [if expr] '=>' expr]
+        '}'
+        '''
+        node = MatchExpr()
+        node.update(match_kw=self.get_keyword(token_type=RustTokenType.MATCH))
+        node.update(expr=self.expr())
+        node.register_token(self.eat(TokenType.LCURLY_BRACE))
+        
+        match_items = []
+        while self.current_token.type in self.rust_first_set.pat:
+            match_item = MatchItem()
+            match_item.update(pats=self.pats())
+            if self.current_token.type == RustTokenType.IF:
+                match_item.register_token(self.eat(RustTokenType.IF))
+                match_item.update(expr=self.expr())
+            match_item.register_token(self.eat(TokenType.LAMBDA_POINT))
+            if self.current_token.type in self.rust_first_set.block_expr:
+                match_item.update(block_expr=self.block_expr())
+            elif self.current_token.type in self.rust_first_set.expr:
+                match_item.update(expr=self.expr())
+            else:
+                self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be block_expr | expr")
+            if self.current_token.type == TokenType.COMMA:
+                match_item.register_token(self.eat(TokenType.COMMA))
+            match_items.append(match_item)
+        node.update(match_items=match_items)
+        node.register_token(self.eat(TokenType.RCURLY_BRACE))
+        return node
+    
+    def for_expr(self):
+        '''
+        for_expr ::= for pat in expr block_expr
+        '''
+        node = ForExpr()
+        node.update(for_kw=self.get_keyword(token_type=RustTokenType.FOR))
+        node.update(pat=self.pat())
+        node.register_token(self.eat(RustTokenType.IN))
+        node.update(expr=self.expr())
+        node.update(block_expr=self.block_expr())
+        return node
 
     def stmt(self):
         """
@@ -999,6 +1375,51 @@ class RustParser(Parser):
                | expr ';'
                | ';'
         """
+        if self.current_token.type in self.rust_first_set.stmt_item:
+            return self.stmt_item()
+        elif self.current_token.type == RustTokenType.LET:
+            node = LetExpr()
+            node.update(let_kw=self.get_keyword(token_type=RustTokenType.LET))
+            node.update(pat=self.pat())
+            if self.current_token.type == TokenType.COLON:
+                node.register_token(self.eat(TokenType.COLON))
+                node.update(ty_sum=self.ty_sum())
+            if self.current_token.type == TokenType.ASSIGN:
+                node.register_token(self.eat(TokenType.ASSIGN))
+                node.update(expr=self.expr())
+            node.register_token(self.eat(TokenType.SEMI))
+            return node
+        elif self.current_token.type in self.rust_first_set.statement_like_expr:
+            return self.statement_like_expr()
+        elif self.current_token.type in self.rust_first_set.expr:
+            node = self.expr()
+            self.eat(TokenType.SEMI)
+            return node
+        elif self.current_token.type == TokenType.SEMI:
+            self.eat(TokenType.SEMI)
+            return None
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be stmt_item | let | statement_like_expr | expr | ;")
 
     def lit(self):
-        """ """
+        """
+        lit ::= lit_byte
+              | lit_char
+              | lit_integer
+              | lit_float
+              | lit_string
+              | lit_byte_string
+              | '()'
+              | true
+              | false
+              | str
+        """
+        if self.current_token.type in self.rust_first_set.lit:
+            if self.current_token.type == TokenType.LPAREN:
+                self.eat(TokenType.LPAREN)
+                self.eat(TokenType.RPAREN)
+            else:
+                self.eat()
+            return None
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be lit")

@@ -64,12 +64,11 @@ class RustTokenType(Enum):
     CHAR = "CHAR"
     INTEGER = "INTEGER"
     FLOAT = "FLOAT"
-    STRING = "STRING"
     BYTE_STRING = "BYTE_STRING"
     STR = "STR"
     DEREF = "*"  # 解引用
     STAR = "*"
-
+    LAMBDA = '||'
 
 class RustLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = RustTokenType):
@@ -127,8 +126,11 @@ class RustLexer(Lexer):
 
             if self.current_char == '"':
                 return self.get_string()
+            
+            if self.current_char.isdigit():
+                return self.get_number(accept_float=True, accept_hex=True, accept_bit=True)
 
-            if self.current_char.isalnum() or self.current_char == "_":
+            if self.current_char.isalpha() or self.current_char == "_":
                 return self.get_id()
 
             if self.current_char in self.long_op_dict:
@@ -159,9 +161,9 @@ class RustTokenSet:
         self.inner_attr = TokenSet(RustTokenType.HASH_BANG)
         self.outer_attr = TokenSet(TokenType.HASH)
 
-        self.attrs_and_vis = TokenSet(self.outer_attr)
         self.visibility = TokenSet(RustTokenType.PUB)
-        self.item_with_attrs = TokenSet(self.attrs_and_vis)
+        self.attrs_and_vis = TokenSet(self.outer_attr, self.visibility)
+    
         self.path_glob = TokenSet(TokenType.ID, RustTokenType.SELF, TokenType.LCURLY_BRACE)
 
         self.block_item = TokenSet(
@@ -187,9 +189,9 @@ class RustTokenSet:
         self.lit = TokenSet(
             RustTokenType.BYTE,
             RustTokenType.CHAR,
-            RustTokenType.INTEGER,
-            RustTokenType.FLOAT,
-            RustTokenType.STRING,
+            TokenType.NUMBER,
+            TokenType.FLOAT,
+            TokenType.STRING,
             RustTokenType.BYTE_STRING,
             TokenType.LPAREN,
             RustTokenType.TRUE,
@@ -219,4 +221,11 @@ class RustTokenSet:
         self.generic_values = TokenSet(TokenType.LANGLE_BRACE)
 
         self.unary_group = TokenSet(RustTokenType.BOX, TokenType.MINUS, TokenType.MUL, TokenType.AMPERSAND)
-        self.expr = TokenSet(TokenType.ID, self.unary_group)
+        self.ref_group = TokenSet(TokenType.DOT, TokenType.LSQUAR_PAREN, TokenType.DOUBLE_COLON, TokenType.LPAREN)
+         
+        self.lambda_expr = TokenSet(TokenType.OR, TokenType.PIPE)
+        self.statement_like_expr = TokenSet(self.block_expr, RustTokenType.UNSAFE, RustTokenType.IF, RustTokenType.WHILE, RustTokenType.LOOP, RustTokenType.MATCH, RustTokenType.FOR)
+        self.primary_group = TokenSet(TokenType.ID, TokenType.AMPERSAND, RustTokenType.SELF, TokenType.LPAREN, TokenType.LSQUAR_PAREN, self.lambda_expr, RustTokenType.RETURN, self.statement_like_expr, self.lit, RustTokenType.CONTINUE, RustTokenType.BREAK)
+        self.expr = TokenSet(TokenType.ID, self.unary_group, self.ref_group, self.primary_group)
+        self.stmt = TokenSet(self.stmt_item, RustTokenType.LET, self.statement_like_expr, self.expr, TokenType.SEMI)
+        self.item_with_attrs = TokenSet(self.attrs_and_vis, self.visibility, self.item)

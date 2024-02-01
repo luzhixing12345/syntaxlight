@@ -1,6 +1,6 @@
 
 i = 0
-t = verilog
+t = rust
 s = vscode
 
 KNOWN_ERROR = 19

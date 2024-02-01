@@ -2,7 +2,7 @@ from ..lexers.lexer import Lexer, Token, TokenType, TTYColor, TokenSet
 from ..error import ParserError, ErrorCode, ttyinfo
 from enum import Enum
 from ..asts.ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Tuple
 import sys
 import html
 import traceback
@@ -11,7 +11,7 @@ from ..gdt import CSS
 
 
 DEBUG = False
-# DEBUG = True
+DEBUG = True
 
 
 class Parser:
@@ -307,7 +307,13 @@ class Parser:
         node.register_token(self.eat(token_type))
         return node
 
-    def get_punctuator(self, token_type: Enum = None) -> Punctuator:
+    def get_punctuator(
+        self,
+        fix_types: List[Tuple[Enum, Enum]] = [
+            (TokenType.LANGLE_BRACE, TokenType.LT),
+            (TokenType.RANGLE_BRACE, TokenType.GT),
+        ],
+    ) -> Punctuator:
         """
         获取运算符
 
@@ -315,14 +321,11 @@ class Parser:
         """
         node = Punctuator(self.current_token.value)
 
-        if token_type is None:
-            if self.current_token.type == TokenType.LANGLE_BRACE:
-                self.current_token.type = TokenType.LT
-            elif self.current_token.type == TokenType.RANGLE_BRACE:
-                self.current_token.type = TokenType.GT
-            node.register_token(self.eat())
-        else:
-            node.register_token(self.eat(token_type))
+        if fix_types is not None:
+            for fix_type in fix_types:
+                if self.current_token.type == fix_type[0]:
+                    self.current_token.type = fix_type[1]
+        node.register_token(self.eat())
         return node
 
     def get_string(
@@ -387,10 +390,12 @@ class Parser:
         node.register_token(self.eat())
         return node
 
-    def list_items(self, func: Callable, delimiter=TokenType.COMMA, trailing_set: Union[TokenSet,List[TokenType]] = None):
+    def list_items(
+        self, func: Callable, delimiter=TokenType.COMMA, trailing_set: Union[TokenSet, List[TokenType]] = None
+    ):
         """
         对于 <terminal> (<delimiter> <terminal>)* 的快速匹配
-        
+
         @func: 需要循环匹配的函数
         @delimiter: 分隔符, None 表示匹配 func*
         @trailing_set: func 的 token_set

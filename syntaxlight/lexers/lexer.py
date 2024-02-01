@@ -432,7 +432,7 @@ class Lexer:
 
         if accept_float:
             # (.<digits>)?
-            if self.current_char == ".":
+            if self.current_char == "." and self.peek() != '.':
                 result += self.current_char
                 self.advance()
                 while self.current_char is not None and is_match_char(self.current_char):

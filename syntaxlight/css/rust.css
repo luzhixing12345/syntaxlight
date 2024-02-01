@@ -21,3 +21,33 @@ pre[class*="language-rust"] {
 .Token.BraceDepth-2 {
     color: --brace3;
 }
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.Keyword,
+.Token.MacroDefine,
+.Token.MacroExpr.BANG {
+    color: --type;
+}
+
+.Token.STRING {
+    color: --string;
+}
+
+.Token.FunctionName, .Token.FunctionCall {
+    color: --function;
+}
+
+.Token.ImportLibName {
+    color: --struct;
+}
+
+.Token.LOOP, .Token.CONTINUE, .Token.BREAK, .Token.MATCH {
+    color: --define;
+}
