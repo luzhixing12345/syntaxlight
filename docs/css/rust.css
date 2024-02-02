@@ -1,0 +1,100 @@
+pre[class*="language-rust"] {
+    background: #1f1f1f;
+}
+
+pre[class*="language-rust"] .Token {
+    color: #C1CCCC;
+}
+
+pre[class*="language-rust"] .Token.ID {
+    color: #88D6FE;
+}
+
+pre[class*="language-rust"] .Token.BraceDepth-0 {
+    color: #FFD700;
+}
+
+pre[class*="language-rust"] .Token.BraceDepth-1 {
+    color: #DA70D6;
+}
+
+pre[class*="language-rust"] .Token.BraceDepth-2 {
+    color: #1A9DFF;
+}
+
+pre[class*="language-rust"] .Token.COMMENT {
+    color: #6A9955;
+}
+
+pre[class*="language-rust"] .Token.NUMBER {
+    color: #A2CEA8;
+}
+
+pre[class*="language-rust"] .Token.Keyword,
+pre[class*="language-rust"] .Token.MacroDefine,
+pre[class*="language-rust"] .Token.MacroExpr.BANG {
+    color: #569cd6;
+}
+
+pre[class*="language-rust"] .Token.STRING,
+pre[class*="language-rust"] .Token.CHARACTER {
+    color: #CE9178;
+}
+
+pre[class*="language-rust"] .Token.FunctionName,
+pre[class*="language-rust"] .Token.FunctionCall,
+pre[class*="language-rust"] .Token.Attribute {
+    color: #DCDCAA;
+}
+
+pre[class*="language-rust"] .Token.ImportLibName,
+pre[class*="language-rust"] .Token.GenericType,
+pre[class*="language-rust"] .Token.TypeBound,
+pre[class*="language-rust"] .Token.NumberType,
+pre[class*="language-rust"] .Token.ClassName,
+pre[class*="language-rust"] .Token.TraitName,
+pre[class*="language-rust"] .Token.Enumerator,
+pre[class*="language-rust"] .Token.Typedefine {
+    color: #4EC9B0;
+}
+
+pre[class*="language-rust"] .Token.LOOP,
+pre[class*="language-rust"] .Token.CONTINUE,
+pre[class*="language-rust"] .Token.BREAK,
+pre[class*="language-rust"] .Token.MATCH,
+pre[class*="language-rust"] .Token.IF,
+pre[class*="language-rust"] .Token.ELSE,
+pre[class*="language-rust"] .Token.FOR,
+pre[class*="language-rust"] .Token.IN {
+    color: #C586C0;
+}
+
+pre[class*="language-rust"] .Token.MutableVar,
+pre[class*="language-rust"] .Token.MutableArg {
+    border-bottom: 1px solid #88D6FE;
+}
+
+pre[class*="language-rust"] .Token.MutableSelf {
+    border-bottom: 1px solid #569cd6;
+}
+
+pre[class*="language-rust"] .Token.MutableFunction {
+    border-bottom: 1px solid #DCDCAA;
+}
+
+pre[class*="language-rust"] .Token.Format,
+pre[class*="language-rust"] .Token.LIFETIME,
+pre[class*="language-rust"] .Token.TRUE,
+pre[class*="language-rust"] .Token.FALSE,
+pre[class*="language-rust"] .Token.ImplItem.FOR {
+    color: #569cd6;
+}
+
+pre[class*="language-rust"] .Token.Control {
+    color: --control;
+}
+
+pre[class*="language-rust"] .Token.EnumID,
+pre[class*="language-rust"] .Token.Constant {
+    color: #4FC1FF;
+}

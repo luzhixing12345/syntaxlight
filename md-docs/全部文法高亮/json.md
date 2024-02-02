@@ -163,43 +163,10 @@
 ## [8.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/8.json)
 
 ```json
-[
-    "阿加莎尽快",
-    "阿斯顿杰拉德",
-    "爱神的箭卡的很",
-
-```
-## [9.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/9.json)
-
-```json
-123
-```
-## [10.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/10.json)
-
-```json
 {
     "definitions": {
         "Schema1": {
             "not": {
-                "$ref": "#/definitions/Schema1",
-            }
-        }
-    },
-    "$ref": "#/definitions/Schema1",
-    "23": -12310,
-    "123": true,
-    "123456": false,
-    "1999": null
-}
-```
-## [11.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/11.json)
-
-```json
-{
-    "definitions": {
-        "Schema1": {
-            "not": {
-                "$ref": "#/definitions/Schema1"
                 "$ref": "#/definitions/Schema1"
             }
         }
@@ -209,64 +176,5 @@
     "123": true,
     "123456": false,
     "1999": null
-}
-```
-## [12.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/12.json)
-
-```json
-[
-    "apple",
-    "banana",
-    "orange"
-    "orange"
-]
-```
-## [13.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/13.json)
-
-```json
-[
-    "apple",
-    "banana",
-    "orange",
-]
-```
-## [14.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/14.json)
-
-```json
-[
-    "apple",
-    "banana",
-    "orange",
-    {
-        "123": -abc
-    }
-]
-```
-## [15.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/15.json)
-
-```json
-[
-    "apple",
-    "banana",
-    "orange"
-]
-123
-```
-## [16.json](https://github.com/luzhixing12345/syntaxlight/tree/main/test/json/16.json)
-
-```json
-{
-    "clangd.fallbackFlags": [
-        "-I${workspaceFolder}/include"
-    ],
-    "clangd.arguments": [
-        "--background-index", // 在后台自动分析文件(基于complie_commands)
-        "-j=12", // 同时开启的任务数量
-        "--clang-tidy", // clang-tidy功能
-        "--clang-tidy-checks=performance-*,bugprone-*",
-        "--all-scopes-completion", // 全局补全(会自动补充头文件)
-        "--completion-style=detailed", // 更详细的补全内容
-        "--header-insertion=iwyu" // 补充头文件的形式
-    ]
 }
 ```

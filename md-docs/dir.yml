@@ -22,6 +22,7 @@
 - yaml: 12
 - txt: 13
 - verilog: 14
+- rust: 15
 开发文档:
 - BNF: 1
 - 参考文档: 2
