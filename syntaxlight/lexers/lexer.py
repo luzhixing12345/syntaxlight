@@ -138,6 +138,13 @@ class Token:
         if CSS is not None:
             self.class_list.append(CSS.value)
 
+    def remove_css(self, CSS: Enum):
+        if CSS is not None:
+            for class_type in self.class_list:
+                if class_type == CSS.value:
+                    self.class_list.remove(class_type)
+                    break
+
     def __repr__(self):
         return self.__str__()
 
@@ -370,6 +377,8 @@ class Lexer:
     def peek(self, n: int = 1):
         """
         向后看 n 个字符
+
+        当 n > 1 时,返回 n 个字符的切片
         """
         peek_pos = self.pos + n
         if peek_pos > len(self.text) - 1:
@@ -432,7 +441,7 @@ class Lexer:
 
         if accept_float:
             # (.<digits>)?
-            if self.current_char == "." and self.peek() != '.':
+            if self.current_char == "." and self.peek() != ".":
                 result += self.current_char
                 self.advance()
                 while self.current_char is not None and is_match_char(self.current_char):
@@ -475,7 +484,7 @@ class Lexer:
         if result != TokenType.QUOTO.value:
             token = Token(TokenType.STRING, result, self.line, self.column)
             self.advance()
-            self.error(ErrorCode.UNEXPECTED_TOKEN, token)
+            self.error(ErrorCode.UNEXPECTED_TOKEN, token, 'should be strict "')
         end_character = TokenType.QUOTO.value
         self.advance()
 
@@ -501,7 +510,7 @@ class Lexer:
         if result not in ("'", '"'):
             token = Token(TokenType.STRING, result, self.line, self.column)
             self.advance()
-            self.error(ErrorCode.UNEXPECTED_TOKEN, token)
+            self.error(ErrorCode.UNEXPECTED_TOKEN, token, "should be ' or \"")
         end_character = self.current_char  # 结束标志一定是和开始标志相同的
         self.advance()
 
@@ -523,6 +532,29 @@ class Lexer:
 
         result += end_character
         token = Token(TokenType.STR, result, self.line, self.column)
+        self.advance()
+        return token
+
+    def get_char(self):
+        """
+        单字符
+        """
+        result = self.current_char
+        if result != "'":
+            token = Token(TokenType.CHARACTER, result, self.line, self.column)
+            self.advance()
+            self.error(ErrorCode.UNEXPECTED_TOKEN, token, "should be a single character")
+
+        self.advance()
+        result += self.current_char
+        self.advance()
+        if self.current_char != "'":
+            token = Token(TokenType.CHARACTER, result, self.line, self.column)
+            self.advance()
+            self.error(ErrorCode.UNEXPECTED_TOKEN, token, "should be a single character")
+
+        result += self.current_char
+        token = Token(TokenType.CHARACTER, result, self.line, self.column)
         self.advance()
         return token
 

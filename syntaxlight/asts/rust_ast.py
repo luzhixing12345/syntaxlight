@@ -1,6 +1,8 @@
-from .ast import AST, NodeVisitor, String, Identifier
-from typing import List, Union
+from .ast import AST, Identifier, Keyword
+from typing import List, Union, Optional
 from enum import Enum
+from ..gdt import GlobalDescriptorTable, CSS
+
 
 class Rust(AST):
     def __init__(self) -> None:
@@ -22,7 +24,7 @@ class OuterAttr(AST):
 class MetaItem(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.ident = None
+        self.id:Identifier = None
         self.lit = None
 
 
@@ -51,13 +53,38 @@ class UseItem(AST):
     def __init__(self) -> None:
         super().__init__()
         self.use = None
-        self.path_glob = None
+        self.path_glob: PathGlob = None
 
 
 class PathGlob(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.path_items = None
+        self.path_item: Union[Identifier, Keyword, None] = None
+        self.sub_path_glob: Optional[PathGlob] = None
+        self.path_globs: Optional[List[PathGlob]] = None
+
+        self.father: PathGlob = None  # sub_path_glob 的父节点
+
+    def register_gdt(self, GDT: GlobalDescriptorTable):
+        """
+        将最后一个导入的路径注册到 GDT 中
+        """
+        if self.path_item is not None:
+            if self.sub_path_glob is None:
+                if type(self.path_item) == Identifier:
+                    GDT.register_id(self.path_item.id, CSS.IMPORT_LIBNAME)
+                elif type(self.path_item) == Keyword:
+                    father_node = self.father
+                    while father_node.path_item is None and father_node.father is not None:
+                        father_node = father_node.father
+                    if father_node.father is not None:
+                        GDT.register_id(father_node.path_item.id, CSS.IMPORT_LIBNAME)
+            else:
+                self.sub_path_glob.register_gdt(GDT)
+        else:
+            if self.path_globs is not None:
+                for path_glob in self.path_globs:
+                    path_glob.register_gdt(GDT)
 
 
 class StaticItem(AST):
@@ -91,9 +118,9 @@ class FnItem(AST):
     def __init__(self) -> None:
         super().__init__()
         self.fn = None
-        self.id = None
+        self.id:Identifier = None
         self.generic_params = None
-        self.fn_params = None
+        self.fn_params:FnParams = None
         self.ret_ty = None
         self.where_clause = None
         self.block_expr = None
@@ -165,14 +192,14 @@ class RecordStructMember(AST):
 class FnParams(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.fn_params = None
+        self.fn_params:List[FnParam] = None
 
 
 class FnParam(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.pat = None
-        self.ty_sum = None
+        self.pat:Pat = None
+        self.ty_sum :TySum= None
 
 
 class RetTy(AST):
@@ -214,22 +241,23 @@ class ImplMember(AST):
     def __init__(self) -> None:
         super().__init__()
         self.type = None
-        self.id = None
+        self.id:Identifier = None
         self.ty_sum = None
         self.expr = None
-
+        self.member_fn_params: MemberFnParams = None
 
 class MemberFnParams(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.member_fn_params = None
-
+        self.self_param:SelfParam = None
+        self.fn_params = None
 
 class SelfParam(AST):
     def __init__(self) -> None:
         super().__init__()
         self.self = None
-
+        self.mut: Keyword = None
+        self.kw_self: Keyword = None
 
 class TraitItem(AST):
     def __init__(self) -> None:
@@ -295,7 +323,7 @@ class WhereClause(AST):
 class Path(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.path = None
+        self.id: Identifier = None
         self.path_ids = None
 
 
@@ -303,6 +331,8 @@ class Pat(AST):
     def __init__(self) -> None:
         super().__init__()
         self.pat = None
+        self.id: Identifier = None
+        self.path: Path = None
 
 
 class PatField(AST):
@@ -315,7 +345,7 @@ class PatField(AST):
 class TySum(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.ty = None
+        self.ty:Ty = None
         self.ty_param_bounds = None
 
 
@@ -323,19 +353,19 @@ class Ty(AST):
     def __init__(self) -> None:
         super().__init__()
         self.ty = None
-
+        self.mut = None
 
 class TyParam(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.id = None
+        self.id:Identifier = None
         self.ty_param_bounds = None
 
 
 class TypePathSegment(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.id = None
+        self.id: Identifier = None
         self.generic_values = None
         self.ty_sums = None
         self.ret_ty = None
@@ -368,7 +398,7 @@ class Expr(AST):
     def __init__(self) -> None:
         super().__init__()
         self.expr: Union[UnaryGroup, PrimaryGroup, MacroExpr] = None
-        self.ref_exprs = []
+        self.ref_exprs: List[RefGroup] = []
 
 
 class UnaryGroup(AST):
@@ -380,7 +410,7 @@ class UnaryGroup(AST):
 class PrimaryGroup(AST):
     def __init__(self) -> None:
         super().__init__()
-        self.expr_path = None
+        self.expr_path: List[ExprPathSegment] = None
 
 
 class StructField(AST):
@@ -472,7 +502,7 @@ class LetExpr(AST):
     def __init__(self) -> None:
         super().__init__()
         self.let_kw = None
-        self.pat = None
+        self.pat: Pat = None
         self.ty_sum = None
         self.expr = None
 
@@ -484,3 +514,10 @@ class RefGroup(AST):
         self.id = None
         self.index_expr = None
         self.generic_values = None
+
+
+class Visibility(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.pub = None
+        self.crate = None

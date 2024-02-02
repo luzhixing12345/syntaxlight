@@ -1,6 +1,7 @@
 use rand::Rng;
 use std::cmp::Ordering;
 use std::io;
+use std::alloc::{*, self};
 
 fn main() {
     println!("Hello, world!");

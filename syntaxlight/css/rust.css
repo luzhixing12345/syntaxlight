@@ -36,18 +36,57 @@ pre[class*="language-rust"] {
     color: --type;
 }
 
-.Token.STRING {
+.Token.STRING,
+.Token.CHARACTER {
     color: --string;
 }
 
-.Token.FunctionName, .Token.FunctionCall {
+.Token.FunctionName,
+.Token.FunctionCall,
+.Token.Attribute {
     color: --function;
 }
 
-.Token.ImportLibName {
+.Token.ImportLibName,
+.Token.GenericType,
+.Token.TypeBound,
+.Token.NumberType,
+.Token.ClassName,
+.Token.TraitName {
     color: --struct;
 }
 
-.Token.LOOP, .Token.CONTINUE, .Token.BREAK, .Token.MATCH {
+.Token.LOOP,
+.Token.CONTINUE,
+.Token.BREAK,
+.Token.MATCH,
+.Token.IF,
+.Token.ELSE,
+.Token.FOR,
+.Token.IN {
     color: --define;
+}
+
+.Token.MutableVar,
+.Token.MutableArg {
+    border-bottom: 1px solid --variant;
+}
+
+.Token.MutableSelf {
+    border-bottom: 1px solid --type;
+}
+
+.Token.MutableFunction {
+    border-bottom: 1px solid --function;
+}
+
+.Token.Format,
+.Token.LIFETIME,
+.Token.TRUE,
+.Token.FALSE {
+    color: --type;
+}
+
+.Token.Control {
+    color: --control;
 }

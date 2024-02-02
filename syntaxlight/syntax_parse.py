@@ -1,11 +1,11 @@
 import os
 from .lexers import *
 from .parsers import *
-from .error import Error
+from .error import Error, ttyinfo
 from .language import guess_language, SUPPORTED_SYNTAX, show_help_info, clean_language
 from .asts.ast import display_ast
 import sys
-
+import traceback
 
 def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> str:
     if len(text) == 0:
@@ -21,7 +21,9 @@ def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> str:
         # 失败后将剩余部分也解析
         while parser.current_token.type != TokenType.EOF:
             parser.eat()
-        
+    except Exception as e:
+        sys.stderr.write(f'  {ttyinfo("Parse running error")}: {e}')
+        traceback.print_exc()
     finally:
         display_ast(parser.root, parser.sub_roots, save_ast_tree=save_ast_tree)
         # print(parser.node)

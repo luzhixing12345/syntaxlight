@@ -89,8 +89,9 @@ private item ::= stmt_item
 extern_crate_item ::= extern crate ident [as ident] ';'
 use_item ::= use path_glob ';'
 
-path_glob ::= path_item ["::" (path_glob | "*")]
-            | '{' [<<comma_separated_list path_item>>] '}'
+path_glob ::= path_item ["::" path_glob]
+            | '{' [<<comma_separated_list path_glob>>] '}'
+            | "*"
 
 path_item ::= ident | self
 
@@ -232,7 +233,7 @@ generic_values ::= '<' <<comma_separated_list (ident '=' ty | ty_sum | lifetime)
 stmt ::= stmt_item
        | let pat [':' ty_sum] ['=' expr] ';'
        | statement_like_expr
-       | expr ';'
+       | expr ';'?
        | ';'
 
 
