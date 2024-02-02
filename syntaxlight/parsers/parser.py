@@ -386,11 +386,11 @@ class Parser:
         return new_asts
 
     def get_number(self, pattern: re.Pattern = None):
-        '''
+        """
         @ pattern: 匹配数字的正则, 两个 group 用于匹配数字部分和类型部分
-        
+
         比如对于 rust 的数字来说: pattern = r'(.*?)([iu](?:32|64|128|size))$'
-        '''
+        """
         if pattern is None:
             node = Number(self.current_token.value)
             node.register_token(self.eat())
@@ -401,27 +401,27 @@ class Parser:
                 node = Number(self.current_token.value)
                 node.register_token(self.eat())
                 return node
-            
+
             new_asts = []
             line = self.current_token.line
             column = self.current_token.column - len(self.current_token.value)
-            
+
             number_part = match.group(1)
             type_part = match.group(2)
-            
+
             token = Token(TokenType.NUMBER, number_part, line, column + len(number_part))
             self.manual_register_token(token)
             node = Number(token.value)
             node.register_token([token])
             new_asts.append(node)
-            
+
             token = Token(TokenType.NUMBER, type_part, line, self.current_token.column)
             token.add_css(CSS.NUMBER_TYPE)
             self.manual_register_token(token)
             node = Number(token.value)
             node.register_token([token])
             new_asts.append(node)
-            
+
             self.manual_get_next_token()
             return new_asts
 

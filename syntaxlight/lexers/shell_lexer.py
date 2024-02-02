@@ -76,7 +76,7 @@ class ShellLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
-                return self.get_number(accept_bit=True, accept_hex=True, end_chars=["s", "M", "G", "K"])
+                return self.get_number(accept_bit=True, accept_hex=True, end_chars="sMGK")
 
             if self.current_char.isalnum() or self.current_char in ("_", ".", "/"):
                 token = self.get_id(extend_chars=["_", "-", ".", "/", ":", "+", "-", "@", "~"])

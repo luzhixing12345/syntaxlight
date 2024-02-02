@@ -16,7 +16,7 @@ class VerilogCSS(Enum):
     MODULE_NAME = "ModuleName"
     DEFINED_MODULE = "DefinedModule"
     PORT_NAME = "PortName"
-    BIT_WIDTH = 'BitWidth'
+    BIT_WIDTH = "BitWidth"
 
 
 class VerilogParser(Parser):
@@ -42,7 +42,7 @@ class VerilogParser(Parser):
             VerilogTokenType.TASK: self.task,
             VerilogTokenType.FUNCTION: self.function,
             VerilogTokenType.GENERATE: self.generate_statement,
-            VerilogTokenType.GENVAR: self.genvar_declaration
+            VerilogTokenType.GENVAR: self.genvar_declaration,
         }
 
     def parse(self):
@@ -105,9 +105,9 @@ class VerilogParser(Parser):
         return node
 
     def module_parameters(self):
-        '''
+        """
         <module_parameters> ::= # ( <parameter_declaration>* )
-        '''
+        """
         node = ModuleParameters()
         node.register_token(self.eat(TokenType.HASH))
         node.register_token(self.eat(TokenType.LPAREN))
@@ -215,7 +215,7 @@ class VerilogParser(Parser):
                         | <function>
                         | <generate_statement>
                         | <genvar_declaration>
-                        
+
         @EXTEND-GRAMMAR: 添加 generate statement, genvar_declaration
         """
         # TODO
@@ -464,11 +464,11 @@ class VerilogParser(Parser):
         node.update(stmts=stmts)
         node.update(end_keyword=self.get_keyword(VerilogTokenType.ENDGENERATE))
         return node
-    
+
     def genvar_declaration(self):
-        '''
+        """
         genvar <list_of_register_variables> ;
-        '''
+        """
         node = GenvarDeclaration()
         node.update(keyword=self.get_keyword(VerilogTokenType.GENVAR))
         node.update(vars=self.list_of_register_variables())
@@ -581,7 +581,7 @@ class VerilogParser(Parser):
         if self.current_token.type in (VerilogTokenType.INTEGER, VerilogTokenType.INT):
             node.update(keyword=self.get_keyword())
         node.update(lvalue=self.lvalue())
-        
+
         if self.current_token.type == TokenType.ASSIGN:
             node.register_token(self.eat(TokenType.ASSIGN))
             node.update(exp=self.expression())
@@ -753,16 +753,16 @@ class VerilogParser(Parser):
             node = Number(self.current_token.value)
             node.register_token(self.eat(TokenType.NUMBER))
             return node
-        
-    def get_identifier(self):
-        '''
+
+    def get_identifier(self, token_type=TokenType.ID):
+        """
         hierarchical_path.mem_1.ADDR_WIDTH
-        '''
-        nodes = [super().get_identifier()]
+        """
+        nodes = [super().get_identifier(token_type)]
         while self.current_token.type == TokenType.DOT:
             self.eat(TokenType.DOT)
-            nodes.append(super().get_identifier())
-        
+            nodes.append(super().get_identifier(token_type))
+
         for node in nodes:
             if bool(re.match(r"^[A-Z0-9_]+$", node.id)):
                 # ID 全部为 大写/数字/下划线, 很可能为宏
@@ -1008,7 +1008,7 @@ class VerilogParser(Parser):
                     ||= force <assignment> ;
                     ||= release <lvalue> ;
                     ||= <genvar_declaration>
-        
+
         @EXTEND-GRAMMAR: 不好区分阻塞和非阻塞, 所以合并二者
         @EXTEND-GRAMMAR: 添加 genvar
         """

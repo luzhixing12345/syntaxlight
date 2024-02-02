@@ -157,8 +157,7 @@ class CLexer(Lexer):
                 return self.get_number(
                     accept_hex=True,
                     accept_bit=True,
-                    accept_p=True,
-                    end_chars=["f", "F", "l", "L", "U", "u"],
+                    end_chars="fFlLUup",
                 )
 
             if self.current_char.isalpha() or self.current_char == TokenType.UNDERLINE.value:

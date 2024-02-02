@@ -31,27 +31,7 @@ class CSSLexer(Lexer):
                 # https://www.zhihu.com/question/602061531/answer/3037149631
                 return self.get_number(
                     accept_hex=True,
-                    end_chars=[
-                        "%",
-                        "s",
-                        "v",
-                        "b",
-                        "p",
-                        "x",
-                        "d",
-                        "l",
-                        "m",
-                        "i",
-                        "n",
-                        "a",
-                        "c",
-                        "h",
-                        "q",
-                        "t",
-                        "g",
-                        "r",
-                        "u",
-                    ],
+                    end_chars="%svbpxdlminachqtgru",
                 )
 
             # transform: translate(-50%, -50%);

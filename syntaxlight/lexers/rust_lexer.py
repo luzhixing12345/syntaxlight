@@ -60,11 +60,6 @@ class RustTokenType(Enum):
 
     HASH_BANG = "#!"
     LIFETIME = "LIFETIME"
-    BYTE = "BYTE"
-    CHAR = "CHAR"
-    INTEGER = "INTEGER"
-    FLOAT = "FLOAT"
-    BYTE_STRING = "BYTE_STRING"
     STR = "STR"
     DEREF = "*"  # 解引用
     STAR = "*"
@@ -187,7 +182,7 @@ class RustTokenSet:
         self.attrs_and_vis = TokenSet(self.outer_attr, self.visibility)
 
         self.path_glob = TokenSet(TokenType.ID, RustTokenType.SELF, TokenType.LCURLY_BRACE, TokenType.MUL)
-        self.path_item = TokenSet(TokenType.ID, RustTokenType.SELF)
+        self.path_item = TokenSet(TokenType.ID, RustTokenType.SELF, RustTokenType.CRATE)
         self.block_item = TokenSet(
             RustTokenType.FN,
             RustTokenType.MOD,
@@ -196,8 +191,9 @@ class RustTokenSet:
             RustTokenType.IMPL,
             RustTokenType.TRAIT,
             RustTokenType.EXTERN,
+            self.outer_attr, self.inner_attr
         )
-        self.stmt_item = TokenSet(RustTokenType.STATIC, RustTokenType.CONST, RustTokenType.TYPE, self.block_item)
+        self.stmt_item = TokenSet(RustTokenType.STATIC, RustTokenType.CONST, RustTokenType.TYPE, self.block_item, RustTokenType.USE)
 
         self.item = TokenSet(self.stmt_item, RustTokenType.USE, RustTokenType.EXTERN)
         self.generic_params = TokenSet(TokenType.LANGLE_BRACE)
@@ -209,18 +205,15 @@ class RustTokenSet:
 
         self.block_expr = TokenSet(TokenType.LCURLY_BRACE)
         self.lit = TokenSet(
-            RustTokenType.BYTE,
             TokenType.CHARACTER,
             TokenType.NUMBER,
-            TokenType.FLOAT,
             TokenType.STRING,
-            RustTokenType.BYTE_STRING,
             TokenType.LPAREN,
             RustTokenType.TRUE,
             RustTokenType.FALSE,
             RustTokenType.STR,
         )
-        self.path = TokenSet(TokenType.ID)
+        self.path = TokenSet(TokenType.ID, RustTokenType.SSELF)
         self.pat = TokenSet(
             TokenType.ID,
             TokenType.AMPERSAND,

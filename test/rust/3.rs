@@ -13,4 +13,6 @@ fn main() {
     println!("Value: {:5}", value);
     println!("Pi: {:<8.2}", pi); 
     println!("Value: {:<+5}", value);
+    println!("{number:0>width$}", number=1, width=5); // TODO
+    println!("{number:0<5}", number=1); // TODO
 }

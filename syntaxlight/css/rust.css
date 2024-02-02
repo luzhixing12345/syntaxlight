@@ -52,7 +52,9 @@ pre[class*="language-rust"] {
 .Token.TypeBound,
 .Token.NumberType,
 .Token.ClassName,
-.Token.TraitName {
+.Token.TraitName,
+.Token.Enumerator,
+.Token.Typedefine {
     color: --struct;
 }
 
@@ -83,10 +85,16 @@ pre[class*="language-rust"] {
 .Token.Format,
 .Token.LIFETIME,
 .Token.TRUE,
-.Token.FALSE {
+.Token.FALSE,
+.Token.ImplItem.FOR {
     color: --type;
 }
 
 .Token.Control {
     color: --control;
+}
+
+.Token.EnumID,
+.Token.Constant {
+    color: --enum;
 }

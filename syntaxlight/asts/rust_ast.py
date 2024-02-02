@@ -72,7 +72,8 @@ class PathGlob(AST):
         if self.path_item is not None:
             if self.sub_path_glob is None:
                 if type(self.path_item) == Identifier:
-                    GDT.register_id(self.path_item.id, CSS.IMPORT_LIBNAME)
+                    if GDT[self.path_item.id] != CSS.ENUM_ID:
+                        GDT.register_id(self.path_item.id, CSS.IMPORT_LIBNAME)
                 elif type(self.path_item) == Keyword:
                     father_node = self.father
                     while father_node.path_item is None and father_node.father is not None:
@@ -101,7 +102,7 @@ class ConstItem(AST):
     def __init__(self) -> None:
         super().__init__()
         self.const = None
-        self.id = None
+        self.id:Identifier = None
         self.ty = None
         self.expr = None
 
@@ -110,7 +111,7 @@ class TypeItem(AST):
     def __init__(self) -> None:
         super().__init__()
         self.type = None
-        self.id = None
+        self.id:Identifier = None
         self.ty = None
 
 
@@ -144,7 +145,7 @@ class StructItem(AST):
     def __init__(self) -> None:
         super().__init__()
         self.struct = None
-        self.id = None
+        self.id:Identifier = None
         self.generic_params = None
         self.where_clause = None
         self.tuple_struct_body = None
@@ -161,7 +162,7 @@ class EnumItem(AST):
     def __init__(self) -> None:
         super().__init__()
         self.enum = None
-        self.id = None
+        self.id:Identifier = None
         self.generic_params = None
         self.enum_body = None
 
@@ -219,7 +220,7 @@ class EnumMember(AST):
         super().__init__()
         self.outer_attrs = None
         self.visibility = None
-        self.id = None
+        self.id:Identifier = None
         self.tuple_struct_body = None
         self.record_struct_body = None
 

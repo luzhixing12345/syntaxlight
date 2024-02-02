@@ -1,4 +1,14 @@
-[
-    "阿加莎尽快",
-    "阿斯顿杰拉德",
-    "爱神的箭卡的很",
+{
+    "definitions": {
+        "Schema1": {
+            "not": {
+                "$ref": "#/definitions/Schema1"
+            }
+        }
+    },
+    "$ref": "#/definitions/Schema1",
+    "23": -12310,
+    "123": true,
+    "123456": false,
+    "1999": null
+}

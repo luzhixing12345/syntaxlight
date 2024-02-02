@@ -233,7 +233,7 @@ generic_values ::= '<' <<comma_separated_list (ident '=' ty | ty_sum | lifetime)
 stmt ::= stmt_item
        | let pat [':' ty_sum] ['=' expr] ';'
        | statement_like_expr
-       | expr ';'?
+       | expr ["?"] [';']
        | ';'
 
 
@@ -321,7 +321,7 @@ macro_expr ::= ident '!' '(' [<<comma_separated_list expr>>] ')'
 
 ref_expr ::= expr '.' (ident | lit_integer)
 array_ref_expr ::= expr '[' index_expr ']'
-private index_expr ::= expr
+private index_expr ::= expr | ".."
 call_expr ::= expr ["::" generic_values] '(' [<<comma_separated_list expr>>] ')'
 
 simple_ref_expr ::= expr_path | self

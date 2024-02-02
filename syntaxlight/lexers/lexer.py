@@ -60,8 +60,6 @@ class TokenType(Enum):
     CHARACTER = "CHARACTER"  # CHARACTER 表示单个字符, 即 'a'
     STR = "STR"  # STR 表示 "" | '' 包裹的字符串
     NUMBER = "NUMBER"  # 整数 | 小数 | 科学计数法
-    INT = "INT"  # 整数
-    FLOAT = "FLOAT"  # 小数
     TEXT = "TEXT"  # 未知的字符
     COMMENT = "COMMENT"
     SHL = "<<"
@@ -386,14 +384,7 @@ class Lexer:
         else:
             return self.text[self.pos + 1 : peek_pos + 1]
 
-    def get_number(
-        self,
-        accept_float=True,
-        accept_hex=False,
-        accept_bit=False,
-        accept_p=False,
-        end_chars: List[str] = [],
-    ) -> Token:
+    def get_number(self, accept_float=True, accept_bit=False, accept_hex=False, end_chars: str = "p") -> Token:
         """
          <digit> ::= [0-9]
         <digits> ::= <digit>*
@@ -402,7 +393,6 @@ class Lexer:
         @accept_float: 允许小数和科学计数法
         @accept_hex  : 允许16进制表示 0xfff
         @accept_bit  : 允许二进制表示 0b111
-        @accept_p    : 允许后面跟 P/p
         """
         bit_matching_status = False
         hex_matching_status = False
@@ -410,29 +400,28 @@ class Lexer:
         def is_match_char(char: str) -> bool:
             if hex_matching_status:
                 return bool(re.match(r"[0-9a-fA-F]", char))
-            if bit_matching_status:
+            elif bit_matching_status:
                 return bool(re.match(r"[01]", char))
-            return char.isdigit()
+            else:
+                return bool(re.match(r"[0-9_]", char))
 
         result = ""
 
-        if accept_hex:
-            if self.current_char == "0" and self.peek() in ("x", "X"):
-                result = self.current_char
+        if self.current_char == "0":
+            result += self.current_char
+            self.advance()
+            if accept_bit and self.current_char in ("b", "B"):
+                result += self.current_char
+                self.advance()
+                result += self.current_char
+                self.advance()
+                bit_matching_status = True
+            elif accept_hex and self.current_char in ("x", "X"):
+                result += self.current_char
                 self.advance()
                 result += self.current_char
                 self.advance()
                 hex_matching_status = True
-
-        if accept_bit:
-            if self.current_char == "0" and self.peek() in ("b", "B"):
-                result = self.current_char
-                self.advance()
-                result += self.current_char
-                self.advance()
-                # 如果此时已经处于 hex_matching_status 状态了则忽略
-                if not hex_matching_status:
-                    bit_matching_status = True
 
         # <digits>
         while self.current_char is not None and is_match_char(self.current_char):
@@ -459,18 +448,7 @@ class Lexer:
                     result += self.current_char
                     self.advance()
 
-        if accept_p:
-            if self.current_char in ("P", "p"):
-                result += self.current_char
-                self.advance()
-                if self.current_char in (TokenType.MINUS.value, TokenType.PLUS.value):
-                    result += self.current_char
-                    self.advance()
-                while self.current_char is not None and is_match_char(self.current_char):
-                    result += self.current_char
-                    self.advance()
-
-        while self.current_char in end_chars:
+        while self.current_char is not None and self.current_char in end_chars:
             result += self.current_char
             self.advance()
         # column - 1, 因为判断结束需要跳出 number
