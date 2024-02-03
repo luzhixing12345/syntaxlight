@@ -427,7 +427,7 @@ class Parser:
 
     def list_items(
         self, func: Callable, delimiter=TokenType.COMMA, trailing_set: Union[TokenSet, List[TokenType]] = None
-    ):
+    , func_args: Tuple = ()):
         """
         对于 <terminal> (<delimiter> <terminal>)* 的快速匹配
 
@@ -435,11 +435,11 @@ class Parser:
         @delimiter: 分隔符, None 表示匹配 func*
         @trailing_set: func 的 token_set
         """
-        nodes = [func()]
+        nodes = [func(*func_args)]
         while delimiter is None or self.current_token.type == delimiter:
             if delimiter is not None:
                 self.eat(delimiter)
             if trailing_set is not None and self.current_token.type not in trailing_set:
                 break
-            nodes.append(func())
+            nodes.append(func(*func_args))
         return nodes

@@ -64,7 +64,8 @@ class RustTokenType(Enum):
     DEREF = "*"  # 解引用
     STAR = "*"
     LAMBDA = "LAMBDA"
-
+    LABEL = 'LABEL'
+    PATTERN_MATCH = '..='
 
 class RustLexer(Lexer):
     def __init__(self, text: str, LanguageTokenType: Enum = RustTokenType):
@@ -93,7 +94,8 @@ class RustLexer(Lexer):
                 "<<=",
                 ">>=",
                 "<<",
-                ">>"
+                ">>",
+                "..="
             ]
         )
 
@@ -193,7 +195,7 @@ class RustTokenSet:
             RustTokenType.EXTERN,
             self.outer_attr, self.inner_attr
         )
-        self.stmt_item = TokenSet(RustTokenType.STATIC, RustTokenType.CONST, RustTokenType.TYPE, self.block_item, RustTokenType.USE)
+        self.stmt_item = TokenSet(RustTokenType.STATIC, RustTokenType.CONST, RustTokenType.TYPE, self.block_item, RustTokenType.USE, RustTokenType.LET)
 
         self.item = TokenSet(self.stmt_item, RustTokenType.USE, RustTokenType.EXTERN)
         self.generic_params = TokenSet(TokenType.LANGLE_BRACE)
@@ -212,6 +214,7 @@ class RustTokenSet:
             RustTokenType.TRUE,
             RustTokenType.FALSE,
             RustTokenType.STR,
+            TokenType.CONCAT
         )
         self.path = TokenSet(TokenType.ID, RustTokenType.SSELF)
         self.pat = TokenSet(
@@ -222,7 +225,7 @@ class RustTokenSet:
             self.lit,
             self.path,
             TokenType.LPAREN,
-            TokenType.LSQUAR_PAREN,
+            TokenType.LSQUAR_PAREN
         )
         self.pat_field = TokenSet(TokenType.ID, RustTokenType.REF, RustTokenType.MUT)
         self.fn_param = TokenSet(self.pat)
@@ -230,14 +233,13 @@ class RustTokenSet:
         self.impl_member = TokenSet(RustTokenType.TYPE, RustTokenType.CONST, RustTokenType.FN)
         self.self_param = TokenSet(TokenType.AMPERSAND, RustTokenType.MUT, RustTokenType.SELF)
 
-        self.type_path = TokenSet(TokenType.ID)
+        self.type_path = TokenSet(TokenType.ID, RustTokenType.SSELF)
         self.ty = TokenSet(
             TokenType.LPAREN,
             TokenType.MUL,
             TokenType.LSQUAR_PAREN,
             TokenType.AMPERSAND,
             self.type_path,
-            RustTokenType.SSELF,
         )
         self.ty_sum = TokenSet(self.ty)
         self.generic_values = TokenSet(TokenType.LANGLE_BRACE)
@@ -269,5 +271,5 @@ class RustTokenSet:
             RustTokenType.BREAK,
         )
         self.expr = TokenSet(TokenType.ID, self.unary_group, self.ref_group, self.primary_group)
-        self.stmt = TokenSet(self.stmt_item, RustTokenType.LET, self.statement_like_expr, self.expr, TokenType.SEMI)
+        self.stmt = TokenSet(self.stmt_item, RustTokenType.LET, self.statement_like_expr, self.expr, TokenType.SEMI, RustTokenType.LIFETIME)
         self.item_with_attrs = TokenSet(self.attrs_and_vis, self.visibility, self.item)

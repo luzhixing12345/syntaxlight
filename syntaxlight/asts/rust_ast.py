@@ -1,4 +1,4 @@
-from .ast import AST, Identifier, Keyword
+from .ast import AST, Identifier, Keyword, Punctuator
 from typing import List, Union, Optional
 from enum import Enum
 from ..gdt import GlobalDescriptorTable, CSS
@@ -334,7 +334,7 @@ class Pat(AST):
         self.pat = None
         self.id: Identifier = None
         self.path: Path = None
-
+        self.mut = None
 
 class PatField(AST):
     def __init__(self) -> None:
@@ -400,7 +400,7 @@ class Expr(AST):
         super().__init__()
         self.expr: Union[UnaryGroup, PrimaryGroup, MacroExpr] = None
         self.ref_exprs: List[RefGroup] = []
-
+        self.op:Punctuator = None
 
 class UnaryGroup(AST):
     def __init__(self) -> None:
@@ -522,3 +522,14 @@ class Visibility(AST):
         super().__init__()
         self.pub = None
         self.crate = None
+
+class LabelItem(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.label:Identifier = None
+        self.expr = None
+        
+class Lit(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.lit = None

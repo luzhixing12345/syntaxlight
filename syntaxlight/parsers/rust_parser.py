@@ -34,6 +34,9 @@ DEFAULT_RUST_LIB = [
     ("tuple", CSS.IMPORT_LIBNAME),
     ("Some", CSS.IMPORT_LIBNAME),
     ("None", CSS.IMPORT_LIBNAME),
+    ("NAN", CSS.ENUM_ID),
+    ("Ok", CSS.ENUM_ID),
+    ("Err", CSS.ENUM_ID),
 ]
 
 GDT = GlobalDescriptorTable(DEFAULT_RUST_LIB)
@@ -44,10 +47,12 @@ class RustCSS(Enum):
     MUTABLE_SELF = "MutableSelf"  # 可变 self
     MUTABLE_FUNCTION = "MutableFunction"  # 可变函数
     MUTABLE_ARG = "MutableArg"  # 可变参数名
+    MUTABLE_OP = "MutableOp"  # 可变操作符
     GENERIC_TYPE = "GenericType"  # 泛型
     TYPE_BOUND = "TypeBound"  # 类型约束
     ATTRIBUTE = "Attribute"  # meta 属性
     TRAIT_NAME = "TraitName"  # trait 名称
+    LABEL = "Label"  # 标签
 
 
 class RustParser(Parser):
@@ -109,6 +114,10 @@ class RustParser(Parser):
         while self.current_token.type in self.rust_first_set.item_with_attrs:
             item_with_attrs.append(self.item_with_attrs())
         node.update(item=item_with_attrs)
+
+        self.skip_crlf()
+        if self.current_token.type != TokenType.EOF:
+            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, message="should match EOF")
         return node
 
     def inner_attr(self):
@@ -216,6 +225,7 @@ class RustParser(Parser):
                     | type_item
                     | block_item
                     | use_item
+                    | let_item
         """
         if self.current_token.type == RustTokenType.STATIC:
             return self.static_item()
@@ -227,6 +237,8 @@ class RustParser(Parser):
             return self.block_item()
         elif self.current_token.type == RustTokenType.USE:
             return self.use_item()
+        elif self.current_token.type == RustTokenType.LET:
+            return self.let_item()
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN, message="should be static_item or const_item or type_item or block_item"
@@ -575,7 +587,11 @@ class RustParser(Parser):
         """
         node = EnumBody()
         node.register_token(self.eat(TokenType.LCURLY_BRACE))
-        node.update(enum_members=self.list_items(self.enum_member, trailing_set=[TokenType.ID, RustTokenType.PUB, TokenType.HASH]))
+        node.update(
+            enum_members=self.list_items(
+                self.enum_member, trailing_set=[TokenType.ID, RustTokenType.PUB, TokenType.HASH]
+            )
+        )
         node.register_token(self.eat(TokenType.RCURLY_BRACE))
         return node
 
@@ -594,7 +610,7 @@ class RustParser(Parser):
             node.update(record_struct_body=self.record_struct_body())
         elif self.current_token.type in self.rust_first_set.tuple_struct_body:
             node.update(tuple_struct_body=self.tuple_struct_body())
-        
+
         if self.current_token.type == TokenType.ASSIGN:
             node.register_token(self.eat(TokenType.ASSIGN))
             node.update(expr=self.expr())
@@ -856,8 +872,8 @@ class RustParser(Parser):
               | '[' <<comma_separated_list pat>> ']'
               | path '(' <<comma_separated_list pat>> ')'
               | path '{' <<comma_separated_list pat_field>> ['..']'}'
-              | path
-              | lit
+              | path ['@' lit]
+              | '-'? lit
         """
         node = Pat()
         if self.current_token.type == TokenType.AMPERSAND:
@@ -874,6 +890,10 @@ class RustParser(Parser):
             if self.current_token.type == RustTokenType.MUT:
                 node.update(mut=self.get_keyword(token_type=RustTokenType.MUT))
             node.update(id=self.get_identifier())
+            
+            if node.mut is not None:
+                GDT.register_id(node.id.id, RustCSS.MUTABLE_VAR)
+                node.id._tokens[0].add_css(RustCSS.MUTABLE_VAR)
         elif self.current_token.type == TokenType.LPAREN:
             if self.peek_next_token().type == TokenType.RPAREN:
                 node.update(lit=self.lit())
@@ -899,8 +919,16 @@ class RustParser(Parser):
                 if self.current_token.type == TokenType.CONCAT:
                     node.register_token(self.eat(TokenType.CONCAT))
                 node.register_token(self.eat(TokenType.RCURLY_BRACE))
-        elif self.current_token.type in self.rust_first_set.lit:
+            elif self.current_token.type == TokenType.AT_SIGN:
+                node.register_token(self.eat(TokenType.AT_SIGN))
+                node.update(lit=self.lit())
+        elif self.current_token.type in (self.rust_first_set.lit, TokenType.MINUS):
+            if self.current_token.type == TokenType.MINUS:
+                node.register_token(self.eat(TokenType.MINUS))
             node.update(lit=self.lit())
+
+        elif self.current_token.type == TokenType.CONCAT:
+            node.register_token(self.eat(TokenType.CONCAT))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be pat or lit or &/mut/ref")
         return node
@@ -948,7 +976,6 @@ class RustParser(Parser):
              | '&' [lifetime] [mut] ty
              | bare_fn
              | type_path
-             | Self
 
         bare_fn 是什么?
         ptr 是什么?
@@ -979,8 +1006,6 @@ class RustParser(Parser):
             node.update(ty=self.ty())
         elif self.current_token.type in self.rust_first_set.type_path:
             node.update(type_path=self.type_path())
-        elif self.current_token.type == RustTokenType.SSELF:
-            node.update(sself=self.get_keyword(token_type=RustTokenType.SSELF))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be ty_sum or *ptr or type_path")
 
@@ -1028,12 +1053,18 @@ class RustParser(Parser):
 
     def type_path_segment(self):
         """
-        type_path_segment ::= ident [generic_values | '(' [<<comma_separated_list ty_sum>>] ')' [ret_ty]]
+        type_path_segment ::= (ident|Self) [generic_values | '(' [<<comma_separated_list ty_sum>>] ')' [ret_ty]]
         """
         node = TypePathSegment()
-        node.update(id=self.get_identifier())
-        GDT.register_id(node.id.id, RustCSS.TYPE_BOUND)
-        node.id._tokens[0].add_css(RustCSS.TYPE_BOUND)
+        if self.current_token.type == TokenType.ID:
+            node.update(id=self.get_identifier())
+            GDT.register_id(node.id.id, RustCSS.TYPE_BOUND)
+            node.id._tokens[0].add_css(RustCSS.TYPE_BOUND)
+        elif self.current_token.type == RustTokenType.SSELF:
+            node.update(sself=self.get_keyword(token_type=RustTokenType.SSELF))
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be ident or Self")
+
         if self.current_token.type in self.rust_first_set.generic_values:
             node.update(generic_values=self.generic_values())
         elif self.current_token.type == TokenType.LPAREN:
@@ -1112,7 +1143,7 @@ class RustParser(Parser):
             node.update(generic_values=self.generic_values())
         return node
 
-    def expr(self, is_match_expr = False):
+    def expr(self, is_match_expr=False):
         """
         expr ::= assign_expr
                | range_expr
@@ -1140,9 +1171,9 @@ class RustParser(Parser):
         node = Expr()
         # unary_group.borrow_expr 和 primary_group.paren_expr 有重叠, 但是不影响匹配, 可以直接在这里过 unary_group, 交由下一组匹配 expr
         if self.current_token.type in self.rust_first_set.unary_group:
-            node.update(expr=self.unary_group())
+            node.update(expr=self.unary_group(is_match_expr))
         elif self.current_token.type == TokenType.ID and self.peek_next_token().type == TokenType.BANG:
-            node.update(expr=self.macro_expr())
+            node.update(expr=self.macro_expr(is_match_expr))
         elif self.current_token.type in self.rust_first_set.primary_group:
             node.update(expr=self.primary_group(is_match_expr))
         else:
@@ -1156,10 +1187,13 @@ class RustParser(Parser):
                 node.update(kw_as=self.get_keyword(token_type=RustTokenType.AS))
             else:
                 node.update(op=self.get_punctuator())
+                if len(node.op.op) > 1 and node.op.op[-1] == '=' and node.op.op not in ['<=','>=']:
+                    node.op._tokens[0].add_css(RustCSS.MUTABLE_OP)
+
             node.update(next_expr=self.expr())
         return node
 
-    def unary_group(self):
+    def unary_group(self, is_match_expr=False):
         """
         unary_group ::= box_expr
                       | unary_min_expr
@@ -1183,10 +1217,10 @@ class RustParser(Parser):
                 node.update(kw=self.get_keyword(token_type=RustTokenType.MUT))
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be box, *, & or -")
-        node.update(expr=self.expr())
+        node.update(expr=self.expr(is_match_expr))
         return node
 
-    def macro_expr(self):
+    def macro_expr(self, is_match_expr=False):
         """
         macro_expr ::= ident '!' '(' [<<comma_separated_list expr>>] ')'
         """
@@ -1200,7 +1234,9 @@ class RustParser(Parser):
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be '(' or '['")
         if self.current_token.type in self.rust_first_set.expr:
-            node.update(exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr))
+            node.update(
+                exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr, func_args=(is_match_expr,))
+            )
         if self.current_token.type in (TokenType.RPAREN, TokenType.RSQUAR_PAREN):
             node.register_token(self.eat())
         else:
@@ -1232,30 +1268,28 @@ class RustParser(Parser):
             else:
                 node.update(index_expr=self.expr())
             node.register_token(self.eat(TokenType.RSQUAR_PAREN))
-        elif self.current_token.type == TokenType.DOUBLE_COLON:
-            node.register_token(self.eat(TokenType.DOUBLE_COLON))
-            node.update(generic_values=self.generic_values())
+        elif self.current_token.type in (TokenType.DOUBLE_COLON, TokenType.LPAREN):
+            # call_expr
+            if self.current_token.type == TokenType.DOUBLE_COLON:
+                node.register_token(self.eat(TokenType.DOUBLE_COLON))
+                node.update(generic_values=self.generic_values())
             node.register_token(self.eat(TokenType.LPAREN))
             if self.current_token.type in self.rust_first_set.expr:
                 node.update(exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr))
             node.register_token(self.eat(TokenType.RPAREN))
-        elif self.current_token.type == TokenType.LPAREN:
-            # call_expr
+
             if type(expr.expr) == PrimaryGroup:
                 if len(expr.ref_exprs) != 0 and expr.ref_exprs[-1].id is not None:
                     add_ast_type(expr.ref_exprs[-1].id, CSS.FUNCTION_CALL)
                 elif expr.expr.expr_path is not None:
                     add_ast_type(expr.expr.expr_path[-1], CSS.FUNCTION_CALL)
-            node.register_token(self.eat(TokenType.LPAREN))
-            if self.current_token.type in self.rust_first_set.expr:
-                node.update(exprs=self.list_items(self.expr, trailing_set=self.rust_first_set.expr))
-            node.register_token(self.eat(TokenType.RPAREN))
+
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be . or [")
 
         expr.ref_exprs.append(node)
 
-    def primary_group(self, is_match_expr = False):
+    def primary_group(self, is_match_expr=False):
         """
         primary_group ::= struct_expr
                         | simple_ref_expr
@@ -1267,7 +1301,7 @@ class RustParser(Parser):
                         | return_expr
                         | statement_like_expr
                         | continue
-                        | break [expr]
+                        | break [expr|lifetime ";"?]
 
         struct_expr ::= expr_path '{' <<comma_separated_list struct_field>> ['..' expr]'}'
 
@@ -1287,7 +1321,11 @@ class RustParser(Parser):
         elif self.current_token.type == TokenType.ID:
             # struct_expr | simple_ref_expr
             node.update(expr_path=self.expr_path())
-            if not is_match_expr and self.current_token.type == TokenType.LCURLY_BRACE and self.peek_next_token().type == TokenType.ID:
+            if (
+                not is_match_expr
+                and self.current_token.type == TokenType.LCURLY_BRACE
+                and self.peek_next_token().type == TokenType.ID
+            ):
                 node.register_token(self.eat(TokenType.LCURLY_BRACE))
                 node.update(struct_fields=self.list_items(self.struct_field, trailing_set=[TokenType.ID]))
                 if self.current_token.type == TokenType.CONCAT:
@@ -1337,6 +1375,12 @@ class RustParser(Parser):
             node.update(kw=self.get_keyword(token_type=RustTokenType.BREAK))
             if self.current_token.type in self.rust_first_set.expr:
                 node.update(expr=self.expr())
+            elif self.current_token.type == RustTokenType.LIFETIME:
+                self.current_token.type = RustTokenType.LABEL
+                node.register_token(self.eat(RustTokenType.LABEL))
+                if self.current_token.type == TokenType.SEMI:
+                    node.register_token(self.eat(TokenType.SEMI))
+
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
@@ -1539,7 +1583,8 @@ class RustParser(Parser):
     def stmt(self):
         """
         stmt ::= stmt_item
-               | let pat [':' ty_sum] ['=' expr] ';'
+               | let_item
+               | label_item
                | statement_like_expr
                | expr "?"? ';'?
                | ';'
@@ -1547,24 +1592,9 @@ class RustParser(Parser):
         if self.current_token.type in self.rust_first_set.stmt_item:
             return self.stmt_item()
         elif self.current_token.type == RustTokenType.LET:
-            node = LetExpr()
-            node.update(let_kw=self.get_keyword(token_type=RustTokenType.LET))
-            node.update(pat=self.pat())
-            if self.current_token.type == TokenType.COLON:
-                node.register_token(self.eat(TokenType.COLON))
-                node.update(ty_sum=self.ty_sum())
-            if self.current_token.type == TokenType.ASSIGN:
-                node.register_token(self.eat(TokenType.ASSIGN))
-                node.update(expr=self.expr())
-            node.register_token(self.eat(TokenType.SEMI))
-            # 对于 pat 为不可变的变量, 修正其匹配类型
-            # let mux x = 0;
-            # ...
-            # let x = x;
-            #     |
-            if node.pat.path is not None:
-                node.pat.path.id._tokens[0].remove_css(RustCSS.MUTABLE_VAR)
-            return node
+            return self.let_item()
+        elif self.current_token.type == RustTokenType.LIFETIME:
+            return self.label_item()
         elif self.current_token.type in self.rust_first_set.statement_like_expr:
             return self.statement_like_expr()
         elif self.current_token.type in self.rust_first_set.expr:
@@ -1580,9 +1610,49 @@ class RustParser(Parser):
         else:
             self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be stmt_item | let | statement_like_expr | expr | ;")
 
+    def let_item(self):
+        """
+        let pat [':' ty_sum] ['=' expr] ';'
+        """
+        node = LetExpr()
+        node.update(let_kw=self.get_keyword(token_type=RustTokenType.LET))
+        node.update(pat=self.pat())
+        if self.current_token.type == TokenType.COLON:
+            node.register_token(self.eat(TokenType.COLON))
+            node.update(ty_sum=self.ty_sum())
+        if self.current_token.type == TokenType.ASSIGN:
+            node.register_token(self.eat(TokenType.ASSIGN))
+            node.update(expr=self.expr())
+        node.register_token(self.eat(TokenType.SEMI))
+        # 对于 pat 为不可变的变量, 修正其匹配类型
+        # let mux x = 0;
+        # ...
+        # let x = x;
+        #     |
+        if node.pat.path is not None:
+            node.pat.path.id._tokens[0].remove_css(RustCSS.MUTABLE_VAR)
+        return node
+
+    def label_item(self):
+        """
+        label_item ::= lifetime ":" stmt
+        """
+        node = LabelItem()
+        if self.current_token.type == RustTokenType.LIFETIME:
+            self.current_token.type = RustTokenType.LABEL
+            node.update(label=self.get_identifier(RustTokenType.LABEL))
+            add_ast_type(node.label, RustCSS.LABEL)
+            GDT.register_id(node.label.id, RustCSS.LABEL)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be lifetime")
+
+        node.register_token(self.eat(TokenType.COLON))
+        node.update(stmt=self.stmt())
+        return node
+
     def lit(self):
         """
-        lit ::= lit_byte
+        lit ::= (lit_byte
               | lit_char
               | lit_integer
               | lit_float
@@ -1592,21 +1662,29 @@ class RustParser(Parser):
               | true
               | false
               | str
+              | ..)
+
+              ["..=" lit]
         """
-        if self.current_token.type in self.rust_first_set.lit:
-            if self.current_token.type == TokenType.LPAREN:
-                self.eat(TokenType.LPAREN)
-                self.eat(TokenType.RPAREN)
-            elif self.current_token.type == TokenType.STRING:
-                # rust 的格式化字符串
-                return self.get_string()
-            elif self.current_token.type == TokenType.NUMBER:
-                return self.get_number(r"(.*?)([iu](?:32|64|128|size))$")
-            else:
-                self.eat()
-            return None
-        else:
+
+        if self.current_token.type not in self.rust_first_set.lit:
             self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be lit")
+
+        node = Lit()
+        if self.current_token.type == TokenType.LPAREN:
+            node.register_token(self.eat(TokenType.LPAREN))
+            node.register_token(self.eat(TokenType.RPAREN))
+        elif self.current_token.type == TokenType.STRING:
+            # rust 的格式化字符串
+            node.update(lit_string=self.get_string())
+        elif self.current_token.type == TokenType.NUMBER:
+            node.update(lit_integer=self.get_number(r"(.*?)([iuf](?:8|16|32|64|128|size))$"))
+        else:
+            node.register_token(self.eat())
+        if self.current_token.type == RustTokenType.PATTERN_MATCH:
+            node.register_token(self.eat(RustTokenType.PATTERN_MATCH))
+            node.update(end_lit=self.lit())
+        return node
 
     def after_eat(self):
         if self.current_token.type == TokenType.ID and self.current_token.value in GDT:

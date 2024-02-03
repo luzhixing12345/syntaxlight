@@ -100,6 +100,7 @@ private stmt_item ::= static_item
                     | const_item
                     | type_item
                     | block_item
+                    | let_item
 
 static_item ::= static [mut] ident ':' ty '=' expr ';'
 
@@ -188,7 +189,8 @@ pat ::= '_'
       | path '(' <<comma_separated_list pat>> ')'
       | path '{' <<comma_separated_list pat_field>> ['..']'}'
       | path
-      | lit
+      | lit ["..=" lit]
+      | ..
 
 pat_field ::= ident ':' pat | [ref] [mut] ident
 
@@ -217,7 +219,7 @@ ty_param_bound ::= lifetime | type_path
 
 // XXX: things like `Fn(f64, f64) -> f64` are also paths
 type_path ::= type_path_segment ("::" type_path_segment)*
-type_path_segment ::= ident [generic_values | '(' [<<comma_separated_list ty_sum>>] ')' [ret_ty]]
+type_path_segment ::= (ident|Self) [generic_values | '(' [<<comma_separated_list ty_sum>>] ')' [ret_ty]]
 
 path ::= ident ("::" ident)*
 
@@ -231,10 +233,12 @@ expr_path_segment ::= ident ["::" generic_values]
 generic_values ::= '<' <<comma_separated_list (ident '=' ty | ty_sum | lifetime)>> '>'
 
 stmt ::= stmt_item
-       | let pat [':' ty_sum] ['=' expr] ';'
+       | let_item
        | statement_like_expr
        | expr ["?"] [';']
        | ';'
+
+let_item ::= let pat [':' ty_sum] ['=' expr] ';'
 
 
 // the root expression rule

@@ -267,9 +267,9 @@ class Number(AST):
 
 
 class Punctuator(AST):
-    def __init__(self, op) -> None:
+    def __init__(self, op:str) -> None:
         super().__init__()
-        self.op = op
+        self.op:str = op
         self.is_leaf_ast = True
 
     def formatter(self, depth: int = 0):

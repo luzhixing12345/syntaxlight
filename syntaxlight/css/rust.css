@@ -54,7 +54,7 @@ pre[class*="language-rust"] {
 .Token.ClassName,
 .Token.TraitName,
 .Token.Enumerator,
-.Token.Typedefine {
+.Token.Typedefine, .Token.LABEL {
     color: --struct;
 }
 
@@ -80,6 +80,10 @@ pre[class*="language-rust"] {
 
 .Token.MutableFunction {
     border-bottom: 1px solid --function;
+}
+
+.Token.MutableOp {
+    border-bottom: 1px solid --operator;
 }
 
 .Token.Format,
