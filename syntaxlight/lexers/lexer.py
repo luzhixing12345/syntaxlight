@@ -714,6 +714,9 @@ class Lexer:
 
 
 class TokenSet:
+    '''
+    用于 first set 的构建
+    '''
     def __init__(self, *args) -> None:
         self._token_set = set()
         for arg in args:

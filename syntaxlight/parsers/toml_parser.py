@@ -126,8 +126,8 @@ class TomlParser(Parser):
     TOML do not skip invisible character `\\r\\n`
     """
 
-    def __init__(self, lexer, skip_invisible_characters=False, skip_space=True):
-        super().__init__(lexer, skip_invisible_characters, skip_space)
+    def __init__(self, lexer, skip_invis_chars=False, skip_space=True):
+        super().__init__(lexer, skip_invis_chars, skip_space)
         self.value_first_set = [
             TokenType.STR,
             TokenType.MINUS,

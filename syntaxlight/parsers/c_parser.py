@@ -49,8 +49,8 @@ class C_CSS(Enum):
 
 
 class CParser(Parser):
-    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True):
-        super().__init__(lexer, skip_invisible_characters, skip_space)
+    def __init__(self, lexer, skip_invis_chars=True, skip_space=True):
+        super().__init__(lexer, skip_invis_chars, skip_space)
         self.cfirst_set = CTokenSet()
         self.in_preprocessing = False  # 进入预处理阶段, 影响 after_eat
         self.preprocessing_keywords = [
@@ -1922,9 +1922,9 @@ class CParser(Parser):
             #
             # 这里禁用skip_space和skip_invisible_characters以单步匹配下一个 token
             self.skip_space = False
-            self.skip_invisible_characters = False
+            self.skip_invis_chars = False
             node.update(id=self.get_identifier())
-            self.skip_invisible_characters = True
+            self.skip_invis_chars = True
             self.skip_space = True
             if self.current_token.type == TokenType.LPAREN:
                 # parameters 或 parameterization 被定义了说明是函数

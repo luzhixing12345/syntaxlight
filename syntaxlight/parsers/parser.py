@@ -11,21 +11,22 @@ from ..gdt import CSS
 
 
 DEBUG = False
-DEBUG = True
+# DEBUG = True
 
 
 class Parser:
-    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True):
+    def __init__(self, lexer, skip_invis_chars=True, skip_space=True):
         self.lexer: Lexer = lexer
-        # set current token to the first token taken from the input
-        self.skip_invisible_characters = skip_invisible_characters
+        self.skip_invis_chars = skip_invis_chars
         self.skip_space = skip_space
-        self.display_warning = display_warning
+
+        self.current_token: Token = self.lexer.get_next_token()
+
         self._token_list: List[Token] = []  # lexer 解析后经过 parser 确定类型后的 tokens
+        self._status_stack = []  # 状态栈
         self.root: AST = None  # 主根节点
         self.sub_roots: List[AST] = []  # 其他根节点, 例如预处理命令
-        self._status_stack = []  # 状态栈
-        self.current_token: Token = self.lexer.get_next_token()
+
         self._skip()
 
     def error(
@@ -55,9 +56,6 @@ class Parser:
         """
         语法解析过程中的警告信息
         """
-        if not self.display_warning:
-            return
-
         warning_color = TTYColor.MAGENTA
 
         sys.stderr.write(ttyinfo("warning: ", warning_color) + message + "\n")
@@ -125,10 +123,10 @@ class Parser:
         """
         跳过不可见字符和空格
 
-        由 self.skip_invisible_characters 与 self.skip_space 控制
+        由 self.skip_invis_chars 与 self.skip_space 控制
         """
         tokens = []
-        if self.skip_invisible_characters and self.skip_space:
+        if self.skip_invis_chars and self.skip_space:
             while (
                 self.current_token.value in self.lexer.invisible_characters
                 or self.current_token.type == TokenType.SPACE
@@ -137,12 +135,12 @@ class Parser:
                 tokens.append(self.current_token)
                 self.current_token = self.lexer.get_next_token()
 
-        elif self.skip_invisible_characters and not self.skip_space:
+        elif self.skip_invis_chars and not self.skip_space:
             while self.current_token.value in self.lexer.invisible_characters:
                 self._register_token()
                 tokens.append(self.current_token)
                 self.current_token = self.lexer.get_next_token()
-        elif not self.skip_invisible_characters and self.skip_space:
+        elif not self.skip_invis_chars and self.skip_space:
             while self.current_token.type == TokenType.SPACE:
                 self._register_token()
                 tokens.append(self.current_token)
@@ -153,24 +151,16 @@ class Parser:
             tokens.append(self.current_token)
             self.current_token = self.lexer.get_next_token()
             tokens.extend(self._skip())
-            return tokens
-        else:
-            return tokens
+
+        return tokens
 
     def skip_crlf(self):
         """
-        set `skip_invisible_characters` to False \n
+        set `skip_invis_chars` to False \n
         跳过连续的换行 `\\n` or `\\r\\n`
         """
         while self.current_token.type in (TokenType.LF, TokenType.CR):
             self.eat(self.current_token.type)
-
-    def skip_end(self):
-        """
-        跳过最后的空白和换行
-        """
-        while self.current_token.type != TokenType.EOF:
-            self._skip()
 
     def eat_lf(self):
         """
@@ -203,12 +193,6 @@ class Parser:
         self.current_token = current_token
         return next_token
 
-    def look_back_token(self, n=1) -> Token:
-        """
-        查看前面已经匹配的 token 类型
-        """
-        return self._token_list[-n]
-
     def _register_token(self, token=None):
         """
         将一个 token 注册到 token_list 当中
@@ -224,8 +208,12 @@ class Parser:
         """
         将一个解析完成的 AST node 输出其 token 流的 HTML 格式
         """
-        html_str = ""
+        # 一些后处理
         self.brace_matching()
+        self.string_inside_format()
+        self.comment_inside_format()
+
+        html_str = ""
         for token in self._token_list:
             html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
         return html_str
@@ -328,23 +316,12 @@ class Parser:
         node.register_token(self.eat())
         return node
 
-    def get_string(
-        self,
-        enable_format: bool = True,
-        output_pattern: re.Pattern = r"%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+",
-        invisible_pattern: re.Pattern = r"\\\\|\\n|\\t|\\v|\\f",
-    ) -> String:
+    def get_string(self) -> String:
         """
         获取字符串
         """
-        if enable_format:
-            node = WrapString()
-            node.update(
-                strings=self.string_inside_format(output_pattern=output_pattern, invisible_pattern=invisible_pattern)
-            )
-        else:
-            node = String(self.current_token.value)
-            node.register_token(self.eat(TokenType.STRING))
+        node = String(self.current_token.value)
+        node.register_token(self.eat(TokenType.STRING))
         return node
 
     def string_inside_format(
@@ -384,6 +361,9 @@ class Parser:
 
         self.manual_get_next_token()
         return new_asts
+    
+    def comment_inside_format(self):
+        ...
 
     def get_number(self, pattern: re.Pattern = None):
         """
@@ -426,8 +406,12 @@ class Parser:
             return new_asts
 
     def list_items(
-        self, func: Callable, delimiter=TokenType.COMMA, trailing_set: Union[TokenSet, List[TokenType]] = None
-    , func_args: Tuple = ()):
+        self,
+        func: Callable,
+        delimiter=TokenType.COMMA,
+        trailing_set: Union[TokenSet, List[TokenType]] = None,
+        func_args: Tuple = (),
+    ):
         """
         对于 <terminal> (<delimiter> <terminal>)* 的快速匹配
 

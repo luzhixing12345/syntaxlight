@@ -22,9 +22,9 @@ class ShellCSS(Enum):
 
 class ShellParser(Parser):
     def __init__(
-        self, lexer, skip_invisible_characters=False, skip_space=True, display_warning=True
+        self, lexer, skip_invis_chars=False, skip_space=True
     ):
-        super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
+        super().__init__(lexer, skip_invis_chars, skip_space)
 
     def parse(self):
         """
@@ -94,27 +94,6 @@ class ShellParser(Parser):
                     self.current_token.add_css(ShellCSS.URL)
                 elif self.is_valid_path(self.current_token.value):
                     self.current_token.type = ShellTokenType.PATH
-                # elif re.match(r'\b(' + '|'.join(success_words) + r')\b', self.current_token.value.lower()):
-                #     self.current_token.add_css(ShellCSS.SUCCESS)
-                # elif re.match(r'\b(' + '|'.join(fail_words) + r')\b', self.current_token.value.lower()):
-                #     self.current_token.add_css(ShellCSS.FAIL)
-
-                # 对于 tree 结果的特殊优化
-                # elif len(self._token_list) >= 4 and (
-                #     self.look_back_token(1).value == " "
-                #     and self.look_back_token(2).value == "─"
-                #     and self.look_back_token(3).value == "─"
-                #     and self.look_back_token(4).value in ("├", "└")
-                # ):
-                #     # 没有后缀
-                #     if self.current_token.value.find(".") == -1:
-                #         ignored_files = ["makefile"]
-                #         if self.current_token.value.lower() in ignored_files:
-                #             self.current_token.add_css(ShellCSS.TREE_NORMAL)
-                #         else:
-                #             self.current_token.add_css(ShellCSS.TREE_EXE)
-                #     else:
-                #         self.current_token.add_css(ShellCSS.TREE_NORMAL)
 
             if is_program_name:
                 if self.current_token.type in (

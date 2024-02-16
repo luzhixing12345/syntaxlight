@@ -3,10 +3,8 @@ from ..lexers import TokenType, CSSTokenType
 
 
 class CSSParser(Parser):
-    def __init__(
-        self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True
-    ):
-        super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
+    def __init__(self, lexer, skip_invis_chars=True, skip_space=True):
+        super().__init__(lexer, skip_invis_chars, skip_space)
 
     def parse(self):
         inside_css_block = False

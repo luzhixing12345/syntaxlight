@@ -20,8 +20,8 @@ class VerilogCSS(Enum):
 
 
 class VerilogParser(Parser):
-    def __init__(self, lexer, skip_invisible_characters=True, skip_space=True, display_warning=True):
-        super().__init__(lexer, skip_invisible_characters, skip_space, display_warning)
+    def __init__(self, lexer, skip_invis_chars=True, skip_space=True):
+        super().__init__(lexer, skip_invis_chars, skip_space)
         self.verilog_first_set = VerilogTokenSet()
 
         self.module_map = {

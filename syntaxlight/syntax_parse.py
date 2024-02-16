@@ -56,7 +56,6 @@ def get_tokens(lexer: Lexer):
             tokens.append(token)
         except Error as e:
             print(e.message)
-            print(e.context)
     return tokens
 
 
