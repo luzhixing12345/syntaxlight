@@ -210,8 +210,6 @@ class Parser:
         """
         # 一些后处理
         self.brace_matching()
-        self.string_inside_format()
-        self.comment_inside_format()
 
         html_str = ""
         for token in self._token_list:
@@ -320,51 +318,8 @@ class Parser:
         """
         获取字符串
         """
-        node = String(self.current_token.value)
-        node.register_token(self.eat(TokenType.STRING))
-        return node
-
-    def string_inside_format(
-        self,
-        token: Token = None,
-        output_pattern: re.Pattern = r"%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+",
-        invisible_pattern: re.Pattern = r"\\\\|\\n|\\t|\\v|\\f",
-    ) -> List[String]:
-        """
-        取出其中格式化字符(如 %d %x \n) 并新建 token
-        """
-        if token is None:
-            token = self.current_token
-
-        # pattern 是 output_pattern 和 invisible_pattern 的组合
-        pattern = re.compile("(" + output_pattern + "|(?:" + invisible_pattern + "))")
-        # pattern = r"(%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+|(?:\\\\|\\n|\\t|\\v|\\f))"
-        sub_strings = re.split(pattern, token.value)
-        new_asts = []
-        line = token.line
-        column = token.column - len(token.value)
-        token_type = token.type
-        for sub_string in sub_strings:
-            if len(sub_string) == 0:
-                continue
-            column += len(sub_string)
-            token = Token(token_type, sub_string, line, column)
-            if bool(re.match(output_pattern, sub_string)):
-                token.add_css(CSS.FORMAT)
-            elif bool(re.match(invisible_pattern, sub_string)):
-                token.add_css(CSS.CONTROL)
-
-            self.manual_register_token(token)
-            node = String(token.value)
-            node.register_token([token])
-            new_asts.append(node)
-
-        self.manual_get_next_token()
-        return new_asts
+        return self.string_inside_format(self.current_token)
     
-    def comment_inside_format(self):
-        ...
-
     def get_number(self, pattern: re.Pattern = None):
         """
         @ pattern: 匹配数字的正则, 两个 group 用于匹配数字部分和类型部分
@@ -427,3 +382,46 @@ class Parser:
                 break
             nodes.append(func(*func_args))
         return nodes
+
+    def string_inside_format(
+        self,
+        token: Token = None,
+        output_pattern: re.Pattern = r"%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+",
+        invisible_pattern: re.Pattern = r"\\\\|\\n|\\t|\\v|\\f",
+    ) -> List[String]:
+        """
+        取出其中格式化字符(如 %d %x \n) 并新建 token
+        """
+        if token is None:
+            token = self.current_token
+
+        # pattern 是 output_pattern 和 invisible_pattern 的组合
+        pattern = re.compile("(" + output_pattern + "|(?:" + invisible_pattern + "))")
+        # pattern = r"(%[#0-9ldiufFeEgGxXoscpaAnYyMmHhSsLl]+|(?:\\\\|\\n|\\t|\\v|\\f))"
+        sub_strings = re.split(pattern, token.value)
+        new_asts = []
+        line = token.line
+        column = token.column - len(token.value)
+        token_type = token.type
+        for sub_string in sub_strings:
+            if len(sub_string) == 0:
+                continue
+            column += len(sub_string)
+            token = Token(token_type, sub_string, line, column)
+            if bool(re.match(output_pattern, sub_string)):
+                token.add_css(CSS.FORMAT)
+            elif bool(re.match(invisible_pattern, sub_string)):
+                token.add_css(CSS.CONTROL)
+
+            self.manual_register_token(token)
+            node = String(token.value)
+            node.register_token([token])
+            new_asts.append(node)
+
+        self.manual_get_next_token()
+        return new_asts
+    
+    def comment_inside_format(self):
+        '''
+        注释内格式化
+        '''
