@@ -95,8 +95,7 @@ pre[class*="language-c"] {
 }
 
 
-
-
+.Token.STATIC_ASSERT,
 .Token.SIZEOF {
     color: --type;
 }
@@ -122,6 +121,7 @@ pre[class*="language-c"] {
 }
 
 .Token.MacroDefine.ID,
+.Token.MacroDefine.TYPEDEF_ID,
 .Token.MarcroFunction.ID,
 .Token.BACK_SLASH {
     color: --type;

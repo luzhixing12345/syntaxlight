@@ -1,6 +1,6 @@
 
 i = 0
-t = rust
+t = c
 s = vscode
 
 .PHONY: test lexer cover

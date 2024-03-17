@@ -152,6 +152,12 @@ class CParser(Parser):
                 self.current_token.type = CTokenType.TYPEDEF_ID
                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
 
+            if self.current_token.value.startswith("__") and (next_token_type in self.cfirst_set.declaration_specifier or next_token_type in next_token_types):
+                # 双下划线开头的变量特殊处理, 可能是宏. 见 44.c
+                # __init __always_inline
+                self.current_token.type = CTokenType.TYPEDEF_ID
+                self.current_token.add_css(CSS.MACRO_DEFINE)
+
     def storage_class_specifier(self):
         """
         <storage-class-specifier> ::= 'auto'

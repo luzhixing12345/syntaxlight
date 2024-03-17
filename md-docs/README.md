@@ -19,3 +19,5 @@ syntaxlight 是一个基于 BNF 的语法高亮的 python 库
   这部分主要记录开发过程中遇到的问题以及解决办法
 
   <!-- 视频: [【编译原理】基于BNF的语法高亮]() -->
+
+[存储设备原理:1-Bit 信息的存储 (磁盘、光盘;闪存和 SSD) [南京大学2023操作系统-P25] (蒋炎岩)](https://www.bilibili.com/video/BV1Bh4y1x7tv/)

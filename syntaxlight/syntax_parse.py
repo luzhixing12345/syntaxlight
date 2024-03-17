@@ -7,6 +7,7 @@ from .asts.ast import display_ast
 import sys
 import traceback
 
+
 def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> str:
     if len(text) == 0:
         return ""
@@ -22,7 +23,9 @@ def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> str:
         while parser.current_token.type != TokenType.EOF:
             parser.eat()
     except Exception as e:
-        sys.stderr.write(f'  {ttyinfo("Parse running error")}: {e}')
+        sys.stderr.write(f'  {ttyinfo("Parse running error")}: {e}\n')
+        if file_path:
+            sys.stderr.write(f'  {ttyinfo("File path")}: {file_path}\n')
         traceback.print_exc()
     finally:
         display_ast(parser.root, parser.sub_roots, save_ast_tree=save_ast_tree)
@@ -42,9 +45,7 @@ def parse_file(file_path: str, language=None, save_ast_tree=False) -> str:
     else:
         language = clean_language(language)
 
-    return parse(
-        text, language=language, file_path=file_path, save_ast_tree=save_ast_tree
-    )
+    return parse(text, language=language, file_path=file_path, save_ast_tree=save_ast_tree)
 
 
 def get_tokens(lexer: Lexer):
