@@ -152,12 +152,6 @@ class CParser(Parser):
                 self.current_token.type = CTokenType.TYPEDEF_ID
                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
 
-            if self.current_token.value.startswith("__") and (next_token_type in self.cfirst_set.declaration_specifier or next_token_type in next_token_types):
-                # 双下划线开头的变量特殊处理, 可能是宏. 见 44.c
-                # __init __always_inline
-                self.current_token.type = CTokenType.TYPEDEF_ID
-                self.current_token.add_css(CSS.MACRO_DEFINE)
-
     def storage_class_specifier(self):
         """
         <storage-class-specifier> ::= 'auto'
@@ -337,9 +331,20 @@ class CParser(Parser):
         return result
 
     def after_eat(self):
-        if self.current_token.type == TokenType.ID and self.current_token.value in GDT:
-            if GDT[self.current_token.value] == CSS.TYPEDEF:
-                self.current_token.type = CTokenType.TYPEDEF_ID
+        if self.current_token.type == TokenType.ID:
+            # 对于已经在 GDT 中的元素直接标记为 TYPEDEF
+            if self.current_token.value in GDT:
+                if GDT[self.current_token.value] == CSS.TYPEDEF:
+                    self.current_token.type = CTokenType.TYPEDEF_ID
+            if self.current_token.value.startswith("__"):
+                next_token_types = [TokenType.ID, TokenType.MUL]
+                next_token_type = self.peek_next_token().type
+                if next_token_type in self.cfirst_set.declaration_specifier or next_token_type in next_token_types:
+                    # 双下划线开头的变量特殊处理, 可能是宏. 见 44.c
+                    # __init __always_inline
+                    self.current_token.type = CTokenType.TYPEDEF_ID
+                    self.current_token.add_css(CSS.MACRO_DEFINE)
+                    GDT.register_id(self.current_token.value, CSS.MACRO_DEFINE)
 
         if self.in_preprocessing:
             if self.current_token.type == CTokenType.IF:
@@ -406,7 +411,9 @@ class CParser(Parser):
             self.error(ErrorCode.UNEXPECTED_TOKEN, "should be * as pointer")
 
         type_qualifiers = []
-        while self.current_token.type == TokenType.MUL or self.current_token.type in self.cfirst_set.type_qualifier:
+        # @EXTEND-GRAMMAR 匹配宏定义
+        # 44.c
+        while self.current_token.type == TokenType.MUL or self.current_token.type == CTokenType.TYPEDEF_ID or self.current_token.type in self.cfirst_set.type_qualifier:
             if self.current_token.type == TokenType.MUL:
                 self.current_token.type = CTokenType.POINTER
                 node.register_token(self.eat(CTokenType.POINTER))

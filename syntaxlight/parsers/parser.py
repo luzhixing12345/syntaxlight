@@ -11,7 +11,7 @@ from ..gdt import CSS
 
 
 DEBUG = False
-# DEBUG = True
+DEBUG = True
 
 
 class Parser:
@@ -319,7 +319,7 @@ class Parser:
         获取字符串
         """
         return self.string_inside_format(self.current_token)
-    
+
     def get_number(self, pattern: re.Pattern = None):
         """
         @ pattern: 匹配数字的正则, 两个 group 用于匹配数字部分和类型部分
@@ -420,8 +420,8 @@ class Parser:
 
         self.manual_get_next_token()
         return new_asts
-    
+
     def comment_inside_format(self):
-        '''
+        """
         注释内格式化
-        '''
+        """
