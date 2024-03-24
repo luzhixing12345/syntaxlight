@@ -1,0 +1,24 @@
+pre[class*="language-"] {
+    background: --background;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.ADD_FILE,
+.Token.SUB_FILE {
+    color: --type;
+}
+
+.Token.TAG_LINE {
+    color: --define;
+}
+
+.Token.ADD_LINE {
+    color: --number;
+}
+
+.Token.SUB_LINE {
+    color: --string;
+}

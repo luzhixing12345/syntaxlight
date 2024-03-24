@@ -54,7 +54,7 @@ pre[class*="language-rust"] .Token.NumberType,
 pre[class*="language-rust"] .Token.ClassName,
 pre[class*="language-rust"] .Token.TraitName,
 pre[class*="language-rust"] .Token.Enumerator,
-pre[class*="language-rust"] .Token.Typedefine {
+pre[class*="language-rust"] .Token.Typedefine, pre[class*="language-rust"] .Token.LABEL {
     color: #4EC9B0;
 }
 
@@ -80,6 +80,10 @@ pre[class*="language-rust"] .Token.MutableSelf {
 
 pre[class*="language-rust"] .Token.MutableFunction {
     border-bottom: 1px solid #DCDCAA;
+}
+
+pre[class*="language-rust"] .Token.MutableOp {
+    border-bottom: 1px solid #D4D4D4;
 }
 
 pre[class*="language-rust"] .Token.Format,

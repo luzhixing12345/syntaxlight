@@ -1,4 +1,4 @@
-from syntaxlight.lexers.lexer import Token
+
 from .lexer import Lexer, Token, TokenType, TokenSet
 from enum import Enum
 

@@ -29,6 +29,7 @@ SUPPORTED_SYNTAX = {
     "txt": SyntaxDict(lexer=TxtLexer, parser=TxtParser, suffix=['txt']),
     "verilog": SyntaxDict(lexer=VerilogLexer, parser=VerilogParser, suffix=['v']),
     "rust": SyntaxDict(lexer=RustLexer, parser=RustParser, suffix=['rs']),
+    "diff": SyntaxDict(lexer=DiffLexer, parser=DiffParser, suffix=['diff']),
 }
 
 supported_languages = list(SUPPORTED_SYNTAX.keys())

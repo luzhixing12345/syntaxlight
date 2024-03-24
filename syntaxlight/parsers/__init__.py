@@ -15,3 +15,4 @@ from .python_parser import PythonParser
 from .txt_parser import TxtParser
 from .verilog_parser import VerilogParser
 from .rust_parser import RustParser
+from .diff_parser import DiffParser

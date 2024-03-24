@@ -78,7 +78,7 @@ class ShellLexer(Lexer):
             if self.current_char.isdigit():
                 return self.get_number(accept_bit=True, accept_hex=True, end_chars="sMGK")
 
-            if self.current_char.isalnum() or self.current_char in ("_", ".", "/"):
+            if self.current_char.isalpha() or self.current_char in ("_", ".", "/"):
                 token = self.get_id(extend_chars=["_", "-", ".", "/", ":", "+", "-", "@", "~"])
                 if bool(re.match(r"^\w+@[\w.-]+:[~\w/]+", token.value)):
                     if self.current_char in ("#", "$"):

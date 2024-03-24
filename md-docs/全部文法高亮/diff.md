@@ -1,0 +1,29 @@
+
+# diff
+## [1.diff](https://github.com/luzhixing12345/syntaxlight/tree/main/test/diff/1.diff)
+
+```diff
+--- a/.vscode/launch.json
++++ b/.vscode/launch.json
+@@ -11,7 +11,8 @@
+             "cwd": "${workspaceFolder}",
+             "environment": [],
+             "MIMode": "gdb",
+-            "miDebuggerPath": "gdb",
++            "miDebuggerPath": "i386-elf-gdb",
+             "targetArchitecture": "x86",
+             "setupCommands": [
+                 {
+                     "description": "Enable pretty-printing for gdb",
+--- a/.vscode/c_cpp_properties.json
++++ b/.vscode/c_cpp_properties.json
+@@ -6,7 +6,7 @@
+                 "${workspaceFolder}/**"
+             ],
+             "defines": [],
+-            "compilerPath": "/usr/bin/gcc",
++            "compilerPath": "/usr/local/bin/i386-elf-gcc",
+             "cStandard": "c89",
+             "cppStandard": "c++98",
+             "intelliSenseMode": "gcc-x64"
+```
