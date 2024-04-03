@@ -14,22 +14,11 @@ class Syntax(AST):
         super().__init__()
         self.rules = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.rules)
-        return super().visit(node_visitor)
-
-
 class Rule(AST):
     def __init__(self) -> None:
         super().__init__()
         self.rule_name = None
         self.expr = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.rule_name)
-        node_visitor.link(self, self.expr)
-        return super().visit(node_visitor)
-
 
 class RuleName(AST):
     def __init__(self) -> None:
@@ -37,21 +26,10 @@ class RuleName(AST):
         self.name = None
         self.op = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.name)
-        node_visitor.link(self, self.op)
-        return super().visit(node_visitor)
-
-
 class Term(AST):
     def __init__(self) -> None:
         super().__init__()
         self.exprs = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.exprs)
-        return super().visit(node_visitor)
-
 
 class GroupTerm(AST):
     def __init__(self) -> None:
@@ -59,23 +37,11 @@ class GroupTerm(AST):
         self.expr = None
         self.op = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.expr)
-        node_visitor.link(self, self.op)
-        return super().visit(node_visitor)
-
-
 class Item(AST):
     def __init__(self) -> None:
         super().__init__()
         self.value = None
         self.op = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.value)
-        node_visitor.link(self, self.op)
-        return super().visit(node_visitor)
-
 
 class BNFParser(Parser):
     def __init__(self, lexer, skip_invis_chars=False, skip_space=True):

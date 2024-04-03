@@ -1,4 +1,3 @@
-
 from .parser import Parser
 from ..lexers import TokenType, TomlTokenType, Token
 from ..error import ErrorCode
@@ -23,11 +22,6 @@ class Toml(AST):
         self.expressions: List[AST] = expressions
         self.graph_node_info = f"expression = {len(self.expressions)}"
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        for expression in self.expressions:
-            node_visitor.link(self, expression)
-        return super().visit(node_visitor)
-
     def formatter(self, depth: int = 0):
         result = ""
         for expression in self.expressions:
@@ -40,10 +34,6 @@ class Pair(AST):
         super().__init__()
         self.path: Path = path
         self.value: AST = value
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.value)
-        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         return f"{self.path.formatter(depth+1)} = {self.value.formatter(depth+1)}"
@@ -65,11 +55,6 @@ class Table(AST):
         self.header: AST = header
         self.entries = entries
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.header)
-        node_visitor.link(self, self.entries)
-        return super().visit(node_visitor)
-
     def formatter(self, depth: int = 0):
         header_formatter = self.header.formatter(depth + 1)
         entries_formatter = self.entries.formatter(depth + 1)
@@ -81,10 +66,6 @@ class TableHeader(AST):
         super().__init__()
         self.path = path
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.path)
-        return super().visit(node_visitor)
-
     def formatter(self, depth: int = 0):
         return f"[{self.path.formatter(depth+1)}]"
 
@@ -94,10 +75,6 @@ class TableArrayHeader(AST):
         super().__init__()
         self.path = path
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.path)
-        return super().visit(node_visitor)
-
     def formatter(self, depth):
         return f"[[{self.path.formatter(depth+1)}]]"
 
@@ -106,12 +83,6 @@ class TableEntry(AST):
     def __init__(self, pairs: List[Pair]) -> None:
         super().__init__()
         self.pairs = pairs
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        # print(self.pairs,'!')
-        for pair in self.pairs:
-            node_visitor.link(self, pair)
-        return super().visit(node_visitor)
 
     def formatter(self, depth):
         result = ""

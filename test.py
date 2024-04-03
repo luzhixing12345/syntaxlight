@@ -3,13 +3,13 @@ import syntaxlight
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--type','-t',type=str,default='c')
-parser.add_argument('--index','-i',type=int,default=0)
-parser.add_argument('--style','-s',type=str,default='vscode')
-parser.add_argument('--lexer',action='store_true')
+parser.add_argument("--type", "-t", type=str, default="c")
+parser.add_argument("--index", "-i", type=int, default=0)
+parser.add_argument("--style", "-s", type=str, default="vscode")
+parser.add_argument("--lexer", action="store_true")
 args = parser.parse_args()
 
-test_folder_path = './test'
+test_folder_path = "./test"
 languages = os.listdir(test_folder_path)
 
 FILE_TYPE = args.type
@@ -31,14 +31,13 @@ for language in languages:
 for language, files in TEST_FILES.items():
     if INDEX != -1:
         if LEXER_TEST:
-            with open(files[INDEX], 'r',encoding='utf-8') as f:
-                lexer = syntaxlight.get_lexer(f.read(),FILE_TYPE)
+            with open(files[INDEX], "r", encoding="utf-8") as f:
+                lexer = syntaxlight.get_lexer(f.read(), FILE_TYPE)
                 tokens = syntaxlight.get_tokens(lexer)
                 for token in tokens:
                     print(token)
             break
-        syntaxlight.example_display(files[INDEX], STYLE,save_ast_tree=False)
+        syntaxlight.example_display(files[INDEX], STYLE, save_ast_tree=True)
         print("    http://127.0.0.1:5655/syntaxlight_example/index.html")
     else:
         syntaxlight.example_display(files, STYLE)
-        

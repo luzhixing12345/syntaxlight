@@ -25,6 +25,7 @@ class AST(object):
         # 默认 update 的时候只会为一级 AST 添加当前类名, 启用此选项后会递归地将类名传递给其下的每一个叶节点
         # 默认不开启以减少对子类的影响
         self.update_subnode = False
+        self._ast_leaves: List[str] = []
 
     def register_token(self, tokens: List[Token], extra_class_name: str = None):
         """
@@ -43,7 +44,9 @@ class AST(object):
         """
         for key, node in kwargs.items():
             setattr(self, key, node)
-            # update 的时候将子元素的 token 也添加当前 AST 的 class
+            # 记录调用 key 值, 用于生成 AST 树时的叶子节点顺序
+            self._ast_leaves.append(key)
+            # 将子元素的 token 也添加当前 AST 的 class
             if isinstance(node, AST):
                 for token in node._tokens:
                     token.class_list.append(self.class_name)
@@ -78,6 +81,9 @@ class AST(object):
         """
         由 node visitor 访问时递归调用
         """
+        for key in self._ast_leaves:
+            if hasattr(self, key):
+                node_visitor.link(self, getattr(self, key))
         node_visitor.depth -= 1  # 到达叶节点, 退出到上一层
         # print(f'visit {self.class_name}, depth = {self.depth}')
 
@@ -109,11 +115,6 @@ class Object(AST):
     def update(self, **kwargs):
         return super().update(**kwargs)
 
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        for pair in self.pairs:
-            node_visitor.link(self, pair)
-        return super().visit(node_visitor)
-
     def formatter(self, depth: int = 0):
         if self._inside_array:
             depth += 1
@@ -142,12 +143,6 @@ class Array(AST):
     def update(self, **kwargs):
         return super().update(**kwargs)
 
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        for element in self.elements:
-            node_visitor.link(self, element)
-
-        return super().visit(node_visitor)
-
     def formatter(self, depth: int = 0):
         result = "["
         for e in self.elements:
@@ -170,11 +165,6 @@ class Pair(AST):
         super().__init__()
         self.key: AST = key
         self.value: AST = value
-
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.key)
-        node_visitor.link(self, self.value)
-        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         return f"{self.key.formatter(depth+1)}: {self.value.formatter(depth+1)}"
@@ -223,10 +213,6 @@ class WrapString(AST):
         super().__init__()
         self.strings = None
 
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.strings)
-        return super().visit(node_visitor)
-
 
 class String(AST):
     def __init__(self, string=None) -> None:
@@ -267,9 +253,9 @@ class Number(AST):
 
 
 class Punctuator(AST):
-    def __init__(self, op:str) -> None:
+    def __init__(self, op: str) -> None:
         super().__init__()
-        self.op:str = op
+        self.op: str = op
         self.is_leaf_ast = True
 
     def formatter(self, depth: int = 0):
@@ -282,10 +268,6 @@ class UnaryOp(AST):
         self.expr = expr
         self.op = op
 
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.expr)
-        return super().visit(node_visitor)
-
     def formatter(self, depth: int = 0):
         return self.op + self.expr.formatter(depth + 1)
 
@@ -297,11 +279,6 @@ class BinaryOp(AST):
         self.expr_rights: List[AST] = None
         self.op = None
 
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.expr_left)
-        node_visitor.link(self, self.expr_rights)
-        return super().visit(node_visitor)
-
 
 class AssignOp(AST):
     def __init__(self, op: str = None) -> None:
@@ -309,9 +286,6 @@ class AssignOp(AST):
         self.op = op
         self.is_leaf_ast = True
         self.node_info += f"\\n{self.op}"
-
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        return super().visit(node_visitor)
 
 
 class ConditionalExpression(AST):
@@ -321,23 +295,11 @@ class ConditionalExpression(AST):
         self.value_true = None
         self.value_false = None
 
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.condition_expr)
-        if self.value_true:
-            node_visitor.link(self, self.value_true)
-        if self.value_false:
-            node_visitor.link(self, self.value_false)
-        return super().visit(node_visitor)
-
 
 class Expression(AST):
     def __init__(self, exprs: List[AST] = None) -> None:
         super().__init__()
         self.exprs = exprs
-
-    def visit(self, node_visitor: "NodeVisitor" = None):
-        node_visitor.link(self, self.exprs)
-        return super().visit(node_visitor)
 
     def formatter(self, depth: int = 0):
         result = ""

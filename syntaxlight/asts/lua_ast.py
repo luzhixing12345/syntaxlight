@@ -1,18 +1,13 @@
-
 from .ast import AST, NodeVisitor, String, Identifier
 from typing import List
 from enum import Enum
+
 
 class Block(AST):
     def __init__(self) -> None:
         super().__init__()
         self.stats = None
         self.retstat = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.stats)
-        node_visitor.link(self, self.retstat)
-        return super().visit(node_visitor)
 
 
 class Statement(AST):
@@ -34,24 +29,6 @@ class Statement(AST):
         self.id = None
         self.end = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.varlist)
-        node_visitor.link(self, self.attnamelist)
-        node_visitor.link(self, self.explist)
-        node_visitor.link(self, self.label)
-        node_visitor.link(self, self.keyword)
-        node_visitor.link(self, self.gotoid)
-        node_visitor.link(self, self.block)
-        node_visitor.link(self, self.exp)
-        node_visitor.link(self, self.sub_keyword)
-        node_visitor.link(self, self.elseif_exprs)
-        node_visitor.link(self, self.else_expr)
-        node_visitor.link(self, self.funcname)
-        node_visitor.link(self, self.funcbody)
-        node_visitor.link(self, self.id)
-        node_visitor.link(self, self.end)
-        return super().visit(node_visitor)
-
 
 class ElseIfStatement(AST):
     def __init__(self) -> None:
@@ -69,20 +46,11 @@ class AttributeName(AST):
         self.id = None
         self.attribute = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.id)
-        node_visitor.link(self, self.attribute)
-        return super().visit(node_visitor)
-
 
 class Attribute(AST):
     def __init__(self) -> None:
         super().__init__()
         self.id: Identifier = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.id)
-        return super().visit(node_visitor)
 
 
 class ReturnStatment(AST):
@@ -91,20 +59,11 @@ class ReturnStatment(AST):
         self.keyword = None
         self.explist = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.keyword)
-        node_visitor.link(self, self.explist)
-        return super().visit(node_visitor)
-
 
 class Label(AST):
     def __init__(self) -> None:
         super().__init__()
         self.id = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.id)
-        return super().visit(node_visitor)
 
 
 class FuncName(AST):
@@ -112,11 +71,6 @@ class FuncName(AST):
         super().__init__()
         self.id = None
         self.sub_ids = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.id)
-        node_visitor.link(self, self.sub_ids)
-        return super().visit(node_visitor)
 
 
 class Variable(AST):
@@ -126,13 +80,7 @@ class Variable(AST):
         self.exp: AST = None
         self.sub_nodes: List[VarSuffix] = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.id)
-        node_visitor.link(self, self.exp)
-        node_visitor.link(self, self.sub_nodes)
-        return super().visit(node_visitor)
-
-    def formatter(self, depth: int = 0): # pragma: no cover
+    def formatter(self, depth: int = 0):  # pragma: no cover
         result = ""
         if self.id:
             result += self.id.formatter(depth + 1)
@@ -159,13 +107,7 @@ class VarSuffix(AST):
         self.exp: AST = None
         self.args: Argument = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.id)
-        node_visitor.link(self, self.exp)
-        node_visitor.link(self, self.args)
-        return super().visit(node_visitor)
-
-    def formatter(self, depth: int = 0): # pragma: no cover
+    def formatter(self, depth: int = 0):  # pragma: no cover
         result = ""
         assert self.suffix_type is not None
         if self.suffix_type == VarSuffixType.INDEX_ID:
@@ -194,18 +136,7 @@ class Expression(AST):
         self.binop = None
         self.next_exp = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.functiondef)
-        node_visitor.link(self, self.string)
-        node_visitor.link(self, self.varargs)
-        node_visitor.link(self, self.prefixexp)
-        node_visitor.link(self, self.unop)
-        node_visitor.link(self, self.exp)
-        node_visitor.link(self, self.binop)
-        node_visitor.link(self, self.next_exp)
-        return super().visit(node_visitor)
-
-    def formatter(self, depth: int = 0): # pragma: no cover
+    def formatter(self, depth: int = 0):  # pragma: no cover
         result = ""
         if self.string:
             for st in self.string:
@@ -221,13 +152,7 @@ class Argument(AST):
         self.table: TableConstructor = None
         self.string: List[String] = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.explist)
-        node_visitor.link(self, self.table)
-        node_visitor.link(self, self.string)
-        return super().visit(node_visitor)
-
-    def formatter(self, depth: int = 0): # pragma: no cover
+    def formatter(self, depth: int = 0):  # pragma: no cover
         result = ""
         if self.explist is not None:
             result += "("
@@ -249,11 +174,6 @@ class FunctionDefinition(AST):
         self.keyword = None
         self.funcbody = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.keyword)
-        node_visitor.link(self, self.funcbody)
-        return super().visit(node_visitor)
-
 
 class FunctionBody(AST):
     def __init__(self) -> None:
@@ -262,12 +182,6 @@ class FunctionBody(AST):
         self.block = None
         self.end = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.parlist)
-        node_visitor.link(self, self.block)
-        node_visitor.link(self, self.end)
-        return super().visit(node_visitor)
-
 
 class ParameterList(AST):
     def __init__(self) -> None:
@@ -275,20 +189,11 @@ class ParameterList(AST):
         self.namelist = None
         self.varargs = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.namelist)
-        node_visitor.link(self, self.varargs)
-        return super().visit(node_visitor)
-
 
 class TableConstructor(AST):
     def __init__(self) -> None:
         super().__init__()
         self.fieldlist = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.fieldlist)
-        return super().visit(node_visitor)
 
 
 class FieldList(AST):
@@ -299,13 +204,6 @@ class FieldList(AST):
         self.sub_fields = None
         self.fieldsep = None
 
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.field)
-        node_visitor.link(self, self.punctuators)
-        node_visitor.link(self, self.sub_fields)
-        node_visitor.link(self, self.fieldsep)
-        return super().visit(node_visitor)
-
 
 class Field(AST):
     def __init__(self) -> None:
@@ -313,9 +211,3 @@ class Field(AST):
         self.exp = None
         self.id = None
         self.end_exp = None
-
-    def visit(self, node_visitor: NodeVisitor = None):
-        node_visitor.link(self, self.exp)
-        node_visitor.link(self, self.id)
-        node_visitor.link(self, self.end_exp)
-        return super().visit(node_visitor)

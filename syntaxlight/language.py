@@ -23,16 +23,17 @@ SUPPORTED_SYNTAX = {
     "riscvasm": SyntaxDict(lexer=RISCVAssemblyLexer, parser=RISCVAssmemblyParser, suffix=["S"]),
     "css": SyntaxDict(lexer=CSSLexer, parser=CSSParser, suffix=["css"]),
     "makefile": SyntaxDict(lexer=MakefileLexer, parser=MakefileParser, suffix=["mk", "mak"]),
-    "dot": SyntaxDict(lexer=DotLexer, parser=DotParser, suffix=['dot','gv']),
-    "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=['yml','yaml']),
+    "dot": SyntaxDict(lexer=DotLexer, parser=DotParser, suffix=["dot", "gv"]),
+    "yaml": SyntaxDict(lexer=YamlLexer, parser=YamlParser, suffix=["yml", "yaml"]),
     "python": SyntaxDict(lexer=PythonLexer, parser=PythonParser, suffix=["py"]),
-    "txt": SyntaxDict(lexer=TxtLexer, parser=TxtParser, suffix=['txt']),
-    "verilog": SyntaxDict(lexer=VerilogLexer, parser=VerilogParser, suffix=['v']),
-    "rust": SyntaxDict(lexer=RustLexer, parser=RustParser, suffix=['rs']),
-    "diff": SyntaxDict(lexer=DiffLexer, parser=DiffParser, suffix=['diff']),
+    "txt": SyntaxDict(lexer=TxtLexer, parser=TxtParser, suffix=["txt"]),
+    "verilog": SyntaxDict(lexer=VerilogLexer, parser=VerilogParser, suffix=["v"]),
+    "rust": SyntaxDict(lexer=RustLexer, parser=RustParser, suffix=["rs"]),
+    "diff": SyntaxDict(lexer=DiffLexer, parser=DiffParser, suffix=["diff"]),
 }
 
 supported_languages = list(SUPPORTED_SYNTAX.keys())
+
 
 def clean_language(language: str):
     language = language.lower()

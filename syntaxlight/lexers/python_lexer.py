@@ -80,7 +80,7 @@ class PythonLexer(Lexer):
             if self.current_char in self.long_op_dict:
                 return self.get_long_op()
 
-            if self.current_char.isalnum() or self.current_char == "_":
+            if self.current_char.isalpha() or self.current_char == "_":
                 return self.get_id()
 
             try:
