@@ -132,7 +132,7 @@ class CParser(Parser):
         self._unknown_typedef_id_guess()
         return node
 
-    def _unknown_typedef_id_guess(self):
+    def _unknown_typedef_id_guess(self, always_match = False):
         """
         @EXTEND-GRAMMAR
 
@@ -143,12 +143,21 @@ class CParser(Parser):
 
         下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
         - static uint64 (*syscalls[])(void)
+        
+        如果可以确定一定是函数指针类型的, 可以使用 always_match = True, 例如
+        
+        struct file_operations {
+            loff_t (*llseek) (struct file *, loff_t, int);
+        }
+        
+        https://github.com/luzhixing12345/syntaxlight/issues/12
+        test/c/45.c
         """
         next_token_types = [TokenType.ID, TokenType.MUL]
 
         if self.current_token.type == TokenType.ID:
             next_token_type = self.peek_next_token().type
-            if next_token_type in next_token_types:
+            if always_match or next_token_type in next_token_types:
                 self.current_token.type = CTokenType.TYPEDEF_ID
                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
 
@@ -273,10 +282,10 @@ class CParser(Parser):
         if self.current_token.type == TokenType.LCURLY_BRACE:
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             struct_declarations = []
-            self._unknown_typedef_id_guess()
+            self._unknown_typedef_id_guess(always_match=True)
             while self.current_token.type in self.cfirst_set.struct_declaration:
                 struct_declarations.append(self.struct_declaration())
-                self._unknown_typedef_id_guess()
+                self._unknown_typedef_id_guess(always_match=True)
             node.update(declarations=struct_declarations)
             node.register_token(self.eat(TokenType.RCURLY_BRACE))
 
