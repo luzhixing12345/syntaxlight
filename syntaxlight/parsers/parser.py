@@ -11,7 +11,7 @@ from ..gdt import CSS
 
 
 DEBUG = False
-DEBUG = True
+# DEBUG = True
 
 
 class Parser:
@@ -420,8 +420,3 @@ class Parser:
 
         self.manual_get_next_token()
         return new_asts
-
-    def comment_inside_format(self):
-        """
-        注释内格式化
-        """

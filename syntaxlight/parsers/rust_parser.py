@@ -5,6 +5,7 @@ from ..error import ErrorCode
 from ..asts.rust_ast import *
 from ..asts.ast import add_ast_type, Token, String
 from ..gdt import CSS, GlobalDescriptorTable
+from enum import Enum
 
 # 默认预导入的 rust 的标准库
 DEFAULT_RUST_LIB = [

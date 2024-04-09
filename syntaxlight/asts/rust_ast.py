@@ -1,6 +1,5 @@
 from .ast import AST, Identifier, Keyword, Punctuator
 from typing import List, Union, Optional
-from enum import Enum
 from ..gdt import GlobalDescriptorTable, CSS
 
 

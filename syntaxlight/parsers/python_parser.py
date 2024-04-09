@@ -2,8 +2,9 @@ from .parser import Parser
 from ..lexers import TokenType, PythonTokenType
 import re
 
-from ..gdt import CSS
+from ..gdt import CSS, GlobalDescriptorTable
 
+GDT = GlobalDescriptorTable()
 
 class PythonParser(Parser):
     def __init__(self, lexer, skip_invis_chars=True, skip_space=True):
@@ -35,9 +36,16 @@ class PythonParser(Parser):
             elif self.current_token.type == PythonTokenType.IMPORT:
                 self.eat()
                 self.current_token.add_css(CSS.IMPORT_LIBNAME)
+                if self.peek_next_token().type == PythonTokenType.AS and self.peek_next_token(2).type == TokenType.ID:
+                    self.eat()
+                    self.eat()
+                    self.current_token.add_css(CSS.IMPORT_LIBNAME)
+                    GDT.register_id(self.current_token.value, CSS.IMPORT_LIBNAME)
 
             elif self.current_token.type == TokenType.ID:
-                if self.peek_next_token().type == TokenType.LPAREN:
+                if self.current_token.value in GDT:
+                    self.current_token.add_css(GDT[self.current_token.value])
+                elif self.peek_next_token().type == TokenType.LPAREN:
                     if self.current_token.value[0].isupper():
                         self.current_token.add_css(CSS.CLASS_INSTANTIATION)
                     else:

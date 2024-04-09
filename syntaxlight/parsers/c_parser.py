@@ -282,6 +282,7 @@ class CParser(Parser):
         if self.current_token.type == TokenType.LCURLY_BRACE:
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             struct_declarations = []
+            # struct/union 内部可以确定一定是函数指针而非函数调用
             self._unknown_typedef_id_guess(always_match=True)
             while self.current_token.type in self.cfirst_set.struct_declaration:
                 struct_declarations.append(self.struct_declaration())

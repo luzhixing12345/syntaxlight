@@ -1,4 +1,4 @@
-from .lexer import Lexer, Token, TokenType, ErrorCode
+from .lexer import Lexer, Token, TokenType, TokenSet
 from enum import Enum
 
 
@@ -101,3 +101,10 @@ class PythonLexer(Lexer):
 
         # End of File
         return Token(type=TokenType.EOF, value="EOF", line=self.line, column=self.column)
+
+class PythonTokenSet:
+    def __init__(self) -> None:
+        
+        self.compound_stmt = TokenSet()
+        self.simple_stmt = TokenSet()
+        self.stmt = TokenSet(self.compound_stmt, self.simple_stmt)
