@@ -39,3 +39,5 @@ struct file_operations {
                    loff_t len, unsigned int remap_flags);
     int (*fadvise)(struct file *, loff_t, loff_t, int);
 } __randomize_layout;
+
+int

@@ -277,11 +277,14 @@ class Lexer:
         lines = self.text.split("\n")
         lines.insert(0, [])
 
-        # if token.type == TokenType.EOF:
-        #     return ""
+        # 对于 EOF 特殊处理
+        if token.type == TokenType.EOF:
+            # token.line += 1
+            token.value = " "
+
         context_start_line = max(token.line - self.context_bias, 1)
         context_end_line = min(token.line + self.context_bias, len(lines))
-
+            
         context = ""
 
         # token 为多行文本的处理

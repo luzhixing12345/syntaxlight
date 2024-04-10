@@ -81,16 +81,9 @@ class Parser:
             tokens.extend(self._skip())
             self.after_eat()
             return tokens
-
         else:
-            current_value = self.current_token.value
-            expected_value = token_type.value
-            if current_value in self.lexer.invisible_characters:
-                current_value = self.current_token.type.name
-            if self.current_token.type == TokenType.EOF:
-                current_value = "EOF"
-            if expected_value in self.lexer.invisible_characters:
-                expected_value = token_type.name
+            current_value = repr(self.current_token.value)
+            expected_value = repr(token_type.value)
             self.error(
                 error_code=ErrorCode.UNEXPECTED_TOKEN,
                 token=self.current_token,
