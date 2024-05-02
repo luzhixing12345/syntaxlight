@@ -132,7 +132,7 @@ class CParser(Parser):
         self._unknown_typedef_id_guess()
         return node
 
-    def _unknown_typedef_id_guess(self, always_match = False):
+    def _unknown_typedef_id_guess(self, always_match=False):
         """
         @EXTEND-GRAMMAR
 
@@ -143,13 +143,13 @@ class CParser(Parser):
 
         下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
         - static uint64 (*syscalls[])(void)
-        
+
         如果可以确定一定是函数指针类型的, 可以使用 always_match = True, 例如
-        
+
         struct file_operations {
             loff_t (*llseek) (struct file *, loff_t, int);
         }
-        
+
         https://github.com/luzhixing12345/syntaxlight/issues/12
         test/c/45.c
         """
@@ -423,7 +423,11 @@ class CParser(Parser):
         type_qualifiers = []
         # @EXTEND-GRAMMAR 匹配宏定义
         # 44.c
-        while self.current_token.type == TokenType.MUL or self.current_token.type == CTokenType.TYPEDEF_ID or self.current_token.type in self.cfirst_set.type_qualifier:
+        while (
+            self.current_token.type == TokenType.MUL
+            or self.current_token.type == CTokenType.TYPEDEF_ID
+            or self.current_token.type in self.cfirst_set.type_qualifier
+        ):
             if self.current_token.type == TokenType.MUL:
                 self.current_token.type = CTokenType.POINTER
                 node.register_token(self.eat(CTokenType.POINTER))
@@ -871,8 +875,11 @@ class CParser(Parser):
             self.current_token.type != TokenType.LPAREN
             and self.current_token.type in self.cfirst_set.primary_expression
         ) or (
-            self.current_token.type == TokenType.LPAREN and self.peek_next_token().type in self.cfirst_set.expression
+            self.current_token.type == TokenType.LPAREN
+            and self.peek_next_token().type in [self.cfirst_set.expression, TokenType.LCURLY_BRACE]
         ):
+            # TokenType.LCURLY_BRACE => GNU C Extension
+            # https://github.com/luzhixing12345/syntaxlight/issues/13
             node.update(primary_expr=self.primary_expression())
         else:
             node.register_token(self.eat(TokenType.LPAREN))
@@ -969,6 +976,12 @@ class CParser(Parser):
                                | <char>
                                | "(" <expression> ")"
                                | <generic-selection>
+
+        # @EXTEND-GRAMMAR: braced-group in expression
+        # see more in https://github.com/luzhixing12345/syntaxlight/issues/13
+
+        <primary-expression>   | "(" <compound-statement> ")"
+
         """
         node = PrimaryExpression()
         if self.current_token.type == TokenType.ID:
@@ -998,7 +1011,10 @@ class CParser(Parser):
             sub_node.register_token(self.eat(self.current_token.type))
         elif self.current_token.type == TokenType.LPAREN:
             node.register_token(self.eat(TokenType.LPAREN))
-            sub_node = self.expression()
+            if self.current_token.type in self.cfirst_set.compound_statement:
+                sub_node = self.compound_statement()
+            else:
+                sub_node = self.expression()
             node.register_token(self.eat(TokenType.RPAREN))
         elif self.current_token.type in self.cfirst_set.generic_selection:
             sub_node = self.generic_selection()

@@ -55,3 +55,4 @@ static int proc_ipc_dointvec_minmax_orphans(struct ctl_table *table, int write,
 		shm_destroy_orphaned(ns);
 	return err;
 }
+

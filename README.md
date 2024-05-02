@@ -52,6 +52,12 @@ make t=json i=1
 make t=toml i=1 s=one-dark-pro
 ```
 
+[now carbon](https://carbon.now.sh/) [ruslanspivak lsbasi-part1](https://ruslanspivak.com/lsbasi-part1/)
+
+https://ruslanspivak.com/lsbasi-part1/ 
+
+https://ruslanspivak.com/lsbasi-part1/
+
 ## 参考
 
 - [Let's Build A Simple Interpreter](https://ruslanspivak.com/lsbasi-part1/)
