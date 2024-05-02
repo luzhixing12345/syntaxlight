@@ -1,4 +1,4 @@
-from ..lexers.lexer import Lexer, Token, TokenType, TTYColor, TokenSet
+from ..lexers.lexer import Lexer, Token, TokenType
 from ..error import ParserError, ErrorCode, ttyinfo
 from enum import Enum
 from ..asts.ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
@@ -8,10 +8,11 @@ import html
 import traceback
 import re
 from ..gdt import CSS
+from ..token import TokenSet
 
 
 DEBUG = False
-DEBUG = True
+# DEBUG = True
 
 
 class Parser:

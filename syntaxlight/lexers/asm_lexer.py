@@ -1,5 +1,5 @@
-from syntaxlight.lexers.lexer import Token
-from .lexer import Lexer, Token, TokenType, ErrorCode
+
+from .lexer import Lexer, Token, TokenType
 from enum import Enum
 import re
 

@@ -380,7 +380,7 @@ class NodeVisitor:
         print(f"ast tree saved in [{self.image_name}], view by grpahviz")
 
 
-def display_ast(node: AST, sub_roots: List[AST], save_ast_tree=False):
+def display_ast(node: AST, sub_roots: List[AST]):
     if node is None:
         return
     node_visitor = NodeVisitor()
@@ -389,8 +389,7 @@ def display_ast(node: AST, sub_roots: List[AST], save_ast_tree=False):
         node_visitor.depth += 1
         sub_root.visit(node_visitor)
 
-    if save_ast_tree:
-        node_visitor.save()
+    node_visitor.save()
     # node.formatter()
     assert node_visitor.depth == -1
 

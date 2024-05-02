@@ -1,6 +1,7 @@
 
-from .lexer import Lexer, Token, TokenType, TokenSet, ErrorCode
+from .lexer import Lexer, Token, TokenType, ErrorCode
 from enum import Enum
+from ..token import TokenSet
 
 class BNFTokenType(Enum):
     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"

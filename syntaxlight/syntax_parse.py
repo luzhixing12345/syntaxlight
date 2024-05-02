@@ -6,36 +6,45 @@ from .language import guess_language, SUPPORTED_SYNTAX, show_help_info, clean_la
 from .asts.ast import display_ast
 import sys
 import traceback
-from typing import Tuple
+from typing import Tuple, Optional
 
-def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> Tuple[str, bool]:
+
+def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> Tuple[str, Optional[Error]]:
+    """
+    解析文本, 高亮代码段
+
+    return: (html, error)
+    html: html 格式的代码段, 无论是否有错误, 都会返回; 错误位置会用红色标记, 其后面的代码段会被默认高亮
+    error: 异常信息, 无错误时为 None, 有错误时为异常对象(Error), 可以打印错误信息
+    """
     if len(text) == 0:
         return ""
     language = clean_language(language)
     parser = get_parser(text, language)
     parser.lexer.file_path = file_path
 
-    parse_flag = False
+    exception: Optional[Error] = None
     try:
         parser.parse()
-        parse_flag = True
     except Error as e:
-        sys.stderr.write(e.message)
+        exception = e
         # 失败后将剩余部分也解析
         while parser.current_token.type != TokenType.EOF:
             parser.eat()
     except Exception as e:
-        sys.stderr.write(f'  {ttyinfo("Parse running error")}: {e}\n')
+        exception = e
+        exception.self_error_info = f'  {ttyinfo("Parse running error")}: {e}\n'
         if file_path:
-            sys.stderr.write(f'  {ttyinfo("File path")}: {file_path}\n')
-        traceback.print_exc()
+            exception.self_error_info += f'  {ttyinfo("File path")}: {file_path}\n'
+        exception.self_error_info += traceback.format_exc()
         # 失败后将剩余部分也解析
         while parser.current_token.type != TokenType.EOF:
             parser.eat()
     finally:
-        display_ast(parser.root, parser.sub_roots, save_ast_tree=save_ast_tree)
+        if save_ast_tree:
+            display_ast(parser.root, parser.sub_roots)
         # print(parser.node)
-        return parser.to_html(), parse_flag
+        return parser.to_html(), exception
 
 
 def parse_file(file_path: str, language=None, save_ast_tree=False) -> Tuple[str, bool]:

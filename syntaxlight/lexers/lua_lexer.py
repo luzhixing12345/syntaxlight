@@ -1,6 +1,6 @@
-from .lexer import Lexer, Token, TokenType, TokenSet, ErrorCode
+from .lexer import Lexer, Token, TokenType, ErrorCode
 from enum import Enum
-
+from ..token import TokenSet
 
 class LuaTokenType(Enum):
     # -----------------------------------------------

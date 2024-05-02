@@ -1,6 +1,7 @@
-from .lexer import Lexer, Token, TokenType, TokenSet, ErrorCode
+from .lexer import Lexer, ErrorCode
 from enum import Enum
-
+from ..token import Token, TokenType
+from ..token import TokenSet
 
 class CTokenType(Enum):
     # -----------------------------------------------

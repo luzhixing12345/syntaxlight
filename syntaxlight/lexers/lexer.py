@@ -1,150 +1,8 @@
 from enum import Enum
-from ..error import ErrorCode, LexerError, TTYColor, ttyinfo
-from typing import Dict, List, Tuple
+from ..error import ErrorCode, LexerError, ParserError
+from typing import Dict, List, Tuple, Union
 import re
-
-
-GLOBAL_TOKEN_ID = 0
-
-# class NewTokenType(Enum):
-#     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
-#     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
-
-
-class TokenType(Enum):
-    # 所有基本 Token 类型
-    PLUS = "+"
-    MINUS = "-"
-    MUL = "*"
-    DIV = "/"
-    ASSIGN = "="
-    BACK_SLASH = "\\"
-    LPAREN = "("
-    RPAREN = ")"
-    LSQUAR_PAREN = "["
-    RSQUAR_PAREN = "]"
-    LCURLY_BRACE = "{"
-    RCURLY_BRACE = "}"
-    LANGLE_BRACE = "<"  # 左尖括号, 如果想表达小于应转换为 LT
-    RANGLE_BRACE = ">"  # 右尖括号, 如果想表达大于应转换为 GT
-    UNDERLINE = "_"
-    SEMI = ";"
-    DOT = "."
-    COLON = ":"
-    COMMA = ","
-    HASH = "#"
-    DOLLAR = "$"
-    MOD = "%"
-    CARET = "^"
-    AMPERSAND = "&"
-    PIPE = "|"
-    QUESTION = "?"
-    APOSTROPHE = "'"
-    QUOTO = '"'
-    SPACE = " "
-    CR = "\r"
-    LF = "\n"
-    TAB = "\t"
-    VERTICAL_TAB = "\v"
-    FORM_FEED = "\f"
-    BELL = "\a"
-    BACKSPACE = "\b"
-    NULL = "\0"
-    BANG = "!"
-    BACKTICK = "`"
-    TILDE = "~"
-    AT_SIGN = "@"
-    EOF = "EOF"
-    ID = "ID"
-    STRING = "STRING"  # STRING 表示严格意义上的字符串, 即 "" 两个双引号包裹的
-    CHARACTER = "CHARACTER"  # CHARACTER 表示单个字符, 即 'a'
-    STR = "STR"  # STR 表示 "" | '' 包裹的字符串
-    NUMBER = "NUMBER"  # 整数 | 小数 | 科学计数法
-    TEXT = "TEXT"  # 未知的字符
-    COMMENT = "COMMENT"
-    SHL = "<<"
-    SHR = ">>"
-    EQ = "=="
-    STRICT_EQ = "==="
-    NE = "!="
-    NORE = "~="
-    STRICT_NE = "!=="
-    DOUBLE_DIV = "//"
-    LT = "LT"  # 小于, 由 LANGLE_BRACE 转换而来
-    GT = "GT"  # 大于, 由 RANGLE_BRACE 转换而来
-    LE = "<="
-    GE = ">="
-    MUL_ASSIGN = "*="
-    DIV_ASSIGN = "/="
-    MOD_ASSIGN = "%="
-    ADD_ASSIGN = "+="
-    SUB_ASSIGN = "-="
-    SHL_ASSIGN = "<<="
-    SHR_ASSIGN = ">>="
-    AND_ASSIGN = "&="
-    XOR_ASSIGN = "^="
-    OR_ASSIGN = "|="
-    CONCAT = ".."
-    VARARGS = "..."
-    DOUBLE_COLON = "::"
-    INC = "++"
-    DEC = "--"
-    OR = "||"
-    AND = "&&"
-    POINT = "->"
-    LAMBDA_POINT = "=>"
-    PRODUCTION_SYMBOL = "::="
-    DOUBLE_HASH = "##"
-
-
-class Token:
-    def __init__(self, type: Enum, value, line=None, column=None):
-        self.type: Enum = type
-        self.value: str = value
-        self.line: int = line
-        self.column: int = column
-        self.ast: None
-        self.class_list = ["Token"]  # parser 语法分析阶段赋给 token
-        global GLOBAL_TOKEN_ID
-        self._id = GLOBAL_TOKEN_ID
-        GLOBAL_TOKEN_ID += 1
-
-    def get_css_class(self):
-        # 转 html 时的 span class
-        css_class = ""
-
-        for class_type in self.class_list:
-            css_class += f"{class_type} "
-
-        css_class += self.type.name
-        return css_class
-
-    def __str__(self):
-        """
-        ID 指创建的索引值
-        column 指该 token 最后一个字符的位置
-        """
-        return "Token[{ID}]({type}, {value}, position={lineno}:{column})".format(
-            ID=self._id,
-            type=self.type,
-            value=repr(self.value),
-            lineno=self.line,
-            column=self.column,
-        )
-
-    def add_css(self, CSS: Enum):
-        if CSS is not None:
-            self.class_list.append(CSS.value)
-
-    def remove_css(self, CSS: Enum):
-        if CSS is not None:
-            for class_type in self.class_list:
-                if class_type == CSS.value:
-                    self.class_list.remove(class_type)
-                    break
-
-    def __repr__(self):
-        return self.__str__()
+from ..token import Token, TokenType, BaseTokenType
 
 
 class Lexer:
@@ -156,20 +14,20 @@ class Lexer:
     继承 Lexer 的子类需要重写其 get_next_token 方法以提供给后续的 parser 解析
     """
 
-    def __init__(self, text: str, LanguageTokenType: Enum):
+    def __init__(self, text: str, LanguageTokenType: BaseTokenType):
         self.text: str = text
         self.pos: int = 0  # 当前指针指向的字符
         self.current_char: str = self.text[self.pos]  # 当前指针指向的字符
         self.line: int = 1
         self.column: int = 1  # 指向 token 的 value 中最后出现的字符的位置
         self.LanguageTokenType: Enum = LanguageTokenType
-        self.context_bias = 3  # 发生错误时 token 的前后文行数
         self.file_path = ""  # 手动修改文件路径, 用于后期错误处理的输出
         self._status_stack = []  # 状态栈
 
-        # 获取 RESERVED_KEYWORD_START - RESERVED_KEYWORD_END 之间的保留关键字
-        tt_list = list(LanguageTokenType)
+        tt_list: List[Enum] = list(LanguageTokenType)
         try:
+            # RESERVED_KEYWORD_START 和 RESERVED_KEYWORD_END 之间为保留关键字
+            # 每一个自定义的 TokenType 都应当定义这两个枚举类型
             start_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_START)
             end_index = tt_list.index(LanguageTokenType.RESERVED_KEYWORD_END)
             self.reserved_keywords = {
@@ -225,119 +83,26 @@ class Lexer:
         self.line = status["line"]
         self.column = status["column"]
 
-    def error(self, error_code: ErrorCode = None, token: Token = None, message: str = "", ErrorType=LexerError):
-        """
-        仿 rust 错误输出格式
-
-          --> src/main.rs:33:9
-           |
-        33 |     let result = loop {
-           |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
-           |
-           = note: `#[warn(unused_variables)]` on by default
-        """
+    def error(
+        self,
+        error_code: ErrorCode = None,
+        token: Token = None,
+        message: str = "",
+        ErrorType=Union[LexerError, ParserError],
+    ):
         # 对于 file_path 的处理, 去掉开头的 ./
         # \ 改为 /
         if self.file_path.startswith("./"):
             self.file_path = self.file_path[2:]
         self.file_path = self.file_path.replace("\\", "/")
 
-        token_info = f"{repr(token.value)} [{token.type.name}]"
-
-        error_position = (
-            " " * len(str(token.line))
-            + ttyinfo("--> ", TTYColor.BLUE)
-            + self.file_path
-            + f":{token.line}:{token.column}\n"
-        )
-        error_context = self.get_error_token_context(token)
-
-        error_info = (
-            (
-                " " * len(str(token.line))
-                + ttyinfo(" = ", TTYColor.BLUE)
-                + f"{ttyinfo('note', TTYColor.YELLOW)}: {message}"
-            )
-            if message != ""
-            else ""
-        )
-
         raise ErrorType(
-            token_info=token_info,
+            token=token,
             error_code=error_code,
-            error_position=error_position,
-            error_context=error_context,
-            error_info=error_info,
+            error_context=self.text,
+            error_message=message,
+            file_path=self.file_path,
         )
-
-    def get_error_token_context(self, token: Token) -> str:
-        """
-        出错时获取上下文, 报错信息输出格式参考 rust
-        """
-        lines = self.text.split("\n")
-        lines.insert(0, [])
-
-        # 对于 EOF 特殊处理
-        if token.type == TokenType.EOF:
-            # token.line += 1
-            token.value = " "
-
-        context_start_line = max(token.line - self.context_bias, 1)
-        context_end_line = min(token.line + self.context_bias, len(lines))
-            
-        context = ""
-
-        # token 为多行文本的处理
-        current_context_line = token.line  # 当前处于哪一行, 从下往上找
-        token_length = len(token.value)
-        token_lines = []  # token 的所占行
-        column = token.column  # 当前列
-
-        #  如果当前行的列数少于 token 的长度, 说明 token 跨行, 将当前行加入到 token_lines 中并且继续到上一行去找
-        while column < token_length:
-            token_length -= column
-            token_lines.insert(0, current_context_line)
-            current_context_line -= 1
-            column = len(lines[current_context_line]) + 1  # +1 是考虑结尾的换行符
-
-        # 多行退出时和单行的情况
-        if token_length != 0:
-            token_lines.insert(0, current_context_line)
-
-        left_space_length = len(str(token_lines[-1]))
-        for i in range(context_start_line, context_end_line):
-            # print(i, token.lineno)
-            if i not in token_lines:
-                context += ttyinfo(" " * left_space_length + " | ", TTYColor.BLUE)
-                context += lines[i] + "\n"
-            else:
-                if len(token_lines) == 1:
-                    # token 前面的部分
-                    pre_context = lines[i][: token.column - token_length]
-                    # token 后面的部分
-                    end_context = lines[i][token.column :]
-
-                    context += (
-                        ttyinfo(str(i) + " | ", TTYColor.BLUE)
-                        + pre_context
-                        + ttyinfo(token.value, underline=True)
-                        + end_context
-                        + "\n"
-                    )
-                else:
-                    if i == token_lines[0]:
-                        context += ttyinfo(str(i) + " | ", TTYColor.BLUE)
-                        pre_context = lines[i][: column - token_length]
-                        context += pre_context + ttyinfo(lines[i][column - token_length :], underline=True) + "\n"
-                    elif i == token_lines[-1]:
-                        end_context = lines[i][token.column + 1 :]
-                        context += ttyinfo(" " * left_space_length + " | ", TTYColor.BLUE)
-                        context += ttyinfo(lines[i][: token.column + 1]) + f"{end_context}\n"
-                    else:
-                        context += ttyinfo(" " * left_space_length + " | ", TTYColor.BLUE)
-                        context += ttyinfo(lines[i]) + "\n"
-
-        return context
 
     def advance(self):
         """
@@ -715,25 +480,3 @@ class Lexer:
         """
         raise NotImplementedError
 
-
-class TokenSet:
-    '''
-    用于 first set 的构建
-    '''
-    def __init__(self, *args) -> None:
-        self._token_set = set()
-        for arg in args:
-            if isinstance(arg, Enum):
-                self._token_set.add(arg)
-
-            elif isinstance(arg, TokenSet):
-                for token_type in arg._token_set:
-                    self._token_set.add(token_type)
-            else:
-                raise TypeError(args)
-
-    def __contains__(self, item):
-        return item in self._token_set
-
-    def __eq__(self, __value: object) -> bool:
-        return self.__contains__(__value)

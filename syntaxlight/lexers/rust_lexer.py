@@ -1,5 +1,6 @@
 from enum import Enum
-from .lexer import Lexer, TokenType, Token, TokenSet
+from .lexer import Lexer, TokenType, Token
+from ..token import TokenSet
 
 
 class RustTokenType(Enum):

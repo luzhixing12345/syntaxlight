@@ -1,22 +1,24 @@
-from .lexer import Lexer, Token, TokenType , ErrorCode
+from .lexer import Lexer, Token, TokenType
 from enum import Enum
+
 
 class TxtTokenType(Enum):
     RESERVED_KEYWORD_START = "RESERVED_KEYWORD_START"
-    YES = 'yes'
-    NO = 'no'
-    OK = 'ok'
-    FAIL = 'fail'
+    YES = "yes"
+    NO = "no"
+    OK = "ok"
+    FAIL = "fail"
     RESERVED_KEYWORD_END = "RESERVED_KEYWORD_END"
 
+
 class TxtLexer(Lexer):
-    
+
     def __init__(self, text: str, LanguageTokenType: Enum = TxtTokenType):
         super().__init__(text, LanguageTokenType)
-        self.build_long_op_dict(['->',"<=",'>=',"<-"])
-        
+        self.build_long_op_dict(["->", "<=", ">=", "<-"])
+
     def get_next_token(self) -> Token:
-        
+
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
                 return self.skip_whitespace()
@@ -26,10 +28,10 @@ class TxtLexer(Lexer):
 
             if self.current_char.isdigit():
                 return self.get_number(accept_hex=True, accept_bit=True)
-            
+
             if self.current_char.isalpha():
                 return self.get_id(ignore_case=True)
-            
+
             if self.current_char in self.long_op_dict:
                 return self.get_long_op()
 

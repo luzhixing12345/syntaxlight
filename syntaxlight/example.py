@@ -3,7 +3,7 @@ import os
 import shutil
 from .export import export_css
 from typing import Union, List
-
+import sys
 
 def example_display(
     file_path: Union[str, List[str]] = None,
@@ -31,9 +31,9 @@ def example_display(
         if language is None:
             language = guess_language(fp)
             all_languages.append(language)
-        html, _ = parse_file(fp, language, save_ast_tree=save_ast_tree)
-        if html is None:
-            continue
+        html, exception = parse_file(fp, language, save_ast_tree=save_ast_tree)
+        if exception is not None:
+            sys.stderr.write(str(exception))
         code_html += f'<p>{fp}</p><pre class="language-{language}"><code>{html}</code></pre>'
 
     code_html = f'<div class="markdown-body">{code_html}</div>'

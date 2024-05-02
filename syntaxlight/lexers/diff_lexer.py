@@ -1,5 +1,6 @@
-from .lexer import Lexer, Token, TokenType, TokenSet
+from .lexer import Lexer, Token, TokenType
 from enum import Enum
+from ..token import TokenSet
 
 
 class DiffTokenType(Enum):

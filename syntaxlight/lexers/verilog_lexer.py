@@ -1,6 +1,7 @@
 from typing import List
 from syntaxlight.lexers.lexer import Token
-from .lexer import Lexer, Token, TokenType, ErrorCode, TokenSet
+from .lexer import Lexer, Token, TokenType, ErrorCode
+from ..token import TokenSet
 from enum import Enum
 import re
 

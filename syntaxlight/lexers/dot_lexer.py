@@ -1,5 +1,6 @@
 
-from .lexer import Lexer, Token, TokenType, TokenSet
+from .lexer import Lexer, Token, TokenType
+from ..token import TokenSet
 from enum import Enum
 
 
