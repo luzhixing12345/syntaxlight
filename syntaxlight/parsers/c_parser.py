@@ -539,6 +539,15 @@ class CParser(Parser):
 
         if self.current_token.type == CTokenType._ATTRIBUTE:
             node.update(gnu_attribute=self.gnu_c_attribute())
+        elif self.current_token.type == TokenType.ID and self.current_token.value.startswith("__"):
+            # 可能尾随的 __attribute__ 属性被宏封装起来了, 判断一下之后将其恢复
+            # struct files_struct {
+            #         spinlock_t file_lock ____cacheline_aligned_in_smp;
+            # };
+            # https://github.com/luzhixing12345/syntaxlight/issues/14
+            self.current_token.add_css(CSS.MACRO_DEFINE)
+            self.current_token.type = CTokenType.TYPEDEF_ID
+            self.eat()
         return node
 
     def _find_declaractor_id(self, node: DirectDeclaractor) -> Identifier:
@@ -1962,6 +1971,13 @@ class CParser(Parser):
             # 这里禁用skip_space和skip_invisible_characters以单步匹配下一个 token
             self.skip_space = False
             self.skip_invis_chars = False
+            
+            # token 第一个 token 可能在 after_eat 中被标记为 TYPEDEF_ID, define 匹配时需要恢复
+            # #define ____cacheline_aligned_in_smp ____cacheline_aligned
+            # https://github.com/luzhixing12345/syntaxlight/issues/14
+            if self.current_token.type == CTokenType.TYPEDEF_ID:
+                self.current_token.type = TokenType.ID
+            
             node.update(id=self.get_identifier())
             self.skip_invis_chars = True
             self.skip_space = True
@@ -2010,8 +2026,6 @@ class CParser(Parser):
 
         self.eat_lf()
         self._end_preprocessing()
-        # if self.current_token.type in self.cfirst_set.external_declaration:
-        #     node.update(group=self.external_declaration())
         return node
 
     def pp_token(self):
@@ -2024,6 +2038,9 @@ class CParser(Parser):
             self.current_token.type = TokenType.GT
 
         if self.current_token.type == TokenType.ID:
+            # 对于宏套宏的情况, 考虑将后面 ID 也作为宏定义
+            if self.current_token.value.startswith("__"):
+                self.current_token.add_css(CSS.MACRO_DEFINE)
             return self.get_identifier()
         elif self.current_token.type == TokenType.STRING:
             return self.get_string()

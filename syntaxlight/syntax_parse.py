@@ -32,7 +32,7 @@ def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> Tupl
         while parser.current_token.type != TokenType.EOF:
             parser.eat()
     except Exception as e:
-        exception = e
+        exception = Error()
         exception.self_error_info = f'  {ttyinfo("Parse running error")}: {e}\n'
         if file_path:
             exception.self_error_info += f'  {ttyinfo("File path")}: {file_path}\n'
