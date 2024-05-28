@@ -1678,6 +1678,7 @@ class CParser(Parser):
 
             exprs = []
             node.register_token(self.eat(TokenType.LPAREN))
+            self._unknown_typedef_id_guess()
             # for "(" <declaration> <expression>? ";" <expression>? ")" <statement>
             if self.current_token.type in self.cfirst_set.declaration:
                 node.update(declaration=self.declaration())
