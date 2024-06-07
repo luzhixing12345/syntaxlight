@@ -161,6 +161,13 @@ class CParser(Parser):
                 self.current_token.type = CTokenType.TYPEDEF_ID
                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
 
+    def _skip_macro(self):
+        """
+        @EXTEND-GRAMMAR
+        """
+        while self.current_token.type == TokenType.ID and CSS.MACRO_DEFINE.value in self.current_token.class_list:
+            self.eat()
+
     def storage_class_specifier(self):
         """
         <storage-class-specifier> ::= 'auto'
@@ -346,6 +353,8 @@ class CParser(Parser):
             if self.current_token.value in GDT:
                 if GDT[self.current_token.value] == CSS.TYPEDEF:
                     self.current_token.type = CTokenType.TYPEDEF_ID
+                elif GDT[self.current_token.value] == CSS.MACRO_DEFINE:
+                    self.current_token.add_css(CSS.MACRO_DEFINE)
             if self.current_token.value.startswith("__"):
                 next_token_types = [TokenType.ID, TokenType.MUL]
                 next_token_type = self.peek_next_token().type
@@ -1750,8 +1759,10 @@ class CParser(Parser):
         node.register_token(self.eat(TokenType.LPAREN))
 
         sticky_strings = []
+        self._skip_macro()
         while self.current_token.type == TokenType.STRING:
             sticky_strings.append(self.get_string())
+            self._skip_macro()
         node.update(sticky_strings=sticky_strings)
 
         while self.current_token.type == TokenType.COLON:
@@ -1972,13 +1983,13 @@ class CParser(Parser):
             # 这里禁用skip_space和skip_invisible_characters以单步匹配下一个 token
             self.skip_space = False
             self.skip_invis_chars = False
-            
+
             # token 第一个 token 可能在 after_eat 中被标记为 TYPEDEF_ID, define 匹配时需要恢复
             # #define ____cacheline_aligned_in_smp ____cacheline_aligned
             # https://github.com/luzhixing12345/syntaxlight/issues/14
             if self.current_token.type == CTokenType.TYPEDEF_ID:
                 self.current_token.type = TokenType.ID
-            
+
             node.update(id=self.get_identifier())
             self.skip_invis_chars = True
             self.skip_space = True
