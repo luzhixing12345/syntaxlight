@@ -15,7 +15,6 @@ class TxtLexer(Lexer):
 
     def __init__(self, text: str, LanguageTokenType: Enum = TxtTokenType):
         super().__init__(text, LanguageTokenType)
-        self.build_long_op_dict(["->", "<=", ">=", "<-"])
 
     def get_next_token(self) -> Token:
 
@@ -31,9 +30,6 @@ class TxtLexer(Lexer):
 
             if self.current_char.isalpha():
                 return self.get_id(ignore_case=True)
-
-            if self.current_char in self.long_op_dict:
-                return self.get_long_op()
 
             try:
                 token_type = TokenType(self.current_char)

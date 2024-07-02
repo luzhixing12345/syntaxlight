@@ -1,0 +1,9 @@
+[sendemail]
+  smtpServer = smtp.gmail.com
+  smtpUser = luzhixing12345@gmail.com
+  smtpPass = **YOUR-2FA-PASSWD**       <--- 将 16 位数字填写到这里
+  smtpServerPort = 587
+  smtpEncryption = tls
+  chainreplyto = false
+[credential]
+  helper = store

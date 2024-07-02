@@ -18,7 +18,7 @@ def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> Tupl
     error: 异常信息, 无错误时为 None, 有错误时为异常对象(Error), 可以打印错误信息
     """
     if len(text) == 0:
-        return ""
+        return "", None
     language = clean_language(language)
     parser = get_parser(text, language)
     parser.lexer.file_path = file_path
