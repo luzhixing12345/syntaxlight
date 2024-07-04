@@ -1,6 +1,6 @@
 {
     "vscode": {
-        "--background": "#1f1f1f",
+        "--background": "#161b22",
         "--variant": "#88D6FE",
         "--type": "#569cd6",
         "--define": "#C586C0",
@@ -26,6 +26,10 @@
             },
             "shell": {
                 ".Token.HOST_NAME": "color: #00c867;"
+            },
+            "diff": {
+                ".Token.ADD_LINE": "background-color: #033a16; color: #aff5b4;",
+                ".Token.SUB_LINE": "background-color: #67060c; color: #fad2d0;"
             }
         }
     },

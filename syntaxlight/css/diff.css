@@ -14,11 +14,3 @@ pre[class*="language-"] {
 .Token.TAG_LINE {
     color: --define;
 }
-
-.Token.ADD_LINE {
-    color: --number;
-}
-
-.Token.SUB_LINE {
-    color: --string;
-}

@@ -39,6 +39,7 @@ def clean_language(language: str):
     language = language.lower()
     rename_languages = {
         r"^bash$": "shell",
+        r"^sh$": "shell",
     }
     for r_language in rename_languages:
         if bool(re.match(r_language, language)):
