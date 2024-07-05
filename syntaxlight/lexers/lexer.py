@@ -22,6 +22,7 @@ class Lexer:
         self.column: int = 1  # 指向 token 的 value 中最后出现的字符的位置
         self.LanguageTokenType: Enum = LanguageTokenType
         self.file_path = ""  # 手动修改文件路径, 用于后期错误处理的输出
+        self.highlight_lines: List[int] = []  # 高亮的行数
         self._status_stack = []  # 状态栈
 
         tt_list: List[Enum] = list(LanguageTokenType)
@@ -479,4 +480,3 @@ class Lexer:
         return Token(type=TokenType.EOF, value="EOF", line=self.line, column=self.column)
         """
         raise NotImplementedError
-

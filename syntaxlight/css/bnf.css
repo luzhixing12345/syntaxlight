@@ -18,6 +18,10 @@ pre[class*="language-bnf"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.RuleName {
     color: --struct;
 }

@@ -18,6 +18,10 @@ pre[class*="language-json"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.Pair.Key {
     color: --variant;
 }

@@ -17,6 +17,7 @@ INDEX = args.index - 1
 STYLE = args.style
 LEXER_TEST = args.lexer
 TEST_FILES = {}
+LINES = []
 
 for language in languages:
     if language != FILE_TYPE:
@@ -37,7 +38,7 @@ for language, files in TEST_FILES.items():
                 for token in tokens:
                     print(token)
             break
-        syntaxlight.example_display(files[INDEX], STYLE, save_ast_tree=False)
+        syntaxlight.example_display(files[INDEX], STYLE, save_ast_tree=False, highlight_lines=LINES)
         print("    http://127.0.0.1:5655/syntaxlight_example/index.html")
     else:
         syntaxlight.example_display(files, STYLE)

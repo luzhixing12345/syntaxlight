@@ -26,6 +26,10 @@ pre[class*="language-dot"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.AttributeKey {
     color: --struct;
 }

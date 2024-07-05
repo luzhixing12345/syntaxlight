@@ -8,8 +8,9 @@ import sys
 def example_display(
     file_path: Union[str, List[str]] = None,
     style="vscode",
-    save_ast_tree=False,
     language=None,
+    save_ast_tree=False,
+    highlight_lines: List[int] = [],
 ):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
     syntaxlight_path = os.path.dirname(__file__)
@@ -31,7 +32,7 @@ def example_display(
         if language is None:
             language = guess_language(fp)
             all_languages.append(language)
-        html, exception = parse_file(fp, language, save_ast_tree=save_ast_tree)
+        html, exception = parse_file(fp, language, save_ast_tree=save_ast_tree, highlight_lines=highlight_lines)
         if exception is not None:
             sys.stderr.write(str(exception))
         code_html += f'<p>{fp}</p><pre class="language-{language}"><code>{html}</code></pre>'

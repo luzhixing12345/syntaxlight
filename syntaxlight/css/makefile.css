@@ -18,6 +18,10 @@ pre[class*="language-makefile"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.NUMBER {
     color: --number;
 }

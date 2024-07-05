@@ -18,6 +18,10 @@ pre[class*="language-shell"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.Program,
 .Token.Function,
 .Token.BACK_SLASH {

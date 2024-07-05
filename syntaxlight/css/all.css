@@ -16,6 +16,7 @@
     color: #88D6FE; /* @--format type */
     color: #9EB2BF; /* @--punctuator . ; :  */
     color: #d4d4d4; /* @--operator +-*=  */
+    color: #264f78; /* @--highlight */
 }
 
 .one-dark-pro {
@@ -36,6 +37,7 @@
     color: #D19A5B; /* @--format type */
     color: #ABB2BF; /* @--punctuator . ; :  */
     color: #F92672; /* @--operator +-*=  */
+    color: #264f78; /* @--highlight */
 }
 
 .monokai {
@@ -56,6 +58,7 @@
     color: #AE81FF; /* @--format type */
     color: #F8F8F2; /* @--punctuator . ; :  */
     color: #F92672; /* @--operator +-*=  */
+    color: #264f78; /* @--highlight */
 }
 
 .others {

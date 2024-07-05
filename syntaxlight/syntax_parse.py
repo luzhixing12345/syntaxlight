@@ -4,24 +4,27 @@ from .parsers import *
 from .error import Error, ttyinfo
 from .language import guess_language, SUPPORTED_SYNTAX, show_help_info, clean_language
 from .asts.ast import display_ast
-import sys
 import traceback
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 
-def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> Tuple[str, Optional[Error]]:
+def parse(
+    text: str, language=None, file_path=None, save_ast_tree=False, highlight_lines: List[int] = []
+) -> Tuple[str, Optional[Error]]:
     """
     解析文本, 高亮代码段
 
     return: (html, error)
     html: html 格式的代码段, 无论是否有错误, 都会返回; 错误位置会用红色标记, 其后面的代码段会被默认高亮
     error: 异常信息, 无错误时为 None, 有错误时为异常对象(Error), 可以打印错误信息
+    highlight_lines: 要高亮的代码段的行号
     """
     if len(text) == 0:
         return "", None
     language = clean_language(language)
     parser = get_parser(text, language)
     parser.lexer.file_path = file_path
+    parser.lexer.highlight_lines = highlight_lines
 
     exception: Optional[Error] = None
     try:
@@ -47,7 +50,7 @@ def parse(text: str, language=None, file_path=None, save_ast_tree=False) -> Tupl
         return parser.to_html(), exception
 
 
-def parse_file(file_path: str, language=None, save_ast_tree=False) -> Tuple[str, bool]:
+def parse_file(file_path: str, language=None, save_ast_tree=False, highlight_lines: List[int] = []) -> Tuple[str, Optional[Error]]:
     if not os.path.exists(file_path):
         print(f"{file_path} file not exsist")
 
@@ -59,7 +62,7 @@ def parse_file(file_path: str, language=None, save_ast_tree=False) -> Tuple[str,
     else:
         language = clean_language(language)
 
-    return parse(text, language=language, file_path=file_path, save_ast_tree=save_ast_tree)
+    return parse(text, language=language, file_path=file_path, save_ast_tree=save_ast_tree, highlight_lines=highlight_lines)
 
 
 def get_tokens(lexer: Lexer):

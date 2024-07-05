@@ -22,6 +22,10 @@ pre[class*="language-xml"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.NUMBER {
     color: --number;
 }

@@ -22,6 +22,10 @@ pre[class*="language-verilog"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.Keyword {
     color: --type;
 }

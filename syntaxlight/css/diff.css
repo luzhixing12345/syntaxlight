@@ -14,3 +14,17 @@ pre[class*="language-"] {
 .Token.TAG_LINE {
     color: --define;
 }
+
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
+.Token.ADD_LINE {
+    background-color: #033a16;
+    color: #aff5b4;
+}
+
+.Token.SUB_LINE {
+    background-color: #67060c;
+    color: #fad2d0;
+}

@@ -17,6 +17,7 @@
         "--format": "#88D6FE",
         "--punctuator": "#C1CCCC",
         "--operator": "#D4D4D4",
+        "--highlight": "#264f78",
         "extension": {
             "json": {
                 ".Token.Keyword": "color: #327ED0;"
@@ -26,10 +27,6 @@
             },
             "shell": {
                 ".Token.HOST_NAME": "color: #00c867;"
-            },
-            "diff": {
-                ".Token.ADD_LINE": "background-color: #033a16; color: #aff5b4;",
-                ".Token.SUB_LINE": "background-color: #67060c; color: #fad2d0;"
             }
         }
     },

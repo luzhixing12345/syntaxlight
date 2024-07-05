@@ -1,5 +1,5 @@
 from ..lexers.lexer import Lexer, Token, TokenType
-from ..error import ParserError, ErrorCode, ttyinfo
+from ..error import ParserError, ErrorCode, ttyinfo, TTYColor
 from enum import Enum
 from ..asts.ast import AST, Keyword, add_ast_type, Identifier, Punctuator, WrapString, Number, String
 from typing import List, Callable, Union, Tuple
@@ -202,11 +202,13 @@ class Parser:
         """
         将一个解析完成的 AST node 输出其 token 流的 HTML 格式
         """
-        # 一些后处理
+        # 对于括号的后处理
         self.brace_matching()
 
         html_str = ""
         for token in self._token_list:
+            if token.line in self.lexer.highlight_lines:
+                token.add_css(CSS.HIGHLIGHT_LINE)
             html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
         return html_str
 

@@ -18,6 +18,10 @@ pre[class*="language-c"] {
     color: --brace3;
 }
 
+.Token.HighlightLine {
+    background-color: --highlight;
+}
+
 .Token.VOID,
 .Token.CHAR,
 .Token.SHORT,
@@ -90,6 +94,7 @@ pre[class*="language-c"] {
 .Token.DO,
 .Token.SWITCH,
 .Token.CASE,
+.Token.RETURN,
 .Token.DEFAULT {
     color: --define;
 }

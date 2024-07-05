@@ -29,3 +29,7 @@ pre[class*="language-"] {
 .Token.NUMBER {
     color: --number;
 }
+
+.Token.HighlightLine {
+    background-color: --highlight;
+}
