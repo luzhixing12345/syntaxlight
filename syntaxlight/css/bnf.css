@@ -20,6 +20,7 @@ pre[class*="language-bnf"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.RuleName {

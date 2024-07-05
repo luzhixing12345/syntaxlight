@@ -24,6 +24,7 @@ pre[class*="language-yaml"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.NUMBER {
@@ -69,7 +70,9 @@ pre[class*="language-yaml"] {
     color: --type;
 }
 
-.Token.STAR, .Token.AMPERSAND, .Token.MAP {
+.Token.STAR,
+.Token.AMPERSAND,
+.Token.MAP {
     color: --define;
 }
 

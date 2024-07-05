@@ -24,6 +24,7 @@ pre[class*="language-riscvasm"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.NUMBER {
@@ -50,7 +51,8 @@ pre[class*="language-riscvasm"] {
     color: --string;
 }
 
-.Token.HASH, .Token.INCLUDE {
+.Token.HASH,
+.Token.INCLUDE {
     color: --define;
 }
 

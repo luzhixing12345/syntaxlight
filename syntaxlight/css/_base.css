@@ -32,4 +32,5 @@ pre[class*="language-"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }

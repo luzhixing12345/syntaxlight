@@ -20,6 +20,7 @@ pre[class*="language-makefile"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.NUMBER {
@@ -33,6 +34,7 @@ pre[class*="language-makefile"] {
 .Token.DOLLAR {
     color: --string;
 }
+
 .Token.ID {
     color: --variant;
 }
@@ -66,7 +68,8 @@ pre[class*="language-makefile"] {
     border-bottom: 1px solid --string;
 }
 
-.Token.AT_SIGN, .Token.MINUS {
+.Token.AT_SIGN,
+.Token.MINUS {
     color: --define;
 }
 
@@ -74,7 +77,8 @@ pre[class*="language-makefile"] {
     color: --string;
 }
 
-.Token.Function, .Token.Program {
+.Token.Function,
+.Token.Program {
     color: --function;
 }
 

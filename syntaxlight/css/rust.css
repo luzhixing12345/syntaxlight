@@ -24,6 +24,7 @@ pre[class*="language-rust"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.COMMENT {
@@ -58,7 +59,8 @@ pre[class*="language-rust"] {
 .Token.ClassName,
 .Token.TraitName,
 .Token.Enumerator,
-.Token.Typedefine, .Token.LABEL {
+.Token.Typedefine,
+.Token.LABEL {
     color: --struct;
 }
 

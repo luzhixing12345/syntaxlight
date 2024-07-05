@@ -24,6 +24,7 @@ pre[class*="language-verilog"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.Keyword {
@@ -36,7 +37,10 @@ pre[class*="language-verilog"] {
 
 .Token.ModuleName,
 .Token.DefinedModule,
-.Token.WIRE, .Token.REG, .Token.INTEGER, .Token.GENVAR {
+.Token.WIRE,
+.Token.REG,
+.Token.INTEGER,
+.Token.GENVAR {
     color: --struct;
 }
 
@@ -50,19 +54,30 @@ pre[class*="language-verilog"] {
     color: --number;
 }
 
-.Token.STAR, .Token.BitWidth, .Token.INPUT, .Token.OUTPUT {
+.Token.STAR,
+.Token.BitWidth,
+.Token.INPUT,
+.Token.OUTPUT {
     color: --type;
 }
 
-.Token.PortName, .Token.SYSTEM_ID {
+.Token.PortName,
+.Token.SYSTEM_ID {
     color: --function;
 }
 
 .Token.ALWAYS,
 .Token.BEGIN,
 .Token.END,
-.Token.CASE,.Token.CASEZ, .Token.CASEX,
-.Token.ENDCASE, .Token.IF, .Token.ELSE, .Token.DEFAULT, .Token.GENERATE, .Token.ENDGENERATE {
+.Token.CASE,
+.Token.CASEZ,
+.Token.CASEX,
+.Token.ENDCASE,
+.Token.IF,
+.Token.ELSE,
+.Token.DEFAULT,
+.Token.GENERATE,
+.Token.ENDGENERATE {
     color: --define;
 }
 

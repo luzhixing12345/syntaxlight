@@ -24,6 +24,7 @@ pre[class*="language-python"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.COMMA,

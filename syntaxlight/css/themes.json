@@ -17,7 +17,7 @@
         "--format": "#88D6FE",
         "--punctuator": "#C1CCCC",
         "--operator": "#D4D4D4",
-        "--highlight": "#264f78",
+        "--highlight": "#2d3c4d",
         "extension": {
             "json": {
                 ".Token.Keyword": "color: #327ED0;"

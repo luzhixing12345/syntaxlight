@@ -24,16 +24,19 @@ pre[class*="language-txt"] {
 
 .Token.HighlightLine {
     background-color: --highlight;
+    padding: 2px 0;
 }
 
 .Token.NUMBER {
     color: --number;
 }
 
-.Token.YES, .Token.OK {
+.Token.YES,
+.Token.OK {
     color: --success;
 }
 
-.Token.NO, .Token.FAIL {
+.Token.NO,
+.Token.FAIL {
     color: --fail;
 }
