@@ -129,6 +129,7 @@ pre[class*="language-c"] {
 .Token.MacroDefine.ID,
 .Token.MacroDefine.TYPEDEF_ID,
 .Token.MarcroFunction.ID,
+.Token.MarcroFunction.TYPEDEF_ID,
 .Token.BACK_SLASH {
     color: --type;
 }

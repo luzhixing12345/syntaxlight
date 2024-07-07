@@ -132,42 +132,6 @@ class CParser(Parser):
         self._unknown_typedef_id_guess()
         return node
 
-    def _unknown_typedef_id_guess(self, always_match=False):
-        """
-        @EXTEND-GRAMMAR
-
-        对于未知符号, 判断下一个 token 类型, 更正为 TYPEDEF_ID
-
-        - static clock_t ticks = 10;                  ID
-        - static clock_t *ticks = 10;                 *
-
-        下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
-        - static uint64 (*syscalls[])(void)
-
-        如果可以确定一定是函数指针类型的, 可以使用 always_match = True, 例如
-
-        struct file_operations {
-            loff_t (*llseek) (struct file *, loff_t, int);
-        }
-
-        https://github.com/luzhixing12345/syntaxlight/issues/12
-        test/c/45.c
-        """
-        next_token_types = [TokenType.ID, TokenType.MUL]
-
-        if self.current_token.type == TokenType.ID:
-            next_token_type = self.peek_next_token().type
-            if always_match or next_token_type in next_token_types:
-                self.current_token.type = CTokenType.TYPEDEF_ID
-                GDT.register_id(self.current_token.value, CSS.TYPEDEF)
-
-    def _skip_macro(self):
-        """
-        @EXTEND-GRAMMAR
-        """
-        while self.current_token.type == TokenType.ID and CSS.MACRO_DEFINE.value in self.current_token.class_list:
-            self.eat()
-
     def storage_class_specifier(self):
         """
         <storage-class-specifier> ::= 'auto'
@@ -278,6 +242,7 @@ class CParser(Parser):
             self.current_token.type = TokenType.ID
         if self.current_token.type == TokenType.ID:
             node.update(id=self.get_identifier())
+            add_ast_type(node.id, C_CSS.STRUCTURE_CLASS)
         # else:
         #     # 匿名 struct
         #     if self.current_token.type != TokenType.LCURLY_BRACE:
@@ -300,7 +265,6 @@ class CParser(Parser):
             # 匿名 struct 且未定义成员
             if len(struct_declarations) == 0 and node.id is None:
                 self.warning("unnamed struct/union that defines no instances", node)
-        add_ast_type(node.id, C_CSS.STRUCTURE_CLASS)
 
         if self.current_token.type == CTokenType._ATTRIBUTE:
             node.update(gnu_attribute=self.gnu_c_attribute())
@@ -341,7 +305,11 @@ class CParser(Parser):
         """
         result = []
         while self.current_token.type in self.cfirst_set.specifier_qualifier_list:
-            if self.current_token.type in self.cfirst_set.type_specifier:
+            if self._is_macro_def():
+                result.append(self.get_macro_def())
+            elif self._is_macro_func():
+                result.append(self.get_macro_func())
+            elif self.current_token.type in self.cfirst_set.type_specifier:
                 result.append(self.type_specifier())
             else:
                 result.append(self.type_qualifier())
@@ -355,6 +323,8 @@ class CParser(Parser):
                     self.current_token.type = CTokenType.TYPEDEF_ID
                 elif GDT[self.current_token.value] == CSS.MACRO_DEFINE:
                     self.current_token.add_css(CSS.MACRO_DEFINE)
+                elif GDT[self.current_token.value] == CSS.MACRO_FUNCTION:
+                    self.current_token.add_css(CSS.MACRO_FUNCTION)
             if self.current_token.value.startswith("__"):
                 next_token_types = [TokenType.ID, TokenType.MUL]
                 next_token_type = self.peek_next_token().type
@@ -917,7 +887,7 @@ class CParser(Parser):
                 ):
                     if self.current_token.type == TokenType.LPAREN:
                         # 宏函数匹配
-                        self._match_macro_function(node.primary_expr.sub_node.id)
+                        self._match_macro_function()
 
         sub_nodes: List[Union[AssignmentExpression, Identifier]] = []
         while self.current_token.type in self.cfirst_set.postfix_expression_inside:
@@ -1080,7 +1050,7 @@ class CParser(Parser):
         node.update(assignment_expr=self.assignment_expression())
         return node
 
-    def _match_macro_function(self, macro_name: str):
+    def _match_macro_function(self):
         """
         匹配不符合 C 文法的宏定义函数
 
@@ -1109,7 +1079,7 @@ class CParser(Parser):
                 brace_number += 1
             self.pp_token()
 
-        self.error(ErrorCode.BRACE_MISS_MATCH, f"in macro define function {macro_name}")
+        self.error(ErrorCode.BRACE_MISS_MATCH)
 
     def expression(self):
         """
@@ -1759,10 +1729,10 @@ class CParser(Parser):
         node.register_token(self.eat(TokenType.LPAREN))
 
         sticky_strings = []
-        self._skip_macro()
+        self._skip_macro_def()
         while self.current_token.type == TokenType.STRING:
             sticky_strings.append(self.get_string())
-            self._skip_macro()
+            self._skip_macro_def()
         node.update(sticky_strings=sticky_strings)
 
         while self.current_token.type == TokenType.COLON:
@@ -2116,4 +2086,64 @@ class CParser(Parser):
         node.register_token(self.eat(TokenType.LPAREN))
         node.update(expression=self.expression())
         node.register_token(self.eat(TokenType.RPAREN))
+        return node
+
+    def _unknown_typedef_id_guess(self, always_match=False):
+        """
+        @EXTEND-GRAMMAR
+
+        对于未知符号, 判断下一个 token 类型, 更正为 TYPEDEF_ID
+
+        - static clock_t ticks = 10;                  ID
+        - static clock_t *ticks = 10;                 *
+
+        下面这种情况没有办法匹配, 唯一的解决措施是在前面手动声明 uint64 的 typedef 或 define
+        - static uint64 (*syscalls[])(void)
+
+        如果可以确定一定是函数指针类型的, 可以使用 always_match = True, 例如
+
+        struct file_operations {
+            loff_t (*llseek) (struct file *, loff_t, int);
+        }
+
+        https://github.com/luzhixing12345/syntaxlight/issues/12
+        test/c/45.c
+        """
+        next_token_types = [TokenType.ID, TokenType.MUL]
+
+        if self.current_token.type == TokenType.ID:
+            next_token_type = self.peek_next_token().type
+            if always_match or next_token_type in next_token_types:
+                self.current_token.type = CTokenType.TYPEDEF_ID
+                GDT.register_id(self.current_token.value, CSS.TYPEDEF)
+
+    def _is_macro_def(self):
+        return self.current_token.type in [TokenType.ID, CTokenType.TYPEDEF_ID] and CSS.MACRO_DEFINE.value in self.current_token.class_list
+        
+    def _is_macro_func(self):
+        return self.current_token.type in [TokenType.ID, CTokenType.TYPEDEF_ID] and CSS.MACRO_FUNCTION.value in self.current_token.class_list
+
+    def _skip_macro_def(self):
+        """
+        @EXTEND-GRAMMAR
+        """
+        while self._is_macro_def():
+            self.eat()
+            
+    def _skip_macro_func(self):
+        if self._is_macro_func():
+            self.eat()
+            self._match_macro_function()
+            
+    def get_macro_def(self):
+        node = MacroInvocation()
+        self.current_token.type = TokenType.ID
+        node.update(id = self.get_identifier())
+        return node
+    
+    def get_macro_func(self):
+        node = MacroInvocation()
+        self.current_token.type = TokenType.ID
+        node.update(id = self.get_identifier())
+        self._match_macro_function()
         return node

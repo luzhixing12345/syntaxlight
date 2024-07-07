@@ -369,3 +369,9 @@ class GNU_C_Assembly(AST):
         self.keyword = None
         self.asm_qualifier = None
         self.sticky_strings = None
+
+class MacroInvocation(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.id: Identifier = None
+        self.arguments = None
