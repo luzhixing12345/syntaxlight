@@ -205,6 +205,10 @@ class Parser:
         # 对于括号的后处理
         self.brace_matching()
 
+        # 剔除掉结尾多余的换行和空格
+        while len(self._token_list) > 0 and self._token_list[-1].type in (TokenType.CR, TokenType.LF, TokenType.SPACE):
+            self._token_list.pop()
+
         html_str = ""
         for token in self._token_list:
             if token.line in self.lexer.highlight_lines:

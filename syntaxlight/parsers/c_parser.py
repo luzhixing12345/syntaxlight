@@ -897,7 +897,8 @@ class CParser(Parser):
                 node.register_token(self.eat(TokenType.RSQUAR_PAREN))
             elif self.current_token.type == TokenType.LPAREN:
                 node.register_token(self.eat(TokenType.LPAREN))
-                if len(sub_nodes) >= 1:
+                if len(sub_nodes) > 0:
+                    func_node = sub_nodes[-1]
                     # @EXTEND-GRAMMAR
                     # 对于多个 () 的情况, 有两种可能
 
@@ -926,15 +927,17 @@ class CParser(Parser):
                                 sub_nodes.append(self.parameter_list())
                                 node.register_token(self.eat(TokenType.RPAREN))
                                 continue
-
-                func_node = node.primary_expr.sub_node
+                else:
+                    # len(sub_nodes) == 0
+                    func_node = node.primary_expr.sub_node
+                
                 if type(func_node) == Identifier and GDT[func_node.id] == CSS.FUNCTION_POINTER:
                     # 对于函数指针, 不视为 FunctionCall
                     pass
                 else:
                     # 暂且视为 function call
                     # 也可能是一个函数指针 time_t (*f)() = NULL; 后续再处理
-                    add_ast_type(node.primary_expr, CSS.FUNCTION_CALL)
+                    add_ast_type(func_node, CSS.FUNCTION_CALL)
 
                 if self.current_token.type in self.cfirst_set.assignment_expression:
                     sub_nodes.append(self.assignment_expression())
