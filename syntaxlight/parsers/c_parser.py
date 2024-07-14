@@ -956,6 +956,11 @@ class CParser(Parser):
                 # ++ --
                 node.register_token(self.eat(self.current_token.type))
 
+        # some c project like to define for/while
+        # see https://github.com/luzhixing12345/syntaxlight/issues/18
+        if self.current_token.type == TokenType.LCURLY_BRACE:
+            node.update(iter_loop = self.compound_statement())
+
         node.update(sub_nodes=sub_nodes)
         return node
 
@@ -1608,9 +1613,16 @@ class CParser(Parser):
         <expression-statement> ::= <expression>? ";"
         """
         node = ExpressionStatement()
+        
+        is_macro = self._is_macro()
         if self.current_token.type in self.cfirst_set.expression:
             node.update(expr=self.expression())
-        node.register_token(self.eat(TokenType.SEMI))
+        
+        # for macro, semicolon is not required in expression because it maybe defined in macro
+        # see https://github.com/luzhixing12345/syntaxlight/issues/18
+        if not is_macro or (is_macro and self.current_token.type == TokenType.SEMI):
+            node.register_token(self.eat(TokenType.SEMI))
+            
         return node
 
     def selection_statement(self):
@@ -1967,10 +1979,13 @@ class CParser(Parser):
             self.skip_invis_chars = True
             self.skip_space = True
             if self.current_token.type == TokenType.LPAREN:
-                # parameters 或 parameterization 被定义了说明是函数
+                # 有 () 说明是宏函数定义
                 node.register_token(self.eat(TokenType.LPAREN))
                 if self.current_token.type in self.cfirst_set.identifier_list:
                     node.update(parameters=self.identifier_list())
+                else:
+                    # 对于空参数的也当作宏函数
+                    node.parameters = []
                 if self.current_token.type == TokenType.VARARGS:
                     node.update(parameterization=self.get_keyword(TokenType.VARARGS))
                 node.register_token(self.eat(TokenType.RPAREN))
@@ -2119,6 +2134,9 @@ class CParser(Parser):
             if always_match or next_token_type in next_token_types:
                 self.current_token.type = CTokenType.TYPEDEF_ID
                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
+
+    def _is_macro(self):
+        return self._is_macro_def() or self._is_macro_func()
 
     def _is_macro_def(self):
         return self.current_token.type in [TokenType.ID, CTokenType.TYPEDEF_ID] and CSS.MACRO_DEFINE.value in self.current_token.class_list
