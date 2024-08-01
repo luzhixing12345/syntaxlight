@@ -23,6 +23,7 @@ class Lexer:
         self.LanguageTokenType: Enum = LanguageTokenType
         self.file_path = ""  # 手动修改文件路径, 用于后期错误处理的输出
         self.highlight_lines: List[int] = []  # 高亮的行数
+        self.highlight_tokens: List[Token] = []  # 高亮的 token
         self._status_stack = []  # 状态栈
 
         tt_list: List[Enum] = list(LanguageTokenType)

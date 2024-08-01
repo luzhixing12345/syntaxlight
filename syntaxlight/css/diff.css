@@ -15,7 +15,8 @@ pre[class*="language-"] {
     color: --define;
 }
 
-.Token.HighlightLine {
+.Token.HighlightLine,
+.Token.HighlightToken {
     background-color: --highlight;
     padding: 2px 0;
 }

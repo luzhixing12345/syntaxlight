@@ -9,7 +9,7 @@ from typing import Tuple, Optional, List
 
 
 def parse(
-    text: str, language=None, file_path=None, save_ast_tree=False, highlight_lines: List[int] = []
+    text: str, language=None, file_path=None, save_ast_tree=False, highlight_lines: List[int] = [], highlight_tokens: List[int] = []
 ) -> Tuple[str, Optional[Error]]:
     """
     解析文本, 高亮代码段
@@ -25,6 +25,7 @@ def parse(
     parser = get_parser(text, language)
     parser.lexer.file_path = file_path
     parser.lexer.highlight_lines = highlight_lines
+    parser.lexer.highlight_tokens = highlight_tokens
 
     exception: Optional[Error] = None
     try:

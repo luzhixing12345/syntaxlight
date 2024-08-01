@@ -24,6 +24,7 @@ class CSS(Enum):
     NUMBER_TYPE = "NumberType" # 数字类型 i32/i64
     CONSTANT = "Constant" # 常量
     HIGHLIGHT_LINE = "HighlightLine"
+    HIGHLIGHT_TOKEN = "HighlightToken"
 
 class Descriptor(TypedDict):
     type: Enum

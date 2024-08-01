@@ -18,7 +18,8 @@ pre[class*="language-lua"] {
     color: --brace3;
 }
 
-.Token.HighlightLine {
+.Token.HighlightLine,
+.Token.HighlightToken {
     background-color: --highlight;
     padding: 2px 0;
 }

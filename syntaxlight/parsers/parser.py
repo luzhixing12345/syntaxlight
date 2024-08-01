@@ -210,9 +210,11 @@ class Parser:
             self._token_list.pop()
 
         html_str = ""
-        for token in self._token_list:
+        for i, token in enumerate(self._token_list):
             if token.line in self.lexer.highlight_lines:
                 token.add_css(CSS.HIGHLIGHT_LINE)
+            if i in self.lexer.highlight_tokens:
+                token.add_css(CSS.HIGHLIGHT_TOKEN)
             html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
         return html_str
 

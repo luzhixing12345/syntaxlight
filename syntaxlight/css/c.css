@@ -18,7 +18,8 @@ pre[class*="language-c"] {
     color: --brace3;
 }
 
-.Token.HighlightLine {
+.Token.HighlightLine,
+.Token.HighlightToken {
     background-color: --highlight;
     padding: 2px 0;
 }
@@ -41,12 +42,13 @@ pre[class*="language-c"] {
 .Token.EXTERN,
 .Token.TYPEDEF,
 .Token.CONST,
-.Token.VOLATITLE,
+.Token.VOLATILE,
 .Token.RESTRICT,
 .Token._ATOMIC,
 .Token._STATIC_ASSERT,
 .Token._GENERIC,
 .Token.DOUBLE_HASH,
+.Token.TYPEOF,
 .Token.GNU_C_Assembly {
     color: --type;
 }
