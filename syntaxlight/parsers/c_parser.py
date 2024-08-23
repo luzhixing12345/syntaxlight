@@ -2136,7 +2136,7 @@ class CParser(Parser):
                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
 
     def _is_macro(self):
-        return self._is_macro_def() or self._is_macro_func()
+        return re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', self.current_token.value) or self._is_macro_def() or self._is_macro_func()
 
     def _is_macro_def(self):
         return self.current_token.type in [TokenType.ID, CTokenType.TYPEDEF_ID] and CSS.MACRO_DEFINE.value in self.current_token.class_list
