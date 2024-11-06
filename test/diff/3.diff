@@ -1,0 +1,64 @@
+From 36e88a3e3ca18c4e285cfccf7625b92d11935a22 Mon Sep 17 00:00:00 2001
+From: luzhixing12345 <luzhixing12345@163.com>
+Date: Fri, 23 Aug 2024 14:57:18 +0800
+Subject: [PATCH 2/2] [fix] : guess macro define by re [A-Z0-9_], fix #20
+
+---
+ pyproject.toml                  | 2 +-
+ syntaxlight/parsers/c_parser.py | 2 +-
+ test.py                         | 1 +
+ test/c/53.c                     | 7 +++++++
+ 4 files changed, 10 insertions(+), 2 deletions(-)
+ create mode 100644 test/c/53.c
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 7ecddf4..c36011f 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,6 +1,6 @@
+ [tool.poetry]
+ name = "syntaxlight"
+-version = "0.1.50"
++version = "0.1.51"
+ description = "syntax highlight based on EBNF"
+ authors = ["luzhixing12345 <luzhixing12345@163.com>"]
+ license = "MIT"
+diff --git a/syntaxlight/parsers/c_parser.py b/syntaxlight/parsers/c_parser.py
+index 1d8e5d3..139ad29 100644
+--- a/syntaxlight/parsers/c_parser.py
++++ b/syntaxlight/parsers/c_parser.py
+@@ -2136,7 +2136,7 @@ class CParser(Parser):
+                 GDT.register_id(self.current_token.value, CSS.TYPEDEF)
+ 
+     def _is_macro(self):
+-        return self._is_macro_def() or self._is_macro_func()
++        return re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', self.current_token.value) or self._is_macro_def() or self._is_macro_func()
+ 
+     def _is_macro_def(self):
+         return self.current_token.type in [TokenType.ID, CTokenType.TYPEDEF_ID] and CSS.MACRO_DEFINE.value in self.current_token.class_list
+diff --git a/test.py b/test.py
+index 821db89..97eb827 100644
+--- a/test.py
++++ b/test.py
+@@ -42,3 +42,4 @@ for language, files in TEST_FILES.items():
+         print("    http://127.0.0.1:5655/syntaxlight_example/index.html")
+     else:
+         syntaxlight.example_display(files, STYLE)
++        print("    http://127.0.0.1:5655/syntaxlight_example/index.html")
+diff --git a/test/c/53.c b/test/c/53.c
+new file mode 100644
+index 0000000..dc49490
+--- /dev/null
++++ b/test/c/53.c
+@@ -0,0 +1,7 @@
++SYSCALL_DEFINE3(execve,
++                const char __user *, filename,
++                const char __user *const __user *, argv,
++                const char __user *const __user *, envp)
++{
++    return do_execve(getname(filename), argv, envp);
++}
+\ No newline at end of file
+-- 
+2.35.1.windows.2
+

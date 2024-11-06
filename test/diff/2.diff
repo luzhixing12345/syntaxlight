@@ -1,0 +1,391 @@
+From cf9517fde33287c625f7445df369d20f68fc33e8 Mon Sep 17 00:00:00 2001
+From: luzhixing12345 <luzhixing12345@163.com>
+Date: Thu, 1 Aug 2024 15:56:25 +0800
+Subject: [PATCH 1/2] [feat] : support highlight tokens, fix #17
+
+---
+ pyproject.toml                | 2 +-
+ syntaxlight/css/_base.css     | 3 ++-
+ syntaxlight/css/bnf.css       | 3 ++-
+ syntaxlight/css/c.css         | 6 ++++--
+ syntaxlight/css/css.css       | 3 ++-
+ syntaxlight/css/diff.css      | 3 ++-
+ syntaxlight/css/dot.css       | 3 ++-
+ syntaxlight/css/json.css      | 3 ++-
+ syntaxlight/css/lua.css       | 3 ++-
+ syntaxlight/css/makefile.css  | 3 ++-
+ syntaxlight/css/python.css    | 3 ++-
+ syntaxlight/css/riscvasm.css  | 3 ++-
+ syntaxlight/css/rust.css      | 3 ++-
+ syntaxlight/css/shell.css     | 3 ++-
+ syntaxlight/css/toml.css      | 3 ++-
+ syntaxlight/css/txt.css       | 3 ++-
+ syntaxlight/css/verilog.css   | 3 ++-
+ syntaxlight/css/x86asm.css    | 3 ++-
+ syntaxlight/css/xml.css       | 3 ++-
+ syntaxlight/css/yaml.css      | 3 ++-
+ syntaxlight/gdt.py            | 1 +
+ syntaxlight/lexers/lexer.py   | 1 +
+ syntaxlight/parsers/parser.py | 4 +++-
+ syntaxlight/syntax_parse.py   | 3 ++-
+ 24 files changed, 48 insertions(+), 23 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 17aee96..7ecddf4 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,6 +1,6 @@
+ [tool.poetry]
+ name = "syntaxlight"
+-version = "0.1.49"
++version = "0.1.50"
+ description = "syntax highlight based on EBNF"
+ authors = ["luzhixing12345 <luzhixing12345@163.com>"]
+ license = "MIT"
+diff --git a/syntaxlight/css/_base.css b/syntaxlight/css/_base.css
+index f25233b..c11fbff 100644
+--- a/syntaxlight/css/_base.css
++++ b/syntaxlight/css/_base.css
+@@ -30,7 +30,8 @@ pre[class*="language-"] {
+     color: --number;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+\ No newline at end of file
+diff --git a/syntaxlight/css/bnf.css b/syntaxlight/css/bnf.css
+index 961b70e..7f990b2 100644
+--- a/syntaxlight/css/bnf.css
++++ b/syntaxlight/css/bnf.css
+@@ -18,7 +18,8 @@ pre[class*="language-bnf"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/c.css b/syntaxlight/css/c.css
+index 2b6081f..d4907e6 100644
+--- a/syntaxlight/css/c.css
++++ b/syntaxlight/css/c.css
+@@ -18,7 +18,8 @@ pre[class*="language-c"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+@@ -41,12 +42,13 @@ pre[class*="language-c"] {
+ .Token.EXTERN,
+ .Token.TYPEDEF,
+ .Token.CONST,
+-.Token.VOLATITLE,
++.Token.VOLATILE,
+ .Token.RESTRICT,
+ .Token._ATOMIC,
+ .Token._STATIC_ASSERT,
+ .Token._GENERIC,
+ .Token.DOUBLE_HASH,
++.Token.TYPEOF,
+ .Token.GNU_C_Assembly {
+     color: --type;
+ }
+diff --git a/syntaxlight/css/css.css b/syntaxlight/css/css.css
+index c023d41..01a4e8c 100644
+--- a/syntaxlight/css/css.css
++++ b/syntaxlight/css/css.css
+@@ -22,7 +22,8 @@ pre[class*="language-css"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/diff.css b/syntaxlight/css/diff.css
+index 6c8955f..c85e360 100644
+--- a/syntaxlight/css/diff.css
++++ b/syntaxlight/css/diff.css
+@@ -15,7 +15,8 @@ pre[class*="language-"] {
+     color: --define;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/dot.css b/syntaxlight/css/dot.css
+index 76606ea..a9e16ef 100644
+--- a/syntaxlight/css/dot.css
++++ b/syntaxlight/css/dot.css
+@@ -26,7 +26,8 @@ pre[class*="language-dot"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/json.css b/syntaxlight/css/json.css
+index 9ec0693..e9aab60 100644
+--- a/syntaxlight/css/json.css
++++ b/syntaxlight/css/json.css
+@@ -18,7 +18,8 @@ pre[class*="language-json"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/lua.css b/syntaxlight/css/lua.css
+index 6d78cab..c122d5e 100644
+--- a/syntaxlight/css/lua.css
++++ b/syntaxlight/css/lua.css
+@@ -18,7 +18,8 @@ pre[class*="language-lua"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/makefile.css b/syntaxlight/css/makefile.css
+index 797f12b..64f241c 100644
+--- a/syntaxlight/css/makefile.css
++++ b/syntaxlight/css/makefile.css
+@@ -18,7 +18,8 @@ pre[class*="language-makefile"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/python.css b/syntaxlight/css/python.css
+index 8828dd7..480d1ea 100644
+--- a/syntaxlight/css/python.css
++++ b/syntaxlight/css/python.css
+@@ -22,7 +22,8 @@ pre[class*="language-python"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/riscvasm.css b/syntaxlight/css/riscvasm.css
+index f13932a..c15b348 100644
+--- a/syntaxlight/css/riscvasm.css
++++ b/syntaxlight/css/riscvasm.css
+@@ -22,7 +22,8 @@ pre[class*="language-riscvasm"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/rust.css b/syntaxlight/css/rust.css
+index 04f12fd..b1aa6f4 100644
+--- a/syntaxlight/css/rust.css
++++ b/syntaxlight/css/rust.css
+@@ -22,7 +22,8 @@ pre[class*="language-rust"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/shell.css b/syntaxlight/css/shell.css
+index 6d2d966..00969a7 100644
+--- a/syntaxlight/css/shell.css
++++ b/syntaxlight/css/shell.css
+@@ -18,7 +18,8 @@ pre[class*="language-shell"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/toml.css b/syntaxlight/css/toml.css
+index 66076ef..dd8e8eb 100644
+--- a/syntaxlight/css/toml.css
++++ b/syntaxlight/css/toml.css
+@@ -22,7 +22,8 @@ pre[class*="language-toml"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/txt.css b/syntaxlight/css/txt.css
+index f67be68..90c83c4 100644
+--- a/syntaxlight/css/txt.css
++++ b/syntaxlight/css/txt.css
+@@ -22,7 +22,8 @@ pre[class*="language-txt"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/verilog.css b/syntaxlight/css/verilog.css
+index 6cff462..fcedf46 100644
+--- a/syntaxlight/css/verilog.css
++++ b/syntaxlight/css/verilog.css
+@@ -22,7 +22,8 @@ pre[class*="language-verilog"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/x86asm.css b/syntaxlight/css/x86asm.css
+index 3cd8571..83ae189 100644
+--- a/syntaxlight/css/x86asm.css
++++ b/syntaxlight/css/x86asm.css
+@@ -22,7 +22,8 @@ pre[class*="language-x86asm"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/xml.css b/syntaxlight/css/xml.css
+index 7d184b1..2629e34 100644
+--- a/syntaxlight/css/xml.css
++++ b/syntaxlight/css/xml.css
+@@ -22,7 +22,8 @@ pre[class*="language-xml"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/css/yaml.css b/syntaxlight/css/yaml.css
+index af47ba4..694feda 100644
+--- a/syntaxlight/css/yaml.css
++++ b/syntaxlight/css/yaml.css
+@@ -22,7 +22,8 @@ pre[class*="language-yaml"] {
+     color: --brace3;
+ }
+ 
+-.Token.HighlightLine {
++.Token.HighlightLine,
++.Token.HighlightToken {
+     background-color: --highlight;
+     padding: 2px 0;
+ }
+diff --git a/syntaxlight/gdt.py b/syntaxlight/gdt.py
+index 8cbefe5..96e465f 100644
+--- a/syntaxlight/gdt.py
++++ b/syntaxlight/gdt.py
+@@ -24,6 +24,7 @@ class CSS(Enum):
+     NUMBER_TYPE = "NumberType" # 数字类型 i32/i64
+     CONSTANT = "Constant" # 常量
+     HIGHLIGHT_LINE = "HighlightLine"
++    HIGHLIGHT_TOKEN = "HighlightToken"
+ 
+ class Descriptor(TypedDict):
+     type: Enum
+diff --git a/syntaxlight/lexers/lexer.py b/syntaxlight/lexers/lexer.py
+index 60905c7..9176ae8 100644
+--- a/syntaxlight/lexers/lexer.py
++++ b/syntaxlight/lexers/lexer.py
+@@ -23,6 +23,7 @@ class Lexer:
+         self.LanguageTokenType: Enum = LanguageTokenType
+         self.file_path = ""  # 手动修改文件路径, 用于后期错误处理的输出
+         self.highlight_lines: List[int] = []  # 高亮的行数
++        self.highlight_tokens: List[Token] = []  # 高亮的 token
+         self._status_stack = []  # 状态栈
+ 
+         tt_list: List[Enum] = list(LanguageTokenType)
+diff --git a/syntaxlight/parsers/parser.py b/syntaxlight/parsers/parser.py
+index c72ec4a..0755739 100644
+--- a/syntaxlight/parsers/parser.py
++++ b/syntaxlight/parsers/parser.py
+@@ -210,9 +210,11 @@ class Parser:
+             self._token_list.pop()
+ 
+         html_str = ""
+-        for token in self._token_list:
++        for i, token in enumerate(self._token_list):
+             if token.line in self.lexer.highlight_lines:
+                 token.add_css(CSS.HIGHLIGHT_LINE)
++            if i in self.lexer.highlight_tokens:
++                token.add_css(CSS.HIGHLIGHT_TOKEN)
+             html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
+         return html_str
+ 
+diff --git a/syntaxlight/syntax_parse.py b/syntaxlight/syntax_parse.py
+index 82276fc..9e14752 100644
+--- a/syntaxlight/syntax_parse.py
++++ b/syntaxlight/syntax_parse.py
+@@ -9,7 +9,7 @@ from typing import Tuple, Optional, List
+ 
+ 
+ def parse(
+-    text: str, language=None, file_path=None, save_ast_tree=False, highlight_lines: List[int] = []
++    text: str, language=None, file_path=None, save_ast_tree=False, highlight_lines: List[int] = [], highlight_tokens: List[int] = []
+ ) -> Tuple[str, Optional[Error]]:
+     """
+     解析文本, 高亮代码段
+@@ -25,6 +25,7 @@ def parse(
+     parser = get_parser(text, language)
+     parser.lexer.file_path = file_path
+     parser.lexer.highlight_lines = highlight_lines
++    parser.lexer.highlight_tokens = highlight_tokens
+ 
+     exception: Optional[Error] = None
+     try:
+-- 
+2.35.1.windows.2
+
