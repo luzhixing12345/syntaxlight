@@ -1262,6 +1262,9 @@ class CParser(Parser):
         """
         <enum-specifier> ::= enum (<identifier>)? "{" <enumerator> ("," <enumerator>)* ","? "}"
                            | enum <identifier>
+        
+        @EXTEND-GRAMMAR: https://github.com/luzhixing12345/syntaxlight/issues/24
+        支持 ... 省略
         """
         node = EnumSpecifier()
         node.update(keyword=self.get_keyword(CTokenType.ENUM))
@@ -1273,10 +1276,23 @@ class CParser(Parser):
         if self.current_token.type == TokenType.LCURLY_BRACE:
             node.register_token(self.eat(TokenType.LCURLY_BRACE))
             enumerators = [self.enumerator()]
-            while self.current_token.type == TokenType.COMMA:
-                node.register_token(self.eat(TokenType.COMMA))
+            while self.current_token.type in [TokenType.COMMA, TokenType.VARARGS]:
+                node.register_token(self.eat())
+                
                 if self.current_token.type == TokenType.RCURLY_BRACE:
+                    # 如果下一个就是 } 则直接返回即可
                     break
+                
+                if self.current_token.type == TokenType.VARARGS:
+                    node.register_token(self.eat(TokenType.VARARGS))
+                    # 如果写法不标准, ... 后没有逗号, 也算在里面
+                    # enum x {
+                    #    abc,
+                    #    ...
+                    #    def
+                    # }
+                    if self.current_token.type != TokenType.ID:
+                        continue
                 enumerators.append(self.enumerator())
             node.update(enumerators=enumerators)
             node.register_token(self.eat(TokenType.RCURLY_BRACE))

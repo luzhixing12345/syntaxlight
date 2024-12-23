@@ -179,3 +179,7 @@ pre[class*="language-c"] {
 .Token.COMMENT {
     color: --comment;
 }
+
+.Token.VARARGS {
+    color: --punctuator;
+}
