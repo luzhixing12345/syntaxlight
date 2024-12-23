@@ -10,7 +10,7 @@ pre[class*="language-txt"] {
     color: --punctuator;
 }
 
-.Token.BraceDepth-0 {
+/* .Token.BraceDepth-0 {
     color: --brace1;
 }
 
@@ -20,7 +20,7 @@ pre[class*="language-txt"] {
 
 .Token.BraceDepth-2 {
     color: --brace3;
-}
+} */
 
 .Token.HighlightLine,
 .Token.HighlightToken {
@@ -32,7 +32,7 @@ pre[class*="language-txt"] {
     color: --number;
 }
 
-.Token.YES,
+/* .Token.YES,
 .Token.OK {
     color: --success;
 }
@@ -40,4 +40,4 @@ pre[class*="language-txt"] {
 .Token.NO,
 .Token.FAIL {
     color: --fail;
-}
+} */
