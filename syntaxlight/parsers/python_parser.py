@@ -6,6 +6,7 @@ from ..gdt import CSS, GlobalDescriptorTable
 
 GDT = GlobalDescriptorTable()
 
+
 class PythonParser(Parser):
     def __init__(self, lexer, skip_invis_chars=True, skip_space=True):
         super().__init__(lexer, skip_invis_chars, skip_space)
@@ -52,9 +53,9 @@ class PythonParser(Parser):
                         self.current_token.add_css(CSS.FUNCTION_CALL)
                 elif bool(re.match(r"^[A-Z0-9_]+$", self.current_token.value)):
                     self.current_token.add_css(CSS.ENUM_ID)
-                    if len(self._token_list) >= 2:
-                        if self._token_list[-1].type == TokenType.DOT:
-                            base_class = self._token_list[-2]
+                    if len(self.token_list) >= 2:
+                        if self.token_list[-1].type == TokenType.DOT:
+                            base_class = self.token_list[-2]
                             if base_class.type == TokenType.ID:
                                 if base_class.value[0].isupper():
                                     base_class.add_css(CSS.CLASS_INSTANTIATION)

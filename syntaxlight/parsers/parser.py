@@ -23,8 +23,8 @@ class Parser:
 
         self.current_token: Token = self.lexer.get_next_token()
 
-        self._token_list: List[Token] = []  # lexer 解析后经过 parser 确定类型后的 tokens
-        self._status_stack = []  # 状态栈
+        self.token_list: List[Token] = []  # lexer 解析后经过 parser 确定类型后的 tokens
+        self.status_stack = []  # 状态栈
         self.root: AST = None  # 主根节点
         self.sub_roots: List[AST] = []  # 其他根节点, 例如预处理命令
 
@@ -173,7 +173,7 @@ class Parser:
         """
         # 保存程序状态
         self.lexer._record()
-        token_list_length = len(self._token_list)
+        token_list_length = len(self.token_list)
         sub_roots_length = len(self.sub_roots)
         current_token = self.current_token
 
@@ -182,7 +182,7 @@ class Parser:
         next_token = self.current_token
 
         self.lexer._reset()
-        self._token_list = self._token_list[:token_list_length]
+        self.token_list = self.token_list[:token_list_length]
         self.sub_roots = self.sub_roots[:sub_roots_length]
         self.current_token = current_token
         return next_token
@@ -196,7 +196,7 @@ class Parser:
         if token is None:
             token = self.current_token
         # print(token)
-        self._token_list.append(token)
+        self.token_list.append(token)
 
     def to_html(self, highlight_lines: List[int] = [], highlight_tokens: List[int] = []):
         """
@@ -206,11 +206,11 @@ class Parser:
         self.brace_matching()
 
         # 剔除掉结尾多余的换行和空格
-        while len(self._token_list) > 0 and self._token_list[-1].type in (TokenType.CR, TokenType.LF, TokenType.SPACE):
-            self._token_list.pop()
+        while len(self.token_list) > 0 and self.token_list[-1].type in (TokenType.CR, TokenType.LF, TokenType.SPACE):
+            self.token_list.pop()
 
         html_str = ""
-        for i, token in enumerate(self._token_list):
+        for i, token in enumerate(self.token_list):
             if token.line in highlight_lines:
                 token.add_css(CSS.HIGHLIGHT_LINE)
             if i in highlight_tokens:
@@ -238,7 +238,7 @@ class Parser:
 
         brace_depth = 0
         brace_stack: List[TokenType] = []
-        for token in self._token_list:
+        for token in self.token_list:
             # print(brace_list)
             if token.type in left_brace_list:
                 # 左括号直接加入到 stack 当中

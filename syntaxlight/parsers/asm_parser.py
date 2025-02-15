@@ -25,7 +25,7 @@ class X86AssemblyParser(Parser):
 
             self.eat()
 
-        for token in self._token_list:
+        for token in self.token_list:
             if token.value in section_id:
                 token.type = X86AssemblyTokenType.SECTION
 
@@ -124,8 +124,8 @@ class RISCVAssmemblyParser(Parser):
                 elif bool(re.match(self.register_pattern, self.current_token.value)):
                     self.current_token.type = RISCVAssemblyTokenType.REGISTER
 
-                elif len(self._token_list) >= 2:
-                    if self._token_list[-2].type == RISCVAssemblyTokenType.ASM_KEYWORD:
+                elif len(self.token_list) >= 2:
+                    if self.token_list[-2].type == RISCVAssemblyTokenType.ASM_KEYWORD:
                         self.current_token.type = RISCVAssemblyTokenType.SECTION
                         section_id.append(self.current_token.value)
 
@@ -134,7 +134,7 @@ class RISCVAssmemblyParser(Parser):
                         self.current_token.type = TokenType.NUMBER
 
             if self.current_token.type == TokenType.STRING:
-                if self._token_list[-2].type == RISCVAssemblyTokenType.INCLUDE:
+                if self.token_list[-2].type == RISCVAssemblyTokenType.INCLUDE:
                     self.current_token.add_css(RISCVAssemblyTokenType.HEADER_NAME)
                 else:
                     self.get_string()
@@ -145,6 +145,6 @@ class RISCVAssmemblyParser(Parser):
 
             self.eat()
 
-        for token in self._token_list:
+        for token in self.token_list:
             if token.value in section_id:
                 token.type = RISCVAssemblyTokenType.SECTION

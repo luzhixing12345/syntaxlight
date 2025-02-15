@@ -20,7 +20,7 @@ class MakefileParser(Parser):
         while self.current_token.type != TokenType.EOF:
             if self.current_token.value in self.lexer.reserved_keywords:
                 if self.current_token.type == MakefileTokenType.INCLUDE:
-                    if len(self._token_list) == 0 or self._token_list[-1].type == TokenType.LF:
+                    if len(self.token_list) == 0 or self.token_list[-1].type == TokenType.LF:
                         self.current_token.add_css(MakefileCSS.KEYWORD)
                         self.eat()
                         while self.current_token.type not in (TokenType.EOF, TokenType.LF):
@@ -39,17 +39,17 @@ class MakefileParser(Parser):
                 elif self.peek_next_token().type == TokenType.COLON:
                     self.current_token.add_css(MakefileCSS.MISSION)
                     # 上一个换行之前的所有 ID 均为 MISSION
-                    for i in range(len(self._token_list) - 1, -1, -1):
-                        if self._token_list[i].type == TokenType.LF:
+                    for i in range(len(self.token_list) - 1, -1, -1):
+                        if self.token_list[i].type == TokenType.LF:
                             break
-                        elif self._token_list[i].type == TokenType.ID:
-                            self._token_list[i].add_css(MakefileCSS.MISSION)
+                        elif self.token_list[i].type == TokenType.ID:
+                            self.token_list[i].add_css(MakefileCSS.MISSION)
                 else:
                     # 如果形如 $(if ...) 那么是一个函数
-                    if len(self._token_list) >= 2:
+                    if len(self.token_list) >= 2:
                         if (
-                            self._token_list[-1].type == TokenType.LPAREN
-                            and self._token_list[-2].type == TokenType.DOLLAR
+                            self.token_list[-1].type == TokenType.LPAREN
+                            and self.token_list[-2].type == TokenType.DOLLAR
                             and self.peek_next_token().type != TokenType.RPAREN
                         ):
                             self.current_token.add_css(MakefileCSS.FUNCTION)

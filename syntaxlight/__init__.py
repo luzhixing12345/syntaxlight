@@ -4,3 +4,6 @@ from .example import example_display
 from .asts.ast import display_ast
 from .language import is_language_support, clean_language, supported_languages
 from .lexers import TokenSet
+from .lexers.lexer import Lexer
+from .parsers.parser import Parser
+from .token import Token
