@@ -13,6 +13,9 @@ def export_css(languages: List[str], export_dir: str = ".", style: str = "vscode
         themes = json.load(f)
 
     EXTENSION_NAME = "extension"
+    
+    if not os.path.exists(export_dir):
+        os.mkdir(export_dir)
 
     if style in themes:
         theme = themes[style]

@@ -5,13 +5,8 @@ from .export import export_css
 from typing import Union, List
 import sys
 
-def example_display(
-    file_path: Union[str, List[str]] = None,
-    style="vscode",
-    language=None,
-    save_ast_tree=False,
-    highlight_lines: List[int] = [],
-):
+
+def example_display(file_path: Union[str, List[str]] = None, style="vscode", language=None):
     example_folder_name = os.path.join(os.getcwd(), "syntaxlight_example")
     syntaxlight_path = os.path.dirname(__file__)
     html_template_file = os.path.join(syntaxlight_path, "template.html")
@@ -32,9 +27,10 @@ def example_display(
         if language is None:
             language = guess_language(fp)
             all_languages.append(language)
-        html, exception = parse_file(fp, language, save_ast_tree=save_ast_tree, highlight_lines=highlight_lines)
-        if exception is not None:
-            sys.stderr.write(str(exception))
+        parse_result = parse_file(fp, language)
+        if parse_result.error is not None:
+            sys.stderr.write(str(parse_result.error))
+        html = parse_result.parser.to_html()
         code_html += f'<p>{fp}</p><pre class="language-{language}"><code>{html}</code></pre>'
 
     code_html = f'<div class="markdown-body">{code_html}</div>'
@@ -51,4 +47,4 @@ def example_display(
         shutil.copyfile(file, os.path.join(example_folder_name, file.split(os.sep)[-1]))
 
     export_css([language], example_folder_name, style)
-    # print(f"open syntaxlight_example/inedx.html in browser")
+    print(f"open syntaxlight_example/inedx.html in browser")

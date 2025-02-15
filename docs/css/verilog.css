@@ -1,5 +1,5 @@
 pre[class*="language-verilog"] {
-    background: #1f1f1f;
+    background: #161b22;
 }
 
 pre[class*="language-verilog"] .Token {
@@ -22,6 +22,12 @@ pre[class*="language-verilog"] .Token.BraceDepth-2 {
     color: #1A9DFF;
 }
 
+pre[class*="language-verilog"] .Token.HighlightLine,
+pre[class*="language-verilog"] .Token.HighlightToken {
+    background-color: #2d3c4d;
+    padding: 2px 0;
+}
+
 pre[class*="language-verilog"] .Token.Keyword {
     color: #569cd6;
 }
@@ -32,7 +38,10 @@ pre[class*="language-verilog"] .Token.COMMENT {
 
 pre[class*="language-verilog"] .Token.ModuleName,
 pre[class*="language-verilog"] .Token.DefinedModule,
-pre[class*="language-verilog"] .Token.WIRE, pre[class*="language-verilog"] .Token.REG, pre[class*="language-verilog"] .Token.INTEGER, pre[class*="language-verilog"] .Token.GENVAR {
+pre[class*="language-verilog"] .Token.WIRE,
+pre[class*="language-verilog"] .Token.REG,
+pre[class*="language-verilog"] .Token.INTEGER,
+pre[class*="language-verilog"] .Token.GENVAR {
     color: #4EC9B0;
 }
 
@@ -46,19 +55,30 @@ pre[class*="language-verilog"] .Token.NUMBER {
     color: #A2CEA8;
 }
 
-pre[class*="language-verilog"] .Token.STAR, pre[class*="language-verilog"] .Token.BitWidth, pre[class*="language-verilog"] .Token.INPUT, pre[class*="language-verilog"] .Token.OUTPUT {
+pre[class*="language-verilog"] .Token.STAR,
+pre[class*="language-verilog"] .Token.BitWidth,
+pre[class*="language-verilog"] .Token.INPUT,
+pre[class*="language-verilog"] .Token.OUTPUT {
     color: #569cd6;
 }
 
-pre[class*="language-verilog"] .Token.PortName, pre[class*="language-verilog"] .Token.SYSTEM_ID {
+pre[class*="language-verilog"] .Token.PortName,
+pre[class*="language-verilog"] .Token.SYSTEM_ID {
     color: #DCDCAA;
 }
 
 pre[class*="language-verilog"] .Token.ALWAYS,
 pre[class*="language-verilog"] .Token.BEGIN,
 pre[class*="language-verilog"] .Token.END,
-pre[class*="language-verilog"] .Token.CASE,pre[class*="language-verilog"] .Token.CASEZ, pre[class*="language-verilog"] .Token.CASEX,
-pre[class*="language-verilog"] .Token.ENDCASE, pre[class*="language-verilog"] .Token.IF, pre[class*="language-verilog"] .Token.ELSE, pre[class*="language-verilog"] .Token.DEFAULT, pre[class*="language-verilog"] .Token.GENERATE, pre[class*="language-verilog"] .Token.ENDGENERATE {
+pre[class*="language-verilog"] .Token.CASE,
+pre[class*="language-verilog"] .Token.CASEZ,
+pre[class*="language-verilog"] .Token.CASEX,
+pre[class*="language-verilog"] .Token.ENDCASE,
+pre[class*="language-verilog"] .Token.IF,
+pre[class*="language-verilog"] .Token.ELSE,
+pre[class*="language-verilog"] .Token.DEFAULT,
+pre[class*="language-verilog"] .Token.GENERATE,
+pre[class*="language-verilog"] .Token.ENDGENERATE {
     color: #C586C0;
 }
 

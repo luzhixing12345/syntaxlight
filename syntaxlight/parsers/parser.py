@@ -198,7 +198,7 @@ class Parser:
         # print(token)
         self._token_list.append(token)
 
-    def to_html(self):
+    def to_html(self, highlight_lines: List[int] = [], highlight_tokens: List[int] = []):
         """
         将一个解析完成的 AST node 输出其 token 流的 HTML 格式
         """
@@ -211,9 +211,9 @@ class Parser:
 
         html_str = ""
         for i, token in enumerate(self._token_list):
-            if token.line in self.lexer.highlight_lines:
+            if token.line in highlight_lines:
                 token.add_css(CSS.HIGHLIGHT_LINE)
-            if i in self.lexer.highlight_tokens:
+            if i in highlight_tokens:
                 token.add_css(CSS.HIGHLIGHT_TOKEN)
             html_str += f'<span class="{token.get_css_class()}">{html.escape(token.value)}</span>'
         return html_str

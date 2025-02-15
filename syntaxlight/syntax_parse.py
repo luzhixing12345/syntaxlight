@@ -6,26 +6,33 @@ from .language import guess_language, SUPPORTED_SYNTAX, show_help_info, clean_la
 from .asts.ast import display_ast
 import traceback
 from typing import Tuple, Optional, List
+from dataclasses import dataclass
 
 
-def parse(
-    text: str, language=None, file_path=None, save_ast_tree=False, highlight_lines: List[int] = [], highlight_tokens: List[int] = []
-) -> Tuple[str, Optional[Error]]:
+@dataclass
+class ParseResult:
+    success: bool  # 是否解析成功
+    parser: Parser  # 解析器
+    error: Error  # 错误信息(如果有)
+
+
+def parse(text: str, language=None, file_path=None) -> ParseResult:
     """
     解析文本, 高亮代码段
 
-    return: (html, error)
-    html: html 格式的代码段, 无论是否有错误, 都会返回; 错误位置会用红色标记, 其后面的代码段会被默认高亮
-    error: 异常信息, 无错误时为 None, 有错误时为异常对象(Error), 可以打印错误信息
-    highlight_lines: 要高亮的代码段的行号
+    :param text: 待解析的文本
+    :param language: 代码语言, 默认为 None
+    :param file_path: 文件路径, 默认为 None
+    :param save_ast_tree: 是否保存抽象语法树, 默认为 False
+    :param highlight_lines: 要高亮的代码段的行号, 默认为空列表
+    :param highlight_tokens: 要高亮的代码段的 token 号, 默认为空列表
+    :return: 返回一个 ParseResult 对象, 包含解析结果和错误信息
     """
     if len(text) == 0:
-        return "", None
+        return None
     language = clean_language(language)
     parser = get_parser(text, language)
     parser.lexer.file_path = file_path
-    parser.lexer.highlight_lines = highlight_lines
-    parser.lexer.highlight_tokens = highlight_tokens
 
     exception: Optional[Error] = None
     try:
@@ -45,13 +52,13 @@ def parse(
         while parser.current_token.type != TokenType.EOF:
             parser.eat()
     finally:
-        if save_ast_tree:
-            display_ast(parser.root, parser.sub_roots)
+        # if save_ast_tree:
+        #     display_ast(parser.root, parser.sub_roots)
         # print(parser.node)
-        return parser.to_html(), exception
+        return ParseResult(success=exception is None, parser=parser, error=exception)
 
 
-def parse_file(file_path: str, language=None, save_ast_tree=False, highlight_lines: List[int] = []) -> Tuple[str, Optional[Error]]:
+def parse_file(file_path: str, language=None) -> ParseResult:
     if not os.path.exists(file_path):
         print(f"{file_path} file not exsist")
 
@@ -63,7 +70,7 @@ def parse_file(file_path: str, language=None, save_ast_tree=False, highlight_lin
     else:
         language = clean_language(language)
 
-    return parse(text, language=language, file_path=file_path, save_ast_tree=save_ast_tree, highlight_lines=highlight_lines)
+    return parse(text, language=language, file_path=file_path)
 
 
 def get_tokens(lexer: Lexer):
