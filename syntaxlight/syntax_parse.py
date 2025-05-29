@@ -29,7 +29,7 @@ def parse(text: str, language=None, file_path=None) -> ParseResult:
     :return: 返回一个 ParseResult 对象, 包含解析结果和错误信息
     """
     if len(text) == 0:
-        return None
+        text = " "
     language = clean_language(language)
     parser = get_parser(text, language)
     parser.lexer.file_path = file_path
