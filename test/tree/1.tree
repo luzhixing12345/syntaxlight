@@ -1,0 +1,5 @@
+workspace/
+├── initramfs
+│   ├── bin
+│   │   └── busybox
+│   └── init

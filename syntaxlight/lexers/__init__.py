@@ -22,3 +22,4 @@ from .txt_lexer import TxtLexer, TxtTokenType
 from .verilog_lexer import VerilogTokenType, VerilogLexer, VerilogTokenSet
 from .rust_lexer import RustLexer, RustTokenType, RustTokenSet
 from .diff_lexer import DiffLexer, DiffTokenType
+from .tree_lexer import TreeLexer, TreeTokenType

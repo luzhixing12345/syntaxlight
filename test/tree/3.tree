@@ -1,0 +1,78 @@
+.
+├── Makefile
+├── a
+├── a.cpp
+├── bzImage -> /home/kamilu/linux/linux-4.4.6/arch/i386/boot/bzImage
+├── compile_commands.json
+├── disk
+│   ├── Makefile
+│   ├── chroot.sh
+│   ├── lfs.img
+│   ├── tmp
+│   ├── ubuntu.raw
+│   └── unchroot.sh
+├── initramfs
+│   ├── bin
+│   │   └── busybox
+│   └── init
+├── initramfs.img
+├── iso
+│   ├── mini.iso
+│   └── ubuntu-24.04-live-server-amd64.iso
+├── l4 -> /home/kamilu/linux/linux-4.4.6
+├── linux
+│   ├── Makefile
+│   ├── README.md
+│   ├── fsroot
+│   │   └── init
+│   └── init
+├── modules
+│   └── lib
+│       └── modules
+│           └── 6.6.0+
+│               ├── build -> /home/kamilu/klinux
+│               ├── kernel
+│               │   ├── drivers
+│               │   │   ├── net
+│               │   │   │   └── ethernet
+│               │   │   │       └── intel
+│               │   │   │           └── e1000
+│               │   │   │               └── e1000.ko
+│               │   │   └── thermal
+│               │   │       └── intel
+│               │   │           └── x86_pkg_temp_thermal.ko
+│               │   ├── fs
+│               │   │   ├── efivarfs
+│               │   │   │   └── efivarfs.ko
+│               │   │   └── fuse
+│               │   │       └── virtiofs.ko
+│               │   └── net
+│               │       ├── ipv4
+│               │       │   └── netfilter
+│               │       │       └── iptable_nat.ko
+│               │       └── netfilter
+│               │           ├── nf_log_syslog.ko
+│               │           ├── xt_LOG.ko
+│               │           ├── xt_MASQUERADE.ko
+│               │           ├── xt_addrtype.ko
+│               │           ├── xt_mark.ko
+│               │           └── xt_nat.ko
+│               ├── modules.alias
+│               ├── modules.alias.bin
+│               ├── modules.builtin
+│               ├── modules.builtin.alias.bin
+│               ├── modules.builtin.bin
+│               ├── modules.builtin.modinfo
+│               ├── modules.dep
+│               ├── modules.dep.bin
+│               ├── modules.devname
+│               ├── modules.order
+│               ├── modules.softdep
+│               ├── modules.symbols
+│               └── modules.symbols.bin
+├── new.sh
+├── qemu.txt
+├── qemu_config.ini
+└── scripts
+    ├── badget.py
+    └── switch_kernel.sh

@@ -1,0 +1,8 @@
+├── modules
+│   └── lib
+│       └── modules
+│           └── 6.6.0+
+├── initramfs
+│   ├── bin
+│   │   └── busybox
+│   └── init

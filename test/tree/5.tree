@@ -1,0 +1,120 @@
+.
+├── LICENSE
+├── Makefile
+├── README.md
+├── a
+├── a.c
+├── a.txt
+├── b.txt
+├── coreutils
+│   ├── arch
+│   ├── base64
+│   ├── bash
+│   ├── cat
+│   ├── dircolors
+│   ├── ls
+│   ├── pwd
+│   ├── stat
+│   ├── touch
+│   └── tree
+├── coreutils.tar
+├── docs
+│   ├── articles
+│   │   ├── md-docs
+│   │   │   ├── README
+│   │   │   │   └── index.html
+│   │   │   ├── dircolors
+│   │   │   │   └── index.html
+│   │   │   └── ls
+│   │   │       └── index.html
+│   │   └── 关于
+│   │       └── 源码编译与阅读
+│   │           └── index.html
+│   ├── css
+│   │   ├── c.css
+│   │   ├── index.css
+│   │   └── shell.css
+│   ├── img
+│   │   ├── after_copy.png
+│   │   ├── before_copy.png
+│   │   ├── enter.png
+│   │   ├── enter.svg
+│   │   ├── moon.png
+│   │   ├── search.svg
+│   │   └── sun.png
+│   ├── index.html
+│   └── js
+│       ├── change_mode.js
+│       ├── copy_code.js
+│       ├── global_js_configuration.js
+│       ├── navigator.js
+│       ├── next_front.js
+│       └── picture_preview.js
+├── include
+│   └── xbox
+│       ├── xargparse.c
+│       ├── xargparse.h
+│       ├── xargparse.o
+│       ├── xstring.c
+│       ├── xstring.h
+│       ├── xstring.o
+│       ├── xterm.c
+│       ├── xterm.h
+│       ├── xterm.o
+│       ├── xutils.c
+│       ├── xutils.h
+│       └── xutils.o
+├── md-docs
+│   ├── README.md
+│   ├── cat.md
+│   ├── dir.yml
+│   ├── dircolors.md
+│   ├── gnu-coreutils.md
+│   ├── ls.md
+│   ├── stat.md
+│   └── 关于
+│       └── 源码编译与阅读.md
+├── scripts
+│   ├── Makefile
+│   ├── README.md
+│   └── ls
+│       └── ls_all_types_files.sh
+├── src
+│   ├── arch
+│   ├── arch.c
+│   ├── arch.o
+│   ├── base64
+│   ├── base64.c
+│   ├── base64.o
+│   ├── bash
+│   ├── bash.c
+│   ├── bash.o
+│   ├── cat
+│   ├── cat.c
+│   ├── cat.o
+│   ├── dircolors
+│   ├── dircolors.c
+│   ├── dircolors.hin
+│   ├── dircolors.o
+│   ├── ls
+│   ├── ls.c
+│   ├── ls.o
+│   ├── ps
+│   ├── ps.c
+│   ├── ps.o
+│   ├── pwd
+│   ├── pwd.c
+│   ├── pwd.o
+│   ├── stat
+│   ├── stat.c
+│   ├── stat.o
+│   ├── touch
+│   ├── touch.c
+│   ├── touch.o
+│   ├── tree
+│   ├── tree.c
+│   └── tree.o
+└── test
+    ├── README.md
+    ├── test.json
+    └── test.py

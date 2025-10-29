@@ -1,0 +1,74 @@
+pre[class*="language-tree"] {
+    background: #1f1f1f;
+}
+
+.Token {
+    color: --punctuator;
+}
+
+.Token.BraceDepth-0 {
+    color: --brace1;
+}
+
+.Token.BraceDepth-1 {
+    color: --brace2;
+}
+
+.Token.BraceDepth-2 {
+    color: --brace3;
+}
+
+.Token.HighlightLine,
+.Token.HighlightToken {
+    background-color: --highlight;
+    padding: 2px 0;
+}
+
+.Token.Program,
+.Token.Function,
+.Token.BACK_SLASH {
+    color: --function;
+}
+
+
+.Token.STRING {
+    color: --string;
+}
+
+.Token.NUMBER {
+    color: --number;
+}
+
+.Token.COMMENT {
+    color: --comment;
+}
+
+.Token.Dir {
+    color: #3b78ff;
+}
+
+.Token.File {
+    color: #cccccc;
+}
+
+/* class FileCSS(Enum):
+    PIC = "Pic" #b4009e
+    TAR = "Tar" #e74856
+    SH = "Sh"   #16c60c
+    LINK = "Link" #61d6d6 */
+
+.Token.Pic {
+    color: #b4009e;
+}
+
+.Token.Tar {
+    color: #e74856;
+}
+
+.Token.Sh {
+    color: #16c60c;
+}
+
+.Token.Link {
+    color: #61d6d6;
+}

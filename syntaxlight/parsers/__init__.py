@@ -16,3 +16,4 @@ from .txt_parser import TxtParser
 from .verilog_parser import VerilogParser
 from .rust_parser import RustParser
 from .diff_parser import DiffParser
+from .tree_parser import TreeParser
