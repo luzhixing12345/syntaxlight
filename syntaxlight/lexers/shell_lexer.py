@@ -23,7 +23,6 @@ class ShellTokenType(Enum):
 
     OPTION = "option"
     PATH = "path"
-    VARIANT = "variant"
     REDIRECT_TO = ">"
     REDIRECT_FROM = "<"
     LINUX_USER_PATH = "root@kamilu"
@@ -52,21 +51,6 @@ class ShellLexer(Lexer):
 
         return Token(ShellTokenType.OPTION, result, self.line, self.column - 1)
 
-    def shell_variant(self):
-        """
-        $i
-        $mysh
-        """
-        result = "$"
-        self.advance()
-        while self.current_char is not None:
-            if self.current_char.isalnum() or self.current_char in ("-", "_"):
-                result += self.current_char
-                self.advance()
-            else:
-                break
-        return Token(ShellTokenType.VARIANT, result, self.line, self.column - 1)
-
     def get_next_token(self) -> Token:
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
@@ -76,9 +60,9 @@ class ShellLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
-                return self.get_number(accept_bit=True, accept_hex=True, end_chars="sMGK")
+                return self.get_number(accept_bit=True, accept_hex=True, end_chars="sMGKBT")
 
-            if self.current_char.isalpha() or self.current_char in ("_", ".", "/"):
+            if self.current_char.isalpha() or self.current_char in ("_", "."):
                 token = self.get_id(extend_chars=["_", "-", ".", "/", ":", "+", "-", "@", "~"])
                 if bool(re.match(r"^\w+@[\w.-]+:[~\w/]+", token.value)):
                     if self.current_char in ("#", "$"):
@@ -100,9 +84,6 @@ class ShellLexer(Lexer):
 
             if self.current_char == "#":
                 return self.get_comment()
-
-            if self.current_char == "$" and self.peek() != "(":
-                return self.shell_variant()
 
             if self.current_char in ("<", ">") and self.peek() != self.current_char:
                 token = Token(ShellTokenType(self.current_char), self.current_char, self.line, self.column)

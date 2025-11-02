@@ -66,7 +66,7 @@ class MakefileLexer(Lexer):
                 return self.get_long_op()
 
             if self.current_char.isdigit():
-                return self.get_number()
+                return self.get_number(end_chars="GMKTB")
 
             if self.current_char.isalpha() or self.current_char in ("-", "_", ".", "%"):
                 return self.get_id(extend_chars=["_", "-", ".", "%", "/"])

@@ -21,35 +21,19 @@ class ShellCSS(Enum):
 
 
 class ShellParser(Parser):
-    def __init__(
-        self, lexer, skip_invis_chars=False, skip_space=True
-    ):
+    def __init__(self, lexer, skip_invis_chars=True, skip_space=True):
         super().__init__(lexer, skip_invis_chars, skip_space)
 
     def parse(self):
         """
         bash 的文法可变因素太多, 这里直接不使用 BNF 采取匹配的方式
         """
-        is_program_name = True
-        # success_words = ["ok", "passed", "pass", "success", "yes", "completed", "finished", "done", "good"]
-        # fail_words = ["fail", "failed", "error", "warning", "bug", "no", "problem", "issue", "incorrect", "unsuccessful"]
-
-        new_program_token_type = [TokenType.LF, TokenType.PIPE, TokenType.SEMI, TokenType.AND]
+        is_program_output = False
         while self.current_token.type != TokenType.EOF:
-            if (
-                self.current_token.type == TokenType.BACK_SLASH
-                and self.peek_next_token().type == TokenType.LF
-            ):
-                self.eat()
-                self.eat_lf()
-                continue
-
             # print(self.current_token, is_program_name)
             if self.current_token.value in self.lexer.reserved_keywords:
                 self.current_token.add_css(ShellCSS.KEYWORD)
-                if is_program_name:
-                    is_program_name = False
-
+                
             if self.current_token.type == ShellTokenType.LINUX_USER_PATH:
                 match_result = re.match(
                     r"^(?P<HostName>\w+@[\w.-]+)(?P<colon>:)(?P<DirPath>[~\w/]+)(?P<Tag>[$#]?)",
@@ -68,43 +52,17 @@ class ShellParser(Parser):
                     column += len(value)
                     token = Token(path_type, value, line, column)
                     self.manual_register_token(token)
-                is_program_name = True
                 self.manual_get_next_token()
                 continue
 
-            if (
-                self.current_token.type == TokenType.DOLLAR
-                and self.peek_next_token().type == TokenType.LPAREN
-            ):
-                is_program_name = True
-
             if self.current_token.type == TokenType.ID:
-                if self.peek_next_token().type in (TokenType.ASSIGN, TokenType.EQ):
-                    self.current_token.add_css(ShellCSS.VARIANT)
-
-                if self.peek_next_token().type == TokenType.LPAREN:
-                    # function
-                    self.current_token.add_css(ShellCSS.FUNCTION)
-                elif bool(
+                if bool(
                     re.match(
                         r"^https?:\/\/[\w\-_]+(?:\.[\w\-_]+)+(?:[\w\-\.,@?^=%&:\/~\+#]*[\w\-\@?^=%&\/~\+#])?(?:;[\w\-\.,@?^=%&:\/~\+#=]*)?$",
                         self.current_token.value,
                     )
                 ):
                     self.current_token.add_css(ShellCSS.URL)
-                elif self.is_valid_path(self.current_token.value):
-                    self.current_token.type = ShellTokenType.PATH
-
-            if is_program_name:
-                if self.current_token.type in (
-                    TokenType.ID,
-                    ShellTokenType.PATH,
-                ) and not self.has_chinese_word(self.current_token.value):
-                    is_program_name = False
-                    self.current_token.add_css(ShellCSS.PROGRAM)
-            else:
-                if self.current_token.type in new_program_token_type:
-                    is_program_name = True
 
             if self.current_token.type == TokenType.STRING:
                 self.get_string()

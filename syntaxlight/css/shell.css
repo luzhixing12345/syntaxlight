@@ -7,15 +7,15 @@ pre[class*="language-shell"] {
 }
 
 .Token.BraceDepth-0 {
-    color: --brace1;
+    color: --punctuator;
 }
 
 .Token.BraceDepth-1 {
-    color: --brace2;
+    color: --punctuator;
 }
 
 .Token.BraceDepth-2 {
-    color: --brace3;
+    color: --punctuator;
 }
 
 .Token.HighlightLine,
@@ -48,12 +48,7 @@ pre[class*="language-shell"] {
 }
 
 .Token.OPTION {
-    color: --option;
-}
-
-.Token.Variant,
-.Token.VARIANT {
-    color: --variant;
+    color: --punctuator;
 }
 
 .Token.Format {
@@ -75,15 +70,3 @@ pre[class*="language-shell"] {
 .Token.DIR_PATH {
     color: --type;
 }
-
-/* .Token.TreeNormal {
-    color: --operator;
-}
-
-.Token.TreeExe {
-    color: lime;
-}
-
-.Token.TreeIgnore {
-    color: --punctuator;
-} */

@@ -40,7 +40,7 @@ class YamlLexer(Lexer):
                 return self.get_comment('#','\n')
             
             if self.current_char.isdigit() or (self.current_char == '.' and self.peek().isdigit()):
-                return self.get_number()
+                return self.get_number(end_chars='GMKTB/')
 
             if self.current_char.isalpha() or self.current_char in ('_','/','.'):
                 return self.get_id(extend_chars=['_','.','@','-','/','?','|'], ignore_case=True)
