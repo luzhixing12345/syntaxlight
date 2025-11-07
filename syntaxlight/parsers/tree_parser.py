@@ -64,7 +64,7 @@ class TreeParser(Parser):
 
             self.eat()
 
-        dir_chars = ["├", "└", "|"]
+        dir_chars = ["├", "└", "|",'`']
         for i, token in enumerate(self.token_list):
             if token.type == TokenType.ID:
                 depth = token.depth
@@ -74,7 +74,8 @@ class TreeParser(Parser):
                 else:
                     token.add_css(TreeCSS.FILE)
                     add_file_css(token)
-                    if i + 2 < len(self.token_list):
-                        next_token = self.token_list[i + 2]
-                        if next_token.type == TokenType.POINT:
-                            token.add_css(FileCSS.LINK)
+            if i + 2 < len(self.token_list):
+                next_token = self.token_list[i + 2]
+                if next_token.type == TokenType.POINT:
+                    token.remove_css(TreeCSS.DIR)
+                    token.add_css(FileCSS.LINK)

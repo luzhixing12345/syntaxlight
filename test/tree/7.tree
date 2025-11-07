@@ -1,0 +1,24 @@
+lzx@cxl2:~/klinux/initrd_root$ tree -L 2
+.
+|-- early
+|   `-- kernel
+|-- early2
+|   `-- kernel
+|-- early3
+|   `-- usr
+`-- main
+    |-- bin -> usr/bin
+    |-- conf
+    |-- etc
+    |-- init
+    |-- lib -> usr/lib
+    |-- lib.usr-is-merged -> usr/lib.usr-is-merged
+    |-- lib32 -> usr/lib32
+    |-- lib64 -> usr/lib64
+    |-- libexec -> usr/libexec
+    |-- libx32 -> usr/libx32
+    |-- run
+    |-- sbin -> usr/sbin
+    |-- scripts
+    |-- usr
+    `-- var
