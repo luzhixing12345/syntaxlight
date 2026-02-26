@@ -17,7 +17,7 @@ body {
     -webkit-text-size-adjust: 100%;
     line-height: 1.5;
     /* color: #24292e; */
-    font-family: Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    font-family: Monaco, Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
     font-size: 16px;
     letter-spacing: 0.02em;
     line-height: 1.5;
@@ -61,29 +61,6 @@ body {
     transition: all 0.8s;
 }
 
-.markdown-dark {
-    background-color: #252d38;
-}
-
-.markdown-dark a {
-    color: #1589e9;
-    transition: all 0.8s;
-}
-
-.markdown-dark a:hover {
-    color: #30a9de;
-    transition: all 0.8s;
-}
-
-.markdown-dark h1,
-.markdown-dark h2,
-.markdown-dark h3,
-.markdown-dark h4,
-.markdown-dark h5,
-.markdown-dark h6 {
-    color: #c4c6c9;
-}
-
 .markdown-body strong {
     font-weight: inherit;
     font-weight: bolder;
@@ -120,7 +97,7 @@ blockquote {
 .markdown-body code,
 .markdown-body kbd,
 .markdown-body pre {
-    font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+    font-family: Monaco, Consolas, Liberation Mono, Menlo, monospace;
     font-size: 15px;
 }
 
@@ -200,32 +177,44 @@ blockquote {
     cursor: pointer;
 }
 
+/* ul lo related css */
 
-/* .markdown-body ol ol,
-.markdown-body ul ol {
-    list-style-type: lower-roman;
+.markdown-body ul {
+    margin-top: 0;
+    margin-bottom: 8px;
+    padding-left: 1.5em;
 }
 
-.markdown-body ol ol ol,
-.markdown-body ol ul ol,
-.markdown-body ul ol ol,
-.markdown-body ul ul ol {
-    list-style-type: lower-alpha;
-} */
-
-.markdown-body ul,
 .markdown-body ol {
     margin-top: 0;
     margin-bottom: 8px;
-    padding-left: 2em;
+    padding-left: 2.3em;
+}
+
+
+.markdown-body ol ul,
+.markdown-body ul ul {
+    padding-left: 1em;
+    margin-top: 10px;
 }
 
 .markdown-body ol ol,
-.markdown-body ol ul,
-.markdown-body ul ol,
-.markdown-body ul ul {
-    margin-top: 0;
-    margin-bottom: 0;
+.markdown-body ul ol {
+    padding-left: 1.75em;
+    margin-top: 10px;
+}
+
+.markdown-body ul p,
+.markdown-body ol p {
+    margin-bottom: 10px;
+}
+
+.markdown-body ol li blockquote {
+    margin-top: 10px;
+}
+
+.markdown-body ul li blockquote {
+    margin-top: 10px;
 }
 
 .markdown-body li {
@@ -240,9 +229,20 @@ blockquote {
     margin-top: 0.25em;
 }
 
-ul>li>ul>li {
+ul>li>ul>li,
+ol>li>ol>li,
+ul>li>ol>li,
+ol>li>ul>li {
+    margin-top: 0;
     margin-top: 10px;
-    /* 通过调整10px来设置上边距大小 */
+}
+
+.markdown-body ol li blockquote {
+    margin-top: 10px;
+}
+
+.markdown-body ul li blockquote {
+    margin-top: 10px;
 }
 
 /* ul 后面的文字加一个间距 */
@@ -287,17 +287,6 @@ ul>li>ul>li {
     border-collapse: collapse;
 }
 
-.markdown-dark table tr {
-    background-color: #444444;
-    border-top: 1px solid #c6cbd1;
-    color: white;
-}
-
-.markdown-dark table tr:nth-child(2n) {
-    background-color: #808080;
-    color: white;
-}
-
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
@@ -329,48 +318,49 @@ ul>li>ul>li {
     border-radius: 5px;
 }
 
+.markdown-body .pic-small {
+    max-width: 40%;
+    max-height: 300px;
+}
+
+.markdown-body .pic-middle {
+    max-width: 60%;
+    max-height: 400px;
+}
+
 .markdown-body pre {
     position: relative;
 }
 
 .markdown-body pre #code_copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     position: absolute;
-    display: inline-block;
-    right: 10px;
-    top: 10px;
-    /* margin-top: -16px; */
-    padding: 3px;
-    opacity: 0.9;
-    border: 1px solid rgba(149, 157, 165, 0.2);
-    border-radius: 5px;
-    background-color: rgb(196, 196, 196);
-    z-index: 1;
+    top: 5px;
+    right: 8px;
+    background: #0b0b0b;
+    color: #9198a1;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease, color 0.12s ease;
 }
 
 .markdown-body pre #code_copy:hover {
-    background-color: #ffffff;
-    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-    border-radius: 5px;
+    background: #121212;
+    border-color: #2a2a2a;
+    transform: translateY(-0.5px);
 }
 
-.markdown-body ol ul,
-.markdown-body ul ol {
-    padding-left: 1em;
-    margin-top: 10px;
-}
-
-.markdown-body ol li blockquote {
-    margin-top: 10px;
-}
-
-.markdown-body ul li blockquote {
-    margin-top: 10px;
-}
 
 .markdown-body kbd {
     display: inline-block;
     padding: 5px 5px;
-    font: 11px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font: 11px "Monaco", Consolas, "Liberation Mono", Menlo, Courier, monospace;
     line-height: 10px;
     color: #444d56;
     vertical-align: middle;
@@ -384,10 +374,6 @@ ul>li>ul>li {
 
 .markdown-light ::selection {
     background-color: #d1ecf9;
-}
-
-.markdown-dark ::selection {
-    background-color: #3f4041;
 }
 
 .markdown-body pre code ::selection {
@@ -418,11 +404,13 @@ ul>li>ul>li {
     display: flex;
     justify-content: left;
     margin-bottom: 5px;
+    margin-top: 5px;
 }
 
 .markdown-body blockquote p {
     margin-bottom: 5px;
     margin-top: 5px;
+    margin-left: 5px;
 }
 
 .changeMode {
@@ -439,7 +427,7 @@ ul>li>ul>li {
 }
 
 .change-article {
-    font-family: Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    font-family: Monaco, Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
     border: 0;
     width: 100%;
     margin-right: 20%;
@@ -484,7 +472,7 @@ ul>li>ul>li {
 }
 
 .dir-tree {
-    font-family: Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    font-family: Monaco, Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
     position: fixed;
     left: 6%;
     top: 10%;
@@ -506,7 +494,7 @@ ul>li>ul>li {
 }
 
 .dir-tree ul {
-    font-family: Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    font-family: Monaco, Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
     font-size: 18px;
     letter-spacing: 0.02em;
     margin-top: 25px;
@@ -525,8 +513,23 @@ ul>li>ul>li {
     white-space: nowrap;
 }
 
+.dir-tree ul ul {
+    overflow: hidden;
+    transform-origin: top;
+}
+
+.dir-tree ul ul.collapsed {
+    transform: scaleY(0);
+    opacity: 0;
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 .dir-tree ul ul li {
-    font-family: Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    font-family: Monaco, Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
     letter-spacing: 0.02em;
     font-size: 16px;
     margin-left: -10px;
@@ -542,22 +545,6 @@ ul>li>ul>li {
 /* .dir-tree ul ul li:hover {
   background-color: #eee;
 } */
-
-.dir-tree a {
-    text-decoration: none;
-    color: #000;
-    /* https://www.bilibili.com/video/BV1Dc41147sW */
-    /* background: linear-gradient(to right, #000, #000) no-repeat right bottom;
-    background-size: 0 2px;
-    transition: background-size 1000ms; */
-}
-
-.dir-tree a:hover {
-    font-weight: bold;
-    color: #000;
-    /* background-position-x: left;
-    background-size: 100% 2px; */
-}
 
 .dir-tree ul ul li a {
     color: #000;
@@ -630,7 +617,7 @@ ul>li>ul>li {
 .markdown-body ul:has(input[type="checkbox"]) {
     list-style-type: none;
     padding-left: 0.5em;
-    /* margin-bottom: 8px; */
+    margin-bottom: 8px;
 }
 
 .markdown-body input[type="checkbox"] {
@@ -646,7 +633,7 @@ ul>li>ul>li {
     width: 15%;
     left: 83%;
     top: 10%;
-    font-family: Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    font-family: Monaco, Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
     font-size: 18px;
     letter-spacing: 0.02em;
     scrollbar-width: none;
@@ -660,6 +647,10 @@ ul>li>ul>li {
     list-style: none;
     max-height: 50%;
     overflow: auto;
+    border-left: 2px solid #e0e0e0;
+    /* 添加左侧灰色竖线 */
+    padding-left: -5px;
+    /* 增加左侧内边距,与竖线保持适当距离 */
 }
 
 .header-navigator::-webkit-scrollbar {
@@ -677,18 +668,18 @@ ul>li>ul>li {
 }
 
 .header-navigator ul {
-    font-family: Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+    font-family: Monaco, Consolas, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
     font-size: 14px;
     letter-spacing: 0.02em;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    margin-left: -10px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-left: -20px;
     list-style: none;
     position: relative;
 }
 
 .header-navigator ul ul {
-    margin-left: -20px;
+    margin-left: -30px;
 }
 
 .header-navigator a {
@@ -700,8 +691,12 @@ ul>li>ul>li {
 }
 
 pre[class^="language-"] {
-    background: #1f1f1f;
-    color: white;
+    background: #0b0b0b;
+    color: #C1CCCC;
+}
+
+pre[class^="language-"] ::selection {
+    background-color: #264f78;
 }
 
 
@@ -938,4 +933,122 @@ body.lb-disable-scrolling {
     .zood {
         display: none;
     }
+}
+
+.dir-tree a {
+    text-decoration: none;
+    color: #000;
+    /* https://www.bilibili.com/video/BV1Dc41147sW */
+    /* background: linear-gradient(to right, #000, #000) no-repeat right bottom;
+    background-size: 0 2px;
+    transition: background-size 1000ms; */
+}
+
+.dir-tree a:hover {
+    font-weight: bold;
+    color: #000;
+    /* background-position-x: left;
+    background-size: 100% 2px; */
+}
+
+/* 引用部分样式 */
+.references-tabs-container {
+    margin-top: 40px;
+    margin-bottom: 20px;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+
+/* 选项卡导航 */
+.references-tabs-nav {
+    display: flex;
+    background-color: #f6f8fa;
+    border-bottom: 1px solid #e1e4e8;
+}
+
+.references-tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    color: #656d76;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.references-tab-btn:hover {
+    color: #24292f;
+    background-color: #f3f4f6;
+}
+
+.references-tab-btn.active {
+    color: #0969da;
+    border-bottom-color: #0969da;
+    background-color: #ffffff;
+}
+
+/* 选项卡内容 */
+.references-tabs-content {
+    position: relative;
+}
+
+.references-tab-pane {
+    display: none;
+    padding: 20px;
+}
+
+.references-tab-pane.active {
+    display: block;
+}
+
+.reference-list {
+    list-style: none;
+    padding-left: 0 !important;
+    margin: 0;
+}
+
+.reference-list li {
+    margin-bottom: 8px;
+}
+
+.reference-list a {
+    text-decoration: none;
+    color: #0969da;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    width: 100%;
+    padding: 12px 4px;
+    background-color: #f3f4f6;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.reference-list a:hover {
+    background-color: #e5e7eb;
+    transform: none;
+    box-shadow: none;
+    text-decoration: none;
+    color: #0969da;
+}
+
+.reference-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    flex-shrink: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* 简单的蓝色文档图标 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%230969da' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='opacity:1;'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M14 2v4a2 2 0 0 0 2 2h4M10 9H8m8 4H8m8 4H8'/%3E%3C/svg%3E");
+    margin-left: 5px;
 }
