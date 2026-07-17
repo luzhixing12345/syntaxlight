@@ -19,7 +19,7 @@ def build_parser():
     parser.add_argument("--index", "-i", type=int, default=0, help="one-based case index; 0 selects all")
     parser.add_argument("--style", "-s", default="vscode")
     parser.add_argument("--lexer", action="store_true", help="print tokens without starting a server")
-    parser.add_argument("--port", "-p", type=int, default=5655)
+    parser.add_argument("--port", "-p", type=int, default=8000)
     parser.add_argument("--no-browser", action="store_true", help="start the server without opening a browser")
     return parser
 

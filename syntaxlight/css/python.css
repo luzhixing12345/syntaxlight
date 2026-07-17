@@ -52,6 +52,11 @@ pre[class*="language-python"] {
 .Token.FOR,
 .Token.WHILE,
 .Token.ELIF,
+.Token.ASYNC,
+.Token.AWAIT,
+.Token.SOFT_CASE,
+.Token.SOFT_MATCH,
+.Token.SOFT_TYPE,
 .Token.RETURN,
 .Token.BREAK,
 .Token.IN,
@@ -91,13 +96,26 @@ pre[class*="language-python"] {
 
 .Token.ClassName,
 .Token.ClassInstantiation,
-.Token.ImportLibName {
+.Token.FunctionArgType,
+.Token.FunctionReturnType,
+.Token.ImportLibName,
+.Token.Typedefine {
     color: --struct;
 }
 
 .Token.FunctionName,
-.Token.FunctionCall {
+.Token.FunctionCall,
+.Token.ImportLibFunction {
     color: --function;
+}
+
+.Token.FunctionArgName {
+    color: --variant;
+    font-style: italic;
+}
+
+.Token.STR.Format {
+    color: --string;
 }
 
 .Token.INT,
