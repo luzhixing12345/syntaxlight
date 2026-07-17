@@ -29,6 +29,7 @@ class ShellTokenType(Enum):
     HOST_NAME = "HostName"
     DIR_PATH = "DirPath"
     TAG = "Tag"
+    IP_ADDRESS = "IpAddress"
 
 
 class ShellLexer(Lexer):
@@ -51,6 +52,33 @@ class ShellLexer(Lexer):
 
         return Token(ShellTokenType.OPTION, result, self.line, self.column - 1)
 
+    def get_ip_address(self):
+        match = re.match(
+            r"(?P<address>\d{1,3}(?:\.\d{1,3}){3})(?::(?P<port>\d{1,5}))?",
+            self.text[self.pos :],
+        )
+        if match is None:
+            return None
+        value = match.group(0)
+        octets = [int(part) for part in match.group("address").split(".")]
+        port = match.group("port")
+        next_char = self.text[self.pos + len(value) : self.pos + len(value) + 1]
+        if (
+            any(octet > 255 for octet in octets)
+            or (port is not None and int(port) > 65535)
+            or next_char.isalnum()
+            or next_char in (".", ":")
+        ):
+            return None
+        for _ in value:
+            self.advance()
+        return Token(
+            ShellTokenType.IP_ADDRESS,
+            value,
+            self.line,
+            self.column - 1,
+        )
+
     def get_next_token(self) -> Token:
         while self.current_char is not None:
             if self.current_char == TokenType.SPACE.value:
@@ -60,6 +88,9 @@ class ShellLexer(Lexer):
                 return self.skip_invisiable_character()
 
             if self.current_char.isdigit():
+                ip_address = self.get_ip_address()
+                if ip_address is not None:
+                    return ip_address
                 return self.get_number(accept_bit=True, accept_hex=True, end_chars="sMGKBT")
 
             if self.current_char.isalpha() or self.current_char in ("_", "."):

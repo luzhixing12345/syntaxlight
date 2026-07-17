@@ -47,6 +47,10 @@ pre[class*="language-shell"] {
     color: --define;
 }
 
+.Token.Variant {
+    color: --variant;
+}
+
 .Token.OPTION {
     color: --punctuator;
 }
@@ -60,6 +64,11 @@ pre[class*="language-shell"] {
 }
 
 .Token.Url {
+    border-bottom: 1px solid --punctuator;
+}
+
+.Token.IpAddress {
+    color: --number;
     border-bottom: 1px solid --punctuator;
 }
 
