@@ -117,6 +117,7 @@ class TypeItem(AST):
 class FnItem(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.async_kw = None
         self.fn = None
         self.id:Identifier = None
         self.generic_params = None
@@ -240,6 +241,7 @@ class ImplItem(AST):
 class ImplMember(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.async_kw = None
         self.type = None
         self.id:Identifier = None
         self.ty_sum = None
@@ -280,6 +282,7 @@ class TraitBody(AST):
 class TraitMember(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.async_kw = None
         self.type = None
         self.ty_param = None
         self.id = None
@@ -352,7 +355,9 @@ class TySum(AST):
 class Ty(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.dyn = None
         self.ty = None
+        self.ty_param_bounds = None
         self.mut = None
 
 class TyParam(AST):
@@ -449,6 +454,14 @@ class UnsafeBlockExpr(AST):
         self.block_expr = None
 
 
+class AsyncBlockExpr(AST):
+    def __init__(self) -> None:
+        super().__init__()
+        self.async_kw = None
+        self.move_kw = None
+        self.block_expr = None
+
+
 class IfExpr(AST):
     def __init__(self) -> None:
         super().__init__()
@@ -510,6 +523,7 @@ class LetExpr(AST):
 class RefGroup(AST):
     def __init__(self) -> None:
         super().__init__()
+        self.await_kw = None
         self.expr = None
         self.id = None
         self.index_expr = None

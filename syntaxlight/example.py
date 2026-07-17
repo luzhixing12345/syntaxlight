@@ -47,4 +47,4 @@ def example_display(file_path: Union[str, List[str]] = None, style="vscode", lan
         shutil.copyfile(file, os.path.join(example_folder_name, file.split(os.sep)[-1]))
 
     export_css([language], example_folder_name, style)
-    print(f"open syntaxlight_example/inedx.html in browser")
+    print("Generated syntaxlight_example/index.html")

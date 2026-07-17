@@ -72,6 +72,8 @@ pre[class*="language-rust"] {
 .Token.IF,
 .Token.ELSE,
 .Token.FOR,
+.Token.AWAIT,
+.Token.TRAIT_NAME,
 .Token.IN {
     color: --define;
 }

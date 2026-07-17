@@ -119,7 +119,7 @@ private block_item ::= fn_item
 
 visibility ::= pub
 
-fn_item ::= fn ident [generic_params] fn_params [ret_ty] [where_clause] block_expr
+fn_item ::= [async] fn ident [generic_params] fn_params [ret_ty] [where_clause] block_expr
 
 private fn_params ::= '(' [ <<comma_separated_list fn_param>> ] ')'
 
@@ -156,7 +156,7 @@ impl_member ::= type ident '=' ty_sum ';'
               | const ident ':' ty_sum '=' expr ';'
               | member_fn_item
 
-member_fn_item ::= fn ident [generic_params] member_fn_params [ret_ty] [where_clause] block_expr
+member_fn_item ::= [async] fn ident [generic_params] member_fn_params [ret_ty] [where_clause] block_expr
 
 member_fn_params ::= '(' ')'
                    | '(' self_param [','] ')'
@@ -170,7 +170,7 @@ trait_item ::= trait ident [generic_params] [':' ty_param_bounds] [where_clause]
 trait_body ::= '{' (outer_attrs trait_member) * '}'
 
 trait_member ::= type ty_param ';'
-               | fn ident [generic_params] member_fn_params [ret_ty] [where_clause] (';' | block_expr )
+               | [async] fn ident [generic_params] member_fn_params [ret_ty] [where_clause] (';' | block_expr )
 
 foreign_mod_item ::= extern [abi] '{' inner_attr*  foreign_item* '}'
 abi ::= lit_string
@@ -209,6 +209,7 @@ ty ::= '(' ty_sum ')'
      | '[' ty_sum ']'
      | '[' ty_sum ';' expr ']'
      | '&' [lifetime] [mut] ty
+     | dyn ty_param_bounds
      | bare_fn
      | type_path
 
@@ -278,6 +279,7 @@ private primary_group ::= struct_expr
                         | statement_like_expr
 
 statement_like_expr ::= block_expr
+                      | async_block_expr
                       | unsafe_block_expr
                       | if_expr
                       | while_expr
@@ -323,7 +325,7 @@ borrow_expr ::= '&' [mut] expr
 
 macro_expr ::= ident '!' '(' [<<comma_separated_list expr>>] ')'
 
-ref_expr ::= expr '.' (ident | lit_integer)
+ref_expr ::= expr '.' (ident | lit_integer | await)
 array_ref_expr ::= expr '[' index_expr ']'
 private index_expr ::= expr | ".."
 call_expr ::= expr ["::" generic_values] '(' [<<comma_separated_list expr>>] ')'
@@ -335,6 +337,7 @@ tuple_expr ::= '(' expr ',' [<<comma_separated_list expr>>] ')'
 array_expr ::= '[' expr ';' expr ']'
              | '[' [<<comma_separated_list expr>>] ']'
 block_expr ::= '{' stmt* [expr] '}'
+async_block_expr ::= async [move] block_expr
 unsafe_block_expr ::= unsafe block_expr
 
 lambda_expr ::= ('||' | '|' [<<comma_separated_list lambda_param>>] '|') [ret_ty] expr

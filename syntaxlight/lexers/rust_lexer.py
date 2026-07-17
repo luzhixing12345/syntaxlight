@@ -8,6 +8,8 @@ class RustTokenType(Enum):
     ABSTRACT = "abstract"
     ALIGNOF = "alignof"
     AS = "as"
+    ASYNC = "async"
+    AWAIT = "await"
     BECOME = "become"
     BOX = "box"
     BREAK = "break"
@@ -15,6 +17,7 @@ class RustTokenType(Enum):
     CONTINUE = "continue"
     CRATE = "crate"
     DO = "do"
+    DYN = "dyn"
     ELSE = "else"
     ENUM = "enum"
     EXTERN = "extern"
@@ -187,6 +190,7 @@ class RustTokenSet:
         self.path_glob = TokenSet(TokenType.ID, RustTokenType.SELF, TokenType.LCURLY_BRACE, TokenType.MUL)
         self.path_item = TokenSet(TokenType.ID, RustTokenType.SELF, RustTokenType.CRATE)
         self.block_item = TokenSet(
+            RustTokenType.ASYNC,
             RustTokenType.FN,
             RustTokenType.MOD,
             RustTokenType.STRUCT,
@@ -231,7 +235,18 @@ class RustTokenSet:
         self.pat_field = TokenSet(TokenType.ID, RustTokenType.REF, RustTokenType.MUT)
         self.fn_param = TokenSet(self.pat)
 
-        self.impl_member = TokenSet(RustTokenType.TYPE, RustTokenType.CONST, RustTokenType.FN)
+        self.impl_member = TokenSet(
+            RustTokenType.TYPE,
+            RustTokenType.CONST,
+            RustTokenType.ASYNC,
+            RustTokenType.FN,
+        )
+        self.trait_member = TokenSet(
+            self.outer_attr,
+            RustTokenType.TYPE,
+            RustTokenType.ASYNC,
+            RustTokenType.FN,
+        )
         self.self_param = TokenSet(TokenType.AMPERSAND, RustTokenType.MUT, RustTokenType.SELF)
 
         self.type_path = TokenSet(TokenType.ID, RustTokenType.SSELF)
@@ -240,6 +255,7 @@ class RustTokenSet:
             TokenType.MUL,
             TokenType.LSQUAR_PAREN,
             TokenType.AMPERSAND,
+            RustTokenType.DYN,
             self.type_path,
         )
         self.ty_sum = TokenSet(self.ty)
@@ -251,6 +267,7 @@ class RustTokenSet:
         self.lambda_expr = TokenSet(TokenType.OR, TokenType.PIPE)
         self.statement_like_expr = TokenSet(
             self.block_expr,
+            RustTokenType.ASYNC,
             RustTokenType.UNSAFE,
             RustTokenType.IF,
             RustTokenType.WHILE,

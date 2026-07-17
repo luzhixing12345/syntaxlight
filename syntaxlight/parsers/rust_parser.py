@@ -374,7 +374,7 @@ class RustParser(Parser):
         elif self.current_token.type in self.rust_first_set.inner_attr:
             self.inner_attr()
 
-        if self.current_token.type == RustTokenType.FN:
+        if self.current_token.type in (RustTokenType.ASYNC, RustTokenType.FN):
             return self.fn_item()
         elif self.current_token.type == RustTokenType.MOD:
             return self.mod_item()
@@ -393,9 +393,11 @@ class RustParser(Parser):
 
     def fn_item(self):
         """
-        fn_item ::= fn ident [generic_params] fn_params [ret_ty] [where_clause] block_expr
+        fn_item ::= [async] fn ident [generic_params] fn_params [ret_ty] [where_clause] block_expr
         """
         node = FnItem()
+        if self.current_token.type == RustTokenType.ASYNC:
+            node.update(async_kw=self.get_keyword(token_type=RustTokenType.ASYNC))
         node.update(fn=self.get_keyword(token_type=RustTokenType.FN))
         node.update(id=self.get_identifier())
         add_ast_type(node.id, CSS.FUNCTION_NAME)
@@ -655,7 +657,7 @@ class RustParser(Parser):
                       | const ident ':' ty_sum '=' expr ';'
                       | member_fn_item
 
-        member_fn_item ::= fn ident [generic_params] member_fn_params [ret_ty] [where_clause] block_expr
+        member_fn_item ::= [async] fn ident [generic_params] member_fn_params [ret_ty] [where_clause] block_expr
         """
         node = ImplMember()
         if self.current_token.type == RustTokenType.TYPE:
@@ -672,7 +674,9 @@ class RustParser(Parser):
             node.register_token(self.eat(TokenType.ASSIGN))
             node.update(expr=self.expr())
             node.register_token(self.eat(TokenType.SEMI))
-        elif self.current_token.type == RustTokenType.FN:
+        elif self.current_token.type in (RustTokenType.ASYNC, RustTokenType.FN):
+            if self.current_token.type == RustTokenType.ASYNC:
+                node.update(async_kw=self.get_keyword(token_type=RustTokenType.ASYNC))
             node.update(fn=self.get_keyword(token_type=RustTokenType.FN))
             node.update(id=self.get_identifier())
             add_ast_type(node.id, CSS.FUNCTION_NAME)
@@ -739,6 +743,8 @@ class RustParser(Parser):
         node = TraitItem()
         node.update(trait=self.get_keyword(token_type=RustTokenType.TRAIT))
         node.update(id=self.get_identifier())
+        add_ast_type(node.id, RustCSS.TRAIT_NAME)
+        GDT.register_id(node.id.id, RustCSS.TRAIT_NAME)
         if self.current_token.type in self.rust_first_set.generic_params:
             node.update(generic_params=self.generic_params())
         if self.current_token.type == TokenType.COLON:
@@ -757,8 +763,8 @@ class RustParser(Parser):
         node.register_token(self.eat(TokenType.LCURLY_BRACE))
         outer_attrs = []
         trait_members = []
-        while self.current_token.type in self.rust_first_set.outer_attr:
-            outer_attrs.append(self.outer_attr())
+        while self.current_token.type in self.rust_first_set.trait_member:
+            outer_attrs.extend(self.outer_attrs())
             trait_members.append(self.trait_member())
 
         node.update(outer_attrs=outer_attrs)
@@ -769,16 +775,20 @@ class RustParser(Parser):
     def trait_member(self):
         """
         trait_member ::= type ty_param ';'
-                       | fn ident [generic_params] member_fn_params [ret_ty] [where_clause] (';' | block_expr )
+                       | [async] fn ident [generic_params] member_fn_params [ret_ty] [where_clause] (';' | block_expr )
         """
         node = TraitMember()
         if self.current_token.type == RustTokenType.TYPE:
             node.update(type=self.get_keyword(token_type=RustTokenType.TYPE))
             node.update(ty_param=self.ty_param())
             node.register_token(self.eat(TokenType.SEMI))
-        elif self.current_token.type == RustTokenType.FN:
+        elif self.current_token.type in (RustTokenType.ASYNC, RustTokenType.FN):
+            if self.current_token.type == RustTokenType.ASYNC:
+                node.update(async_kw=self.get_keyword(token_type=RustTokenType.ASYNC))
             node.update(fn=self.get_keyword(token_type=RustTokenType.FN))
             node.update(id=self.get_identifier())
+            add_ast_type(node.id, CSS.FUNCTION_NAME)
+            GDT.register_id(node.id.id, CSS.FUNCTION_NAME)
             if self.current_token.type in self.rust_first_set.generic_params:
                 node.update(generic_params=self.generic_params())
             node.update(member_fn_params=self.member_fn_params())
@@ -975,6 +985,7 @@ class RustParser(Parser):
              | '[' ty_sum ']'
              | '[' ty_sum ';' expr ']'
              | '&' [lifetime] [mut] ty
+             | dyn ty_param_bounds
              | bare_fn
              | type_path
 
@@ -1005,6 +1016,9 @@ class RustParser(Parser):
             if self.current_token.type == RustTokenType.MUT:
                 node.update(mut=self.get_keyword(token_type=RustTokenType.MUT))
             node.update(ty=self.ty())
+        elif self.current_token.type == RustTokenType.DYN:
+            node.update(dyn=self.get_keyword(token_type=RustTokenType.DYN))
+            node.update(ty_param_bounds=self.ty_param_bounds())
         elif self.current_token.type in self.rust_first_set.type_path:
             node.update(type_path=self.type_path())
         else:
@@ -1248,7 +1262,7 @@ class RustParser(Parser):
         """
         ref_group ::= ref_expr | array_ref_expr | call_expr
 
-        ref_expr ::= expr '.' (ident | lit_integer)
+        ref_expr ::= expr '.' (ident | lit_integer | await)
         array_ref_expr ::= expr '[' index_expr ']'
         private index_expr ::= expr || ..
         call_expr ::= expr ["::" generic_values] '(' [<<comma_separated_list expr>>] ')'
@@ -1260,8 +1274,10 @@ class RustParser(Parser):
                 node.update(id=self.get_identifier())
             elif self.current_token.type == TokenType.NUMBER:
                 node.register_token(self.eat(TokenType.NUMBER))
+            elif self.current_token.type == RustTokenType.AWAIT:
+                node.update(await_kw=self.get_keyword(token_type=RustTokenType.AWAIT))
             else:
-                self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be identifier or integer")
+                self.error(ErrorCode.UNEXPECTED_TOKEN, message="should be identifier, integer or await")
         elif self.current_token.type == TokenType.LSQUAR_PAREN:
             node.register_token(self.eat(TokenType.LSQUAR_PAREN))
             if self.current_token.type == TokenType.CONCAT:
@@ -1435,6 +1451,7 @@ class RustParser(Parser):
     def statement_like_expr(self):
         """
         statement_like_expr ::= block_expr
+                              | async_block_expr
                               | unsafe_block_expr
                               | if_expr
                               | while_expr
@@ -1444,6 +1461,8 @@ class RustParser(Parser):
         """
         if self.current_token.type == TokenType.LCURLY_BRACE:
             return self.block_expr()
+        elif self.current_token.type == RustTokenType.ASYNC:
+            return self.async_block_expr()
         elif self.current_token.type == RustTokenType.UNSAFE:
             return self.unsafe_block_expr()
         elif self.current_token.type == RustTokenType.IF:
@@ -1459,7 +1478,7 @@ class RustParser(Parser):
         else:
             self.error(
                 ErrorCode.UNEXPECTED_TOKEN,
-                message="should be block_expr | unsafe_block_expr | if_expr | while_expr | loop_expr | match_expr | for_expr",
+                message="should be block_expr | async_block_expr | unsafe_block_expr | if_expr | while_expr | loop_expr | match_expr | for_expr",
             )
 
     def block_expr(self):
@@ -1480,6 +1499,17 @@ class RustParser(Parser):
         """
         node = UnsafeBlockExpr()
         node.update(unsafe=self.get_keyword(token_type=RustTokenType.UNSAFE))
+        node.update(block_expr=self.block_expr())
+        return node
+
+    def async_block_expr(self):
+        """
+        async_block_expr ::= async [move] block_expr
+        """
+        node = AsyncBlockExpr()
+        node.update(async_kw=self.get_keyword(token_type=RustTokenType.ASYNC))
+        if self.current_token.type == RustTokenType.MOVE:
+            node.update(move_kw=self.get_keyword(token_type=RustTokenType.MOVE))
         node.update(block_expr=self.block_expr())
         return node
 
