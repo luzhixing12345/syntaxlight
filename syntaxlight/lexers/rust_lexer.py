@@ -262,7 +262,13 @@ class RustTokenSet:
         self.generic_values = TokenSet(TokenType.LANGLE_BRACE)
 
         self.unary_group = TokenSet(RustTokenType.BOX, TokenType.MINUS, TokenType.MUL, TokenType.AMPERSAND, TokenType.BANG)
-        self.ref_group = TokenSet(TokenType.DOT, TokenType.LSQUAR_PAREN, TokenType.DOUBLE_COLON, TokenType.LPAREN)
+        self.ref_group = TokenSet(
+            TokenType.DOT,
+            TokenType.LSQUAR_PAREN,
+            TokenType.DOUBLE_COLON,
+            TokenType.LPAREN,
+            TokenType.QUESTION,
+        )
 
         self.lambda_expr = TokenSet(TokenType.OR, TokenType.PIPE)
         self.statement_like_expr = TokenSet(

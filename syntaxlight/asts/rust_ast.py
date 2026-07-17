@@ -524,6 +524,7 @@ class RefGroup(AST):
     def __init__(self) -> None:
         super().__init__()
         self.await_kw = None
+        self.question = None
         self.expr = None
         self.id = None
         self.index_expr = None

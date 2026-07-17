@@ -1260,15 +1260,18 @@ class RustParser(Parser):
 
     def ref_group(self, expr: Expr):
         """
-        ref_group ::= ref_expr | array_ref_expr | call_expr
+        ref_group ::= ref_expr | array_ref_expr | call_expr | try_expr
 
         ref_expr ::= expr '.' (ident | lit_integer | await)
         array_ref_expr ::= expr '[' index_expr ']'
         private index_expr ::= expr || ..
         call_expr ::= expr ["::" generic_values] '(' [<<comma_separated_list expr>>] ')'
+        try_expr ::= expr '?'
         """
         node = RefGroup()
-        if self.current_token.type == TokenType.DOT:
+        if self.current_token.type == TokenType.QUESTION:
+            node.update(question=self.get_punctuator())
+        elif self.current_token.type == TokenType.DOT:
             node.register_token(self.eat(TokenType.DOT))
             if self.current_token.type == TokenType.ID:
                 node.update(id=self.get_identifier())

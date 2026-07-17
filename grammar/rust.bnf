@@ -267,7 +267,7 @@ private shift_group ::= shl_expr | shr_expr
 private add_group ::= plus_expr | minus_expr
 private mul_group ::= mul_expr | div_expr | mod_expr
 private unary_group ::= box_expr | unary_min_expr | deref_expr | not_expr | borrow_expr
-private ref_group ::= ref_expr | array_ref_expr | call_expr
+private ref_group ::= ref_expr | array_ref_expr | call_expr | try_expr
 private primary_group ::= struct_expr
                         | simple_ref_expr
                         | literal_expr
@@ -329,6 +329,7 @@ ref_expr ::= expr '.' (ident | lit_integer | await)
 array_ref_expr ::= expr '[' index_expr ']'
 private index_expr ::= expr | ".."
 call_expr ::= expr ["::" generic_values] '(' [<<comma_separated_list expr>>] ')'
+try_expr ::= expr '?'
 
 simple_ref_expr ::= expr_path | self
 literal_expr ::= lit
