@@ -7,6 +7,80 @@ body {
   background-color: #f8f9fa;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+.test-navigation {
+  position: fixed;
+  top: 50%;
+  left: 24px;
+  z-index: 10;
+  max-height: 80vh;
+  padding: 8px;
+  overflow-y: auto;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(31, 35, 40, 0.12);
+}
+
+.test-navigation ol {
+  display: grid;
+  grid-template-columns: repeat(2, 36px);
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.test-navigation a {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: #24292f;
+  font: 600 13px/1 -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica,
+    Arial, sans-serif;
+  text-decoration: none;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  transition: color 0.15s ease, background-color 0.15s ease,
+    border-color 0.15s ease, transform 0.15s ease;
+}
+
+.test-navigation a:hover,
+.test-navigation a:focus-visible {
+  color: #fff;
+  background: #0969da;
+  border-color: #0969da;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.code-section {
+  scroll-margin-top: 24px;
+}
+
+.code-section + .code-section {
+  padding-top: 32px;
+  margin-top: 32px;
+  border-top: 1px solid #d8dee4;
+}
+
+.code-section-title {
+  padding-bottom: 8px;
+  margin-bottom: 12px !important;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  color: #57606a;
+  border-bottom: 1px solid #d8dee4;
+}
+
 .markdown-body {
   margin-left: 20%;
   margin-right: 20%;
@@ -23,6 +97,28 @@ body {
   word-wrap: break-word;
   background-color: rgb(255, 255, 255);
 }
+
+@media (max-width: 900px) {
+  .test-navigation {
+    left: 8px;
+    padding: 6px;
+  }
+
+  .test-navigation ol {
+    grid-template-columns: 32px;
+  }
+
+  .test-navigation a {
+    width: 32px;
+    height: 32px;
+  }
+
+  .markdown-body {
+    margin: 24px 16px 24px 58px;
+    padding: 20px;
+  }
+}
+
 .markdown-body .octicon {
   display: inline-block;
   fill: currentColor;
