@@ -552,7 +552,7 @@ class RustParser(Parser):
         node.register_token(self.eat(TokenType.LCURLY_BRACE))
         node.update(
             record_struct_members=self.list_items(
-                self.record_struct_member, trailing_set=[TokenType.ID, RustTokenType.PUB]
+                self.record_struct_member, trailing_set=[TokenType.HASH, TokenType.ID, RustTokenType.PUB]
             )
         )
         node.register_token(self.eat(TokenType.RCURLY_BRACE))
@@ -560,9 +560,10 @@ class RustParser(Parser):
 
     def record_struct_member(self):
         """
-        record_struct_member ::= [visibility] ident ':' ty_sum
+        record_struct_member ::= outer_attrs [visibility] ident ':' ty_sum
         """
         node = RecordStructMember()
+        node.update(outer_attrs=self.outer_attrs())
         if self.current_token.type in self.rust_first_set.visibility:
             node.update(visibility=self.visibility())
         node.update(id=self.get_identifier())
