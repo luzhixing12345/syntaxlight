@@ -26,7 +26,7 @@ class CSSLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 # CSS 单位
                 # https://www.zhihu.com/question/602061531/answer/3037149631
                 return self.get_number(

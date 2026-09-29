@@ -77,7 +77,7 @@ class XmlLexer(Lexer):
                 self.advance()
                 return token
             
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 return self.get_number()
 
             if self.current_char.isalpha() or self.current_char in ("_", ":"):

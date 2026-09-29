@@ -152,6 +152,11 @@ class Lexer:
         else:
             return self.text[self.pos + 1 : peek_pos + 1]
 
+    @staticmethod
+    def is_ascii_digit(char: str) -> bool:
+        """Return whether *char* is a decimal digit accepted by number lexers."""
+        return char is not None and "0" <= char <= "9"
+
     def get_number(self, accept_float=True, accept_bit=False, accept_hex=False, end_chars: str = "p") -> Token:
         """
          <digit> ::= [0-9]
@@ -174,6 +179,9 @@ class Lexer:
                 return bool(re.match(r"[0-9_]", char))
 
         result = ""
+        start_pos = self.pos
+        start_line = self.line
+        start_column = self.column
 
         if self.current_char == "0":
             result += self.current_char
@@ -219,6 +227,14 @@ class Lexer:
         while self.current_char is not None and self.current_char in end_chars:
             result += self.current_char
             self.advance()
+
+        # Keep the lexer moving even if a caller invokes get_number for a
+        # character outside the ASCII number grammar.
+        if self.pos == start_pos:
+            result = self.current_char
+            self.advance()
+            return Token(TokenType.TEXT, result, start_line, start_column)
+
         # column - 1, 因为判断结束需要跳出 number
         return Token(TokenType.NUMBER, result, self.line, self.column - 1)
 

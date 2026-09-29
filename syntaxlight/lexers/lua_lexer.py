@@ -106,7 +106,7 @@ class LuaLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 return self.get_number(accept_hex=True)
 
             if self.current_char.isalpha() or self.current_char == "_":

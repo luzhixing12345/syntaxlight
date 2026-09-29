@@ -1,0 +1,27 @@
+digraph G {
+    size="6!" ratio=fill
+    node [shape=circle, style=bold, fontsize=22, fontname=Consolas, width=0.8, height=0.8]
+    edge [style=bold]
+    label="(41) select 3"
+    node0 [label="26"]
+    node1 [label="25"]
+    node2 [label="17"]
+    node3 [label="3"]
+    node4 [label="19"]
+    node5 [label="7"]
+    node6 [label="1"]
+    node7 [label="2"]
+    node0 -> node1
+    n100 [width=0.1, height=0.1, shape=point, style=invis]
+    node0 -> n100 [weight=10, style=invis]
+    node0 -> node2
+    node1 -> node3
+    n101 [width=0.1, height=0.1, shape=point, style=invis]
+    node1 -> n101 [weight=10, style=invis]
+    node1 -> node4
+    node2 -> node5
+    n102 [width=0.1, height=0.1, shape=point, style=invis]
+    node2 -> n102 [weight=10, style=invis]
+    node2 -> node6
+    node3 -> node7
+}

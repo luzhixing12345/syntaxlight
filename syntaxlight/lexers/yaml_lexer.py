@@ -39,7 +39,9 @@ class YamlLexer(Lexer):
             if self.current_char == '#':
                 return self.get_comment('#','\n')
             
-            if self.current_char.isdigit() or (self.current_char == '.' and self.peek().isdigit()):
+            if self.is_ascii_digit(self.current_char) or (
+                self.current_char == '.' and self.is_ascii_digit(self.peek())
+            ):
                 return self.get_number(end_chars='GMKTB/')
 
             if self.current_char.isalpha() or self.current_char in ('_','/','.'):

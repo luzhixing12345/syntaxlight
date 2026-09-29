@@ -31,7 +31,7 @@ class DotLexer(Lexer):
             if self.current_char.isalpha() or self.current_char == "_":
                 return self.get_id()
 
-            if self.current_char.isdigit() or self.current_char == ".":
+            if self.is_ascii_digit(self.current_char) or self.current_char == ".":
                 return self.get_number()
 
             if self.current_char == "/":

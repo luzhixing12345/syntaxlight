@@ -162,6 +162,7 @@ cython_debug/
 .vscode/
 a.py
 *.dot
+!test/dot/*.dot
 syntaxlight_example/
 
 *.exe

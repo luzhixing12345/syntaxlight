@@ -1,0 +1,8 @@
+strict graph Network {
+    graph [label="Undirected network", rankdir=LR]
+    node [shape=circle, color=steelblue]
+    edge [color=gray]
+
+    router -- switch -- workstation
+    router -- server [label="10 Gbit"]
+}

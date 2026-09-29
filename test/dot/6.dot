@@ -1,0 +1,12 @@
+// Assignments, comments, quoted identifiers, and chained edges.
+digraph Pipeline {
+    ranksep=.3
+    bgcolor="white"
+
+    /* Default styles may contain comma- or semicolon-separated attributes. */
+    node [shape=box, style=rounded; fontname="Courier"]
+    edge [arrowsize=.5]
+
+    "read source" -> tokenize -> parse -> render [color=navy, weight=2]
+    render [label="HTML output"]
+}

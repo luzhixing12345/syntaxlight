@@ -65,7 +65,7 @@ class MakefileLexer(Lexer):
             if self.current_char in self.long_op_dict:
                 return self.get_long_op()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 return self.get_number(end_chars="GMKTB")
 
             if self.current_char.isalpha() or self.current_char in ("-", "_", ".", "%"):

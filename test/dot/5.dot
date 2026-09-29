@@ -1,0 +1,13 @@
+digraph Ports {
+    nodesep=.05
+    rankdir=LR
+    node [shape=record, width=.1, height=.1]
+
+    node0 [label="<f0> zero | <f1> one | <f2> two", height=2.0]
+    node1 [label="{<n> name | 719 | <p> next}"]
+    node2 [label="{<n> value | 805 | <p> next}"]
+
+    node0:f0 -> node1:n
+    node0:f1 -> node2:n
+    node1:p -> node2:n
+}

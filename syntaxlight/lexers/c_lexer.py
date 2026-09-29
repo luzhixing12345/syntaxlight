@@ -154,7 +154,7 @@ class CLexer(Lexer):
             if self.current_char == "/" and self.peek() == "*":
                 return self.get_comment("/*", "*/")
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 return self.get_number(
                     accept_hex=True,
                     accept_bit=True,

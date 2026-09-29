@@ -149,8 +149,8 @@ class PythonLexer(Lexer):
             if self.current_char in ('"', "'"):
                 return self.get_str()
 
-            if self.current_char.isdigit() or (
-                self.current_char == "." and (self.peek() or "").isdigit()
+            if self.is_ascii_digit(self.current_char) or (
+                self.current_char == "." and self.is_ascii_digit(self.peek())
             ):
                 return self.get_python_number()
             

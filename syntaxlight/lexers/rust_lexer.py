@@ -134,7 +134,7 @@ class RustLexer(Lexer):
             if self.current_char == "'":
                 return self.get_char()
             
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 token = self.get_number(accept_float=True, accept_hex=True, accept_bit=True)
                 if self.current_char in ["i", "u", "f"]:
                     if self.peek() == "8" or self.peek(2) in ["16", "32", "64"] or self.peek(3) == "128":

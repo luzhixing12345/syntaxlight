@@ -23,7 +23,7 @@ class X86AssemblyLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 result = ''
                 while self.current_char is not None:
                     if bool(re.match(r'^[0-9a-fA-FxX]$', self.current_char)):
@@ -105,7 +105,7 @@ class RISCVAssemblyLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 
                 result = ''
                 while self.current_char is not None:

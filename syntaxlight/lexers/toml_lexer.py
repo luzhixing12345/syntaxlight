@@ -37,7 +37,7 @@ class TomlLexer(Lexer):
                 # match comment
                 return self.get_comment()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 token = self.get_number()
                 # https://datatracker.ietf.org/doc/html/rfc3339
                 # a tricky implementation

@@ -25,7 +25,7 @@ class TxtLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 return self.get_number(accept_hex=True, accept_bit=True, end_chars="GMKTB")
 
             if self.current_char.isalpha():

@@ -178,7 +178,7 @@ class VerilogLexer(Lexer):
             'b   'B   'o   'O   'd   'D   'h   'H
         """
         result = ""
-        while self.current_char.isdigit():
+        while self.is_ascii_digit(self.current_char):
             result += self.current_char
             self.advance()
         if self.current_char == "'":
@@ -227,7 +227,7 @@ class VerilogLexer(Lexer):
             if self.current_char == '"':
                 return self.get_string()
 
-            if self.current_char.isdigit() or self.current_char == "'":
+            if self.is_ascii_digit(self.current_char) or self.current_char == "'":
                 token = self.get_number()
                 # if len(token.value) == 1 and token.value in ("0", "1"):
                 #     token.type = VerilogTokenType.LEVEL_SYMBOL

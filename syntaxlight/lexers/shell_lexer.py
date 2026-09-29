@@ -87,7 +87,7 @@ class ShellLexer(Lexer):
             if self.current_char in self.invisible_characters:
                 return self.skip_invisiable_character()
 
-            if self.current_char.isdigit():
+            if self.is_ascii_digit(self.current_char):
                 ip_address = self.get_ip_address()
                 if ip_address is not None:
                     return ip_address

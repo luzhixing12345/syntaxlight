@@ -1,0 +1,18 @@
+digraph Clusters {
+    rankdir=LR
+
+    subgraph cluster_input {
+        label="input stage"
+        style=filled
+        color=lightgrey
+        source -> validate -> normalize
+    }
+
+    subgraph cluster_output {
+        label="output stage"
+        node [style=filled, color=white]
+        render -> publish
+    }
+
+    normalize -> render [label="AST"]
+}
